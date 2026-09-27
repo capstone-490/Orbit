@@ -1,0 +1,110 @@
+name: User Story
+description: Submit a new user story with tracking, estimations, and criteria
+title: "[Story]: <Short descriptive name>"
+labels: ["story", "feature:needs-triage", "NeedsStakeholderReview", "NeedsStakeholderSignOff"]
+
+body:
+  - type: textarea
+    id: user_story
+    attributes:
+      label: User Story Description
+      description: Must follow standard story format. Use a concrete Persona when appropriate.
+      placeholder: "As a [Persona Name], I want [action/capability], so that [business/user outcome]."
+      value: "As [Persona], I want to , so that ."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: story_points
+    attributes:
+      label: Story Points
+      description: "Numerical estimate of effort."
+      options:
+        - "1"
+        - "2"
+        - "3"
+        - "5"
+        - "8"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: Select the priority/value ranking of this story.
+      options:
+        - Urgent
+        - High
+        - Medium
+        - Low
+    validations:
+      required: true
+
+  - type: dropdown
+    id: risk
+    attributes:
+      label: Risk
+      description: Assess the risk level of implementing this story; to users or to team
+      options:
+        - High
+        - Medium
+        - Low
+    validations:
+      required: true
+
+  - type: textarea
+    id: task_breakdown
+    attributes:
+      label: Task Breakdown (Ideal Hours)
+      description: | 
+        Break the story down into discrete engineering tasks with ideal hour estimates. 
+        Initially can be incomplete, but must refine later prior to work.
+      placeholder: |
+        - [ ] Sub-task 1: Define API contracts and schemas (2h)
+        - [ ] Sub-task 2: Implement backend service and validation (4h)
+        - [ ] Sub-task 3: Frontend component integration (3h)
+        - [ ] Sub-task 4: Mock dependencies and add unit tests (2h)
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        **Exit Criteria:** Stories will not be reviewed until story points, value/priority, risk, feature label, iteration milestone, sub-tasks with ideal hours, unit tests, and demo steps are complete.
+
+  - type: textarea
+    id: testing_plan
+    attributes:
+      label: Testing Plan
+      description: Step-by-step instructions for stakeholder demo and test verification.
+      placeholder: |
+        1. Linked tests: #id1...
+        1. Confirm unit test suite passes: `npm test` or `pytest`.
+    validations:
+      required: false
+
+  - type: textarea
+    id: demo_steps
+    attributes:
+      label: Demo Steps
+      description: Step-by-step instructions for stakeholder demo
+      placeholder: |
+        1. Navigate to /example-route.
+        2. Perform action X with test input Y.
+        3. Verify system logs show event Z.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: signoff_checklist
+    attributes:
+      label: Signoff Checklist
+      options:
+        - label: Set points, priority, risk, `feature:<name>` label, iteration, sub-tasks & estimate"
+          required: true
+        - label: Has Test Plan
+          required: false
+        - label: Demo completed and Stakeholder approved
+          required: false
+
