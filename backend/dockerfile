@@ -17,5 +17,5 @@ COPY . /app/
 # Expose port
 EXPOSE 8001
 
-# Run migrations and start server
-CMD ["sh", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
+# Run start server (currently as there are no python script it will be with the base ./your-daemon-or-script.py)
+CMD [ "python", "./your-daemon-or-script.py" ]
