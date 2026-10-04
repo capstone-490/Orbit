@@ -12,7 +12,9 @@ Orbit is an AI-powered client and workflow management platform built for financi
 
 <!-- What would a new developer need to do to get the system up and running? -->
 
-<Link to your project’s board.>
+## Project board
+[Orbit Project Board](https://github.com/orgs/capstone-490/projects/3/views/2)
+
 
 ## Wiki table of contents
 - [Home](https://github.com/capstone-490/Orbit/wiki)
