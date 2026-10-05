@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: orbit_postgres
+    environment:
+      - POSTGRES_DB=orbit_db
+      - POSTGRES_USER=orbit_user
+      - POSTGRES_PASSWORD=orbit_password
+    ports:
+      - "6105:6105"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orbit_user -d orbit_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: orbit_backend
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./backend:/app
+    environment:
+      - DEBUG=True
+      - SECRET_KEY=dev-secret-key-change-in-production
+      - DB_NAME=orbit_db
+      - DB_USER=orbit_user
+      - DB_PASSWORD=orbit_password
+      - DB_HOST=db
+      - DB_PORT=6105
+    depends_on:
+      db:
+        condition: service_healthy
+    stdin_open: true
+    tty: true
+
+volumes:
+  postgres_data:
