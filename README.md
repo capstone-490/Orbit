@@ -1,9 +1,13 @@
 <h1 align="center">Orbit</h1>
 
-<CI information>
+
+## CI Information
+**GitHub Actions** is used for continuous integration.
+
+[View GitHub Actions workflows](https://github.com/capstone-490/Orbit/actions)
   
 ## Release demos
-<This will be filled in with links to your demo videos for each release.>
+<!--This will be filled in with links to your demo videos for each release.-->
   
 ## Project summary
 Orbit is an AI-powered client and workflow management platform built for financial advisors that focuses on centralizing daily administrative tasks and client management activities to reduce the burden of managing multiple clients. Specialized AI agents support advisors by handling tasks such as drafting messages, summarizing meetings, suggesting tasks, and identifying follow-up actions. Orbit includes a coordination mechanism that detects conflicting, duplicate and stale updates before any changes are committed, while advisors have final approval over important actions.
@@ -12,6 +16,11 @@ Orbit is an AI-powered client and workflow management platform built for financi
 
 <!-- What would a new developer need to do to get the system up and running? -->
 
+## Tech Stack
+
+- **Frontend:** React.js
+- **Backend:** Python with FastAPI
+  
 ## Project board
 [Orbit Project Board](https://github.com/orgs/capstone-490/projects/3/views/2)
 
