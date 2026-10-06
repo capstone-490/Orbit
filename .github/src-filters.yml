@@ -1,0 +1,10 @@
+# This is used by the action https://github.com/dorny/paths-filter
+
+backend:
+  - 'backend/**'
+  - '.github/workflows/backend.yml'
+  - '.github/workflows/main.yml'
+frontend:
+  - 'frontend/**'
+  - '.github/workflows/frontend.yml'
+  - '.github/workflows/main.yml'
