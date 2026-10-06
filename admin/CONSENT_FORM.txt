@@ -1,0 +1,154 @@
+CONSENT TO PARTICIPATE IN ORBIT PROTOTYPE EVALUATION
+
+Research Project Title:
+
+Orbit - Financial Advisor AI-Assisted Client and Workflow Management Platform
+
+
+I understand that I have been asked to participate in a research project being conducted by:
+
+Student Researchers:
+
+student_name
+student_name
+student_name
+...
+
+
+Department of Computer Science and Software Engineering (CSSE), Concordia University
+Contact: reception@cse.concordia.ca / 514-848-2424, ext. 3000
+
+Under the supervision of:
+
+Faculty Supervisor: PROFESSOR_NAME
+Department of Computer Science and Software Engineering, Concordia University
+Contact: PROFESSOR_CONTACT
+
+
+
+A. PURPOSE
+I understand that the purpose of this research is to evaluate the usability and usefulness of Orbit, a prototype platform designed to help financial advisors organize clients, appointments, documents, tasks, and follow-ups.
+
+I understand that the research will help the project team identify problems, improve the design, and evaluate how well Orbit supports common advisor workflows.
+
+
+
+B. PROCEDURES
+I understand that I may be asked to:
+- use or review the Orbit prototype;
+- complete tasks using fictional or synthetic client information;
+- answer an online questionnaire;
+- provide feedback about the interface and features;
+- answer questions about my experience using the system; and
+- participate in an interview or demonstration, if applicable.
+
+I understand that participation will take approximately [X] minutes.
+I understand that the study may collect information such as:
+
+- my questionnaire answers;
+- my feedback and comments;
+- time taken to complete tasks;
+- task completion or error information;
+- which prototype features I use; and
+- basic technical information needed to operate or evaluate the prototype.
+
+I understand that I must not enter real client financial or personal information into the Orbit prototype during this study.
+
+I understand that the project team will use fictional or synthetic client information for testing and evaluation whenever client information is required for a task.
+
+I understand that information collected during the study will be accessed only by authorized members of the research/project team and will be stored using reasonable security measures.
+
+I understand that AI features in the prototype are experimental. AI-generated information may be incorrect, and the prototype is not intended to provide financial, investment, insurance, tax, or legal advice.
+
+
+
+C. RISKS AND BENEFITS
+
+Risks
+I understand that the risks of participating are expected to be minimal.
+
+I understand that I may experience minor inconvenience, frustration, or discomfort while completing tasks or answering questions about the prototype.
+
+I understand that there is a risk that information provided during the study could be accessed by an unauthorized person. The research team will take reasonable measures to reduce this risk.
+
+I understand that I should not provide real client financial information, identification numbers, health information, account information, passwords, or other sensitive client information during the study.
+
+Benefits
+I understand that I may not receive a direct personal benefit from participating.
+
+I understand that my feedback may help improve the Orbit prototype and may contribute to the development of software that can better support financial advisors with administrative and organizational work.
+
+
+
+D. CONDITIONS OF PARTICIPATION
+I understand that I am free to withdraw my consent and discontinue my participation at any time without negative consequences.
+
+I understand that participation is voluntary and that I may choose not to answer a question if I do not wish to answer it.
+
+I understand that my participation in this study is CONFIDENTIAL. The research team will know my identity when necessary, but my name will not be disclosed in reports or presentations unless I provide separate permission.
+
+I understand that the research team may use my questionnaire responses, feedback, and other study data for the purposes described in this consent form.
+
+I understand that the data from this study may be used in academic project reports, presentations, demonstrations, and other academic materials.
+
+I understand that information used in reports and presentations will be presented in a way that does not intentionally identify me.
+
+I understand that anonymized or aggregated results may be retained as part of the project documentation.
+
+I understand that I should not provide real client information when using the Orbit prototype.
+
+
+
+CONSENT FORM
+
+I understand that the data from this study will not be published.
+
+I HAVE CAREFULLY STUDIED THE ABOVE AND UNDERSTAND THIS AGREEMENT.
+I FREELY CONSENT AND VOLUNTARILY AGREE TO PARTICIPATE IN THIS STUDY.
+
+
+NAME (please print): __________________________________________________________
+
+
+
+SIGNATURE: _______________________________________________________________
+
+
+
+DATE: _______________________________________________________________
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+For an online questionnaire, replace the signature section with an electronic consent statement such as:
+
+By selecting "I agree" below, I confirm that I have read and understood the information above, have had the opportunity to ask questions, and freely consent to participate in this study.
+
+☐ I agree to participate
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+QUESTIONS ABOUT THE RESEARCH
+
+If at any time you have questions about the proposed research, please contact:
+
+Principal Investigator / Student Researcher:
+Student Researchers: 
+
+student_name
+student_name
+student_name
+...
+
+Department of Computer Science and Software Engineering (CSSE), Concordia University
+Email: reception@cse.concordia.ca
+Phone: 514-848-2424, ext. 3000
+
+Faculty Supervisor: 
+PROFESSOR_NAME
+Department of Computer Science and Software Engineering, Concordia University
+Email: PROFESSOR_EMAIL
+
+If at any time you have questions about your rights as a research participant, please contact:
+
+Manager, Research Ethics
+Concordia University
+514-848-2424 ext. 7481
+oor.ethics@concordia.ca
