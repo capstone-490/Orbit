@@ -1,0 +1,80 @@
+name: CI/CD Orchestrator
+
+on:
+  pull_request:
+    branches: [main]
+  # allow manual releae
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Action to perform"
+        required: true
+        default: "publish_release"
+        type: choice
+        options:
+          - "publish_release"
+      target_tag:
+        description: "Tag to publish (leave blank for latest tag)"
+        required: false
+        type: string
+        default: ""
+      iteration:
+        description: "Iteration number (leave blank to auto-detect)"
+        required: false
+        type: string
+        default: ""
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  detect-changes:
+    name: detect what files changed
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.changes.outputs.backend }}
+      frontend: ${{ steps.changes.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 #v7.0.1
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d #v4.0.3
+        id: changes
+        with:
+          filters: .github/src-filters.yml
+
+  backend-ci:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.backend == 'true' || github.ref == 'refs/heads/main' }}
+    uses: ./.github/workflows/backend.yml
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  frontend-ci:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.frontend == 'true' || github.ref == 'refs/heads/main' }}
+    uses: ./.github/workflows/frontend.yml
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  auto-tag:
+    needs: [backend-ci, frontend-ci]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    uses: ./.github/workflows/release-version.yml
+    with:
+      publish_mode: "draft" # prepares draft/tag without publishing
+    permissions:
+      contents: write
+  
+  publish-release:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'publish_release'
+    uses: ./.github/workflows/release-version.yml
+    with:
+      publish_mode: "publish"
+      target_tag: ${{ github.event.inputs.target_tag }}
+      iteration: ${{ github.event.inputs.iteration }}
+    secrets:
+      PROJECT_TOKEN: ${{ secrets.PROJECT_ACCESS_TOKEN }}
+    permissions:
+      contents: write
+

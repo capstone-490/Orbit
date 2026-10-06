@@ -1,0 +1,160 @@
+name: Release & Versioning
+
+on:
+  workflow_call:
+    inputs:
+      publish_mode:
+        required: true
+        type: string # draft or publish
+      target_tag:
+        required: false
+        type: string
+        default: ""
+      iteration:
+        required: false
+        type: string
+        default: ""
+    secrets:
+      PROJECT_TOKEN:
+        required: false
+    outputs:
+      new_tag:
+        description: "The newly generated or targeted tag"
+        value: ${{ jobs.manage-release.outputs.new_tag }}
+      iteration_tag:
+        description: "The current iteration as a tag"
+        value: ${{ jobs.manage-release.outputs.iteration_tag }}
+
+jobs:
+  manage-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      new_tag: ${{ steps.resolve-tag.outputs.tag }}
+      iteration_tag: ${{ steps.resolve-iter.outputs.iter_tag }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 #v7.0.1
+        with:
+          fetch-depth: 0
+
+      # commit with fix: or perf -> increments patch (v1.0.0 > v1.0.1)
+      # commit with feat: -> increments minor (v1.0.0 > v1.1.0)
+      # commit with BREAKING CHANGE: or feat!: -> increments major (v1.0.0 > v2.0.0)
+      - name: Generate Tag
+        id: versioning
+        if: ${{ inputs.publish_mode == 'draft' }}
+        uses: mathieudutour/github-tag-action@af99e60ce8132224b8e6ebab5023449fe256ed46 #v7
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          default_bump: patch
+          release_branches: main
+
+      - name: Update Draft Release with Notes
+        if: ${{ inputs.publish_mode == 'draft' && steps.versioning.outputs.release_created == 'true' }}
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 #v3.0.3
+        with:
+          tag_name: ${{ steps.versioning.outputs.new_tag }}
+          name: Release ${{ steps.versioning.outputs.new_tag }}
+          body: ${{ steps.versioning.outputs.changelog }}
+          draft: true
+          prerelease: false
+          generate_release_notes: true
+      
+      # manual release
+      - name: Determine Tag for Manual Release
+        id: manual-tag
+        if: ${{ inputs.publish_mode == 'publish' }}
+        run: |
+          if [ -n "${{ inputs.target_tag }}" ]; then
+            echo "target=${{ inputs.target_tag }}" >> $GITHUB_OUTPUT
+          else
+            LATEST_TAG=$(git describe --tags --abbrev=0)
+            echo "target=${LATEST_TAG}" >> $GITHUB_OUTPUT
+          fi
+
+      # Resolve iteration number
+      - name: Resolve Iteration Number
+        id: resolve-iter
+        if: ${{ inputs.publish_mode == 'publish' }}
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          ITER=""
+
+          if [ -n "${{ inputs.iteration }}" ]; then
+            ITER="${{ inputs.iteration }}"
+
+          # fetch active iteration via gh cli
+          elif command -v gh >/dev/null 2>&1; then
+            QUERY='
+            query($org: String!, $num: Int!) {
+                organization(login: $org) {
+                projectV2(number: $num) {
+                    field(name: "Iteration") {
+                    ... on ProjectV2IterationField {
+                        configuration {
+                        iterations {
+                            title
+                            startDate
+                            duration
+                        }
+                        }
+                    }
+                    }
+                }
+                }
+            }'
+
+            ITER=$(gh api graphql -F org="capstone-490" -F num=3 -f query="$QUERY" --jq '
+                .data.organization.projectV2.field.configuration.iterations[]
+                | select(
+                    (now >= ((.startDate | strptime("%Y-%m-%d") | mktime))) and
+                    (now <= (((.startDate | strptime("%Y-%m-%d") | mktime)) + (.duration * 86400)))
+                )
+                | .title
+                | capture("Iteration (?<num>[0-9]+)")
+                | .num
+            ' 2>/dev/null || true)
+          fi
+
+          if [ -n "$ITER" ]; then
+            echo "iter_tag=iteration-${ITER}" >> "$GITHUB_OUTPUT"
+            echo "Resolved tag: iteration-${ITER}"
+          else
+            echo "iter_tag=" >> "$GITHUB_OUTPUT"
+            echo "No current iteration matched."
+          fi
+
+      - name: Publish Official Release
+        if: ${{ inputs.publish_mode == 'publish' }}
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 #v3.0.3
+        with:
+          tag_name: ${{ steps.manual-tag.outputs.target }}
+          name: Release ${{ steps.manual-tag.outputs.target }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+      
+      # push iteration tag pointing to the release commit
+      - name: Tag and Push Iteration
+        if: ${{ inputs.publish_mode == 'publish' && steps.resolve-iter.outputs.iter_tag != '' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          TARGET="${{ steps.manual-tag.outputs.target }}"
+          ITER_TAG="${{ steps.resolve-iter.outputs.iter_tag }}"
+
+          echo "Tagging commit associated with $TARGET with $ITER_TAG"
+          git tag -f "$ITER_TAG" "$TARGET"
+          git push origin "$ITER_TAG" --force
+
+      - name: Resolve Output Tag
+        id: resolve-tag
+        run: |
+          if [ "${{ inputs.publish_mode }}" == "draft" ]; then
+            echo "tag=${{ steps.versioning.outputs.new_tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${{ steps.manual-tag.outputs.target }}" >> $GITHUB_OUTPUT
+          fi
