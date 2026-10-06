@@ -3,6 +3,8 @@ name: CI/CD Orchestrator
 on:
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
   # allow manual releae
   workflow_dispatch:
     inputs:
