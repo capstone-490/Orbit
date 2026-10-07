@@ -87,6 +87,9 @@ jobs:
 
           # fetch active iteration via gh cli
           elif command -v gh >/dev/null 2>&1; then
+            TODAY_EST=$(TZ="America/New_York" date +%Y-%m-%d)
+            echo "current date EST: ${TODAY_EST}"
+
             QUERY='
             query($org: String!, $num: Int!) {
                 organization(login: $org) {
@@ -106,12 +109,12 @@ jobs:
                 }
             }'
 
-            ITER=$(gh api graphql -F org="capstone-490" -F num=3 -f query="$QUERY" --jq '
-                .data.organization.projectV2.field.configuration.iterations[]
-                | select(
-                    (now >= ((.startDate | strptime("%Y-%m-%d") | mktime))) and
-                    (now <= (((.startDate | strptime("%Y-%m-%d") | mktime)) + (.duration * 86400)))
-                )
+            ITER=$(gh api graphql -F org="capstone-490" -F num=3 -f query="$QUERY" --arg today "$TODAY_EST" --jq '
+                ($today | strptime("%Y-%m-%d") | mktime) as $current_day
+                | .data.organization.projectV2.field.configuration.iterations[]
+                | (.startDate | strptime("%Y-%m-%d") | mktime) as $start
+                | ($start + (.duration * 86400)) as $end
+                | select($current_day >= $start and $current_day <= $end)
                 | .title
                 | capture("Iteration (?<num>[0-9]+)")
                 | .num
