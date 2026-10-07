@@ -102,23 +102,30 @@ jobs:
                             startDate
                             duration
                         }
-                        }
+                      }
                     }
-                    }
+                  }
                 }
-                }
+              }
             }'
 
-            ITER=$(gh api graphql -F org="capstone-490" -F num=3 -f query="$QUERY" --arg today "$TODAY_EST" --jq '
-                ($today | strptime("%Y-%m-%d") | mktime) as $current_day
-                | .data.organization.projectV2.field.configuration.iterations[]
-                | (.startDate | strptime("%Y-%m-%d") | mktime) as $start
-                | ($start + (.duration * 86400)) as $end
-                | select($current_day >= $start and $current_day <= $end)
-                | .title
-                | capture("Iteration (?<num>[0-9]+)")
-                | .num
-            ' 2>/dev/null || true)
+            RAW_DATA=$(gh api graphql -F org="capstone-490" -F num=3 -f query="$QUERY" --jq '
+                .data.organization.projectV2.field.configuration.iterations[]
+                | [.title, .startDate, (.duration | tostring)]
+                | @tsv
+            ')
+
+            while IFS=$'\t' read -r title start_date duration; do
+                [ -z "$start_date" ] && continue
+                END_DATE=$(date -d "${start_date} + ${duration} days" +%Y-%m-%d)
+
+                if [[ "$TODAY_EST" > "$start_date" || "$TODAY_EST" == "$start_date" ]] && \
+                   [[ "$TODAY_EST" < "$END_DATE"   || "$TODAY_EST" == "$END_DATE" ]]; then
+                    ITER=$(echo "$title" | grep -o -E '[0-9]+' | head -n 1)
+                    echo "$title -> resolved $ITER ($start_date to $END_DATE)"
+                    break
+                fi
+            done <<< "$RAW_DATA"
           fi
 
           if [ -n "$ITER" ]; then
