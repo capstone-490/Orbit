@@ -40,7 +40,8 @@ Rules:
 - If a number is corrected during the conversation, use the corrected value.
 - Include follow-up meetings and any preparation someone promised for them.
 - Use dates exactly as they appear in the text. Do not guess or invent dates.
-- Do not invent information that is not in the text."""
+- Do not invent information that is not in the text.
+- Do not add a year. Write dates as the text does, such as "October 21" or "Friday"."""
 
 
 def ingest(path: Path) -> str:
@@ -64,7 +65,7 @@ def process(text: str, model: str, ctx: int) -> tuple[dict, dict]:
         "model": model,
         "stream": False,
         "format": "json",  # forces valid JSON output
-        "options": {"temperature": 0.2, "num_ctx": ctx},
+        "options": {"temperature": 0, "seed": 42, "num_ctx": ctx},
         "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": text},
