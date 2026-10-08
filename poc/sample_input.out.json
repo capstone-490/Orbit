@@ -1,0 +1,31 @@
+{
+  "summary": "Review of client goals: emergency fund at $4,000, student loan balance of $12,000 at 5.5% interest. Plan to split extra cash between emergency fund and loan, with Yasmeen to start adding $300/month to emergency fund in November. Nayiri to prepare comparison of savings account options and review tax slips by October 21. Follow-up meeting on November 4.",
+  "action_items": [
+    {
+      "task": "Add $300/month to emergency fund",
+      "owner": "Yasmeen",
+      "due": "November"
+    },
+    {
+      "task": "Send notices of assessment to Nayiri by October 21",
+      "owner": "Khujista",
+      "due": "October 21"
+    },
+    {
+      "task": "Review tax slips and prepare comparison of savings account options",
+      "owner": "Nayiri",
+      "due": "November 4"
+    },
+    {
+      "task": "Consider switching jobs and review plan",
+      "owner": "Khujista",
+      "due": "Next spring"
+    }
+  ],
+  "decisions": [
+    "Split extra cash between emergency fund and loan"
+  ],
+  "open_questions": [
+    "How will switching jobs affect the plan?"
+  ]
+}
