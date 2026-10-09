@@ -90,6 +90,7 @@ def main():
 
     path = Path(args.input)
     text = ingest(path)
+    path.with_suffix(".transcript.txt").write_text(text, encoding="utf-8")
     print(f"[ingest] {len(text)} characters")
 
     t0 = time.time()
