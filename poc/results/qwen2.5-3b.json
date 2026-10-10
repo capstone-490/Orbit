@@ -1,0 +1,28 @@
+{
+  "summary": "The advisors reviewed the clients' financial goals and progress, particularly on their emergency fund, student loan, and future down payment savings. They decided to increase the monthly contribution to the student loan and to a high-interest savings account for the emergency fund. They also agreed to send the clients updated information on investment options by Friday.",
+  "action_items": [
+    {
+      "task": "Increase monthly contribution to the student loan to $450 and add $300 to a high-interest savings account for the emergency fund.",
+      "owner": "Nayiri, Yasmeen, Khujista",
+      "due": null
+    },
+    {
+      "task": "Send updated information on savings account options by Friday.",
+      "owner": "Nayiri",
+      "due": "2022-10-28"
+    },
+    {
+      "task": "Send tax slips to Nayiri by October 21.",
+      "owner": "Khujista",
+      "due": "2022-10-21"
+    }
+  ],
+  "decisions": [
+    "Increase the monthly contribution to the student loan to $450 and add $300 to a high-interest savings account for the emergency fund.",
+    "Send updated information on savings account options by Friday."
+  ],
+  "open_questions": [
+    "What about investing for the down payment? Should we use a TFSA or an RRSP?",
+    "How will income changes due to job switching next spring affect the plan?"
+  ]
+}

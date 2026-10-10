@@ -1,0 +1,32 @@
+{
+  "summary": "Review of client goals: emergency fund at $4,000, student loan balance of $12,000, and down payment savings. Recommendations include adjusting loan payments and exploring TFSA or RRSP options for down payment savings.",
+  "action_items": [
+    {
+      "task": "Adjust student loan payments to $450/month",
+      "owner": "Kujista",
+      "due": "November"
+    },
+    {
+      "task": "Add $300/month to high interest savings account for emergency fund",
+      "owner": "Kujista",
+      "due": "November"
+    },
+    {
+      "task": "Send tax slips by October 21 for down payment savings comparison",
+      "owner": "Nairi",
+      "due": "October 21"
+    },
+    {
+      "task": "Send summary of new savings account options by Friday",
+      "owner": "Nairi",
+      "due": "Friday"
+    }
+  ],
+  "decisions": [
+    "Use $450/month for student loan payments",
+    "Add $300/month to high interest savings account for emergency fund"
+  ],
+  "open_questions": [
+    "How will switching jobs next spring affect income and down payment savings plan?"
+  ]
+}

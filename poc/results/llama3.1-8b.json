@@ -1,0 +1,21 @@
+{
+  "summary": "The clients are making progress on their goals, with an emergency fund at $4,000 and $450 monthly payments towards the student loan. They plan to adjust their strategy to also save for the emergency fund, starting in November. They will revisit their plan for saving for a down payment after considering a potential job change.",
+  "action_items": [
+    {
+      "task": "Send tax slips to Nayiri by October 21",
+      "owner": "Yasmeen and Khujista",
+      "due": "October 21"
+    },
+    {
+      "task": "Send summary of new savings account options to Yasmeen and Khujista by Friday",
+      "owner": "Nayiri",
+      "due": "Friday"
+    }
+  ],
+  "decisions": [
+    "Adjust savings strategy to also save for emergency fund, starting in November"
+  ],
+  "open_questions": [
+    "How will a potential job change affect their income and savings plan"
+  ]
+}
