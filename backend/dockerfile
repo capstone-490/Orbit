@@ -2,6 +2,7 @@ FROM python:3.14
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
 
 # Set work directory
 WORKDIR /app
@@ -18,4 +19,4 @@ COPY . /app/
 EXPOSE 8001
 
 # Run start server (currently as there are no python script it will be with the base ./your-daemon-or-script.py)
-CMD [ "python", "./your-daemon-or-script.py" ]
+CMD ["sh", "-c", "python manage.py migrate" ]
