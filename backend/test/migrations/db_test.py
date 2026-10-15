@@ -200,20 +200,22 @@ class TestAgents:
 
 class TestAgentAssignments:
     def test_default_status_pending(self):
-        cid = make_agent()
-        agid = make_client()
+        cid = make_client()
+        agid = make_agent()
         row = run("INSERT INTO agent_assignments (client_id, agent_id, assigned_at) "
                   "VALUES (%s,%s,NOW()) RETURNING status", (cid, agid), fetch=True)
         assert row[0] == "Pending"
 
     def test_invalid_status(self):
-        cid, agid = make_client(), make_agent()
+        cid = make_client()
+        agid = make_agent()
         with pytest.raises(errors.InvalidTextRepresentation):
             run("INSERT INTO agent_assignments (client_id, agent_id, assigned_at, status) "
                 "VALUES (%s,%s,NOW(),'NotAStatus')", (cid, agid))
 
     def test_assigned_at_required(self):
-        cid, agid = make_client(), make_agent()
+        cid = make_client()
+        agid = make_agent()
         with pytest.raises(errors.NotNullViolation):
             run("INSERT INTO agent_assignments (client_id, agent_id) VALUES (%s,%s)", (cid, agid))
 
@@ -223,7 +225,8 @@ class TestAgentAssignments:
                 "VALUES (10000, 10000, NOW())")
 
     def test_cascade_delete_client_and_agent(self):
-        cid, agid = make_client(), make_agent()
+        cid = make_client()
+        agid = make_agent()
         run("INSERT INTO agent_assignments (client_id, agent_id, assigned_at) "
             "VALUES (%s,%s,NOW())", (cid, agid))
         run("DELETE FROM agents WHERE id=%s", (agid,))
