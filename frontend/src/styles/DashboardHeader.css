@@ -1,0 +1,23 @@
+.dashboard-header {
+  padding: 26px 32px 20px;
+}
+
+.dashboard-header h1 {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #171b2c;
+}
+
+.dashboard-header p {
+  margin: 5px 0 0;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #596275;
+}
+
+.dashboard-header .critical-action {
+  color: #dc3545;
+}
