@@ -31,28 +31,20 @@ describe('Navbar', () => {
   it('renders navigation links with the correct routes', () => {
     renderNavbar()
 
-    expect(screen.getByRole('link', { name: 'Dashboard' }))
-      .toHaveAttribute('href', '/')
+    const links = [
+      ['Dashboard', '/'],
+      ['Clients', '/clients'],
+      ['Calendar', '/calendar'],
+      ['Follow-Ups', '/follow-ups'],
+      ['Tasks', '/tasks'],
+      ['Documents', '/documents'],
+      ['AI Review', '/ai-review'],
+      ['Activity', '/activity'],
+    ]
 
-    expect(screen.getByRole('link', { name: 'Clients' }))
-      .toHaveAttribute('href', '/clients')
-
-    expect(screen.getByRole('link', { name: 'Calendar' }))
-      .toHaveAttribute('href', '/calendar')
-
-    expect(screen.getByRole('link', { name: 'Follow-Ups' }))
-      .toHaveAttribute('href', '/follow-ups')
-
-    expect(screen.getByRole('link', { name: 'Tasks' }))
-      .toHaveAttribute('href', '/tasks')
-
-    expect(screen.getByRole('link', { name: 'Documents' }))
-      .toHaveAttribute('href', '/documents')
-
-    expect(screen.getByRole('link', { name: 'AI Review' }))
-      .toHaveAttribute('href', '/ai-review')
-
-    expect(screen.getByRole('link', { name: 'Activity' }))
-      .toHaveAttribute('href', '/activity')
+    links.forEach(([name, href]) => {
+      expect(screen.getByRole('link', { name }))
+        .toHaveAttribute('href', href)
+    })
   })
 })
