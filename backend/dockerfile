@@ -2,6 +2,7 @@ FROM python:3.14
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
 
 # Set work directory
 WORKDIR /app
@@ -17,5 +18,5 @@ COPY . /app/
 # Expose port
 EXPOSE 8001
 
-# Run start server (currently as there are no python script it will be with the base ./your-daemon-or-script.py)
-CMD [ "python", "./your-daemon-or-script.py" ]
+# Run to start server
+CMD ["sh", "-c", "python manage.py migrate && fastapi run main.py --host 0.0.0.0 --port 8001"]
