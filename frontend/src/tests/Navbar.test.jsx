@@ -12,12 +12,16 @@ describe('Navbar', () => {
     role: 'Advisor',
   }
 
-  it('renders the navbar with the logo and user role', () => {
+  const renderNavbar = () => {
     render(
       <MemoryRouter>
         <Navbar user={mockUser} />
       </MemoryRouter>
     )
+  }
+
+  it('renders the navbar with the logo and user role', () => {
+    renderNavbar()
 
     expect(screen.getByAltText('Orbit')).toBeInTheDocument()
     expect(screen.getByText('Orbit')).toBeInTheDocument()
@@ -25,11 +29,7 @@ describe('Navbar', () => {
   })
 
   it('renders navigation links with the correct routes', () => {
-    render(
-      <MemoryRouter>
-        <Navbar user={mockUser} />
-      </MemoryRouter>
-    )
+    renderNavbar()
 
     expect(screen.getByRole('link', { name: 'Dashboard' }))
       .toHaveAttribute('href', '/')
