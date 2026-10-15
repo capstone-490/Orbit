@@ -81,6 +81,12 @@ docker-compose up -d --build backend
 docker-compose down
 ```
 
+### To Run the Tests
+
+```bash
+docker compose run --rm backend pytest -v
+```
+
 ## Development Notes
 
 - The backend runs on port **8001**

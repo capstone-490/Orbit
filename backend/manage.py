@@ -1,7 +1,14 @@
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
 from migrations.migrate import migrate
 
-def main():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     migrate()
+    yield
 
-if __name__ == '__main__':
-    main()
+app = FastAPI(lifespan=lifespan)
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}

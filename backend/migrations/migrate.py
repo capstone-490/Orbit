@@ -226,7 +226,7 @@ def create_password_reset_tokens_table():
                     used_at TIMESTAMPTZ,
 
                     CONSTRAINT token_hash_not_empty
-                        CHECK (LENGTH(TRIM(token_hash)) > 0),
+                        CHECK (LENGTH(BTRIM(token_hash, E' \t\r\n')) > 0),
 
                     CONSTRAINT fk_password_reset_token_advisor
                         FOREIGN KEY (advisor_id)
