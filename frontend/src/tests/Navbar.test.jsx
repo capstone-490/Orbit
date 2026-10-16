@@ -12,12 +12,16 @@ describe('Navbar', () => {
     role: 'Advisor',
   }
 
-  it('renders the navbar with the logo and user role', () => {
+  const renderNavbar = () => {
     render(
       <MemoryRouter>
         <Navbar user={mockUser} />
       </MemoryRouter>
     )
+  }
+
+  it('renders the navbar with the logo and user role', () => {
+    renderNavbar()
 
     expect(screen.getByAltText('Orbit')).toBeInTheDocument()
     expect(screen.getByText('Orbit')).toBeInTheDocument()
@@ -25,34 +29,22 @@ describe('Navbar', () => {
   })
 
   it('renders navigation links with the correct routes', () => {
-    render(
-      <MemoryRouter>
-        <Navbar user={mockUser} />
-      </MemoryRouter>
-    )
+    renderNavbar()
 
-    expect(screen.getByRole('link', { name: 'Dashboard' }))
-      .toHaveAttribute('href', '/')
+    const links = [
+      ['Dashboard', '/'],
+      ['Clients', '/clients'],
+      ['Calendar', '/calendar'],
+      ['Follow-Ups', '/follow-ups'],
+      ['Tasks', '/tasks'],
+      ['Documents', '/documents'],
+      ['AI Review', '/ai-review'],
+      ['Activity', '/activity'],
+    ]
 
-    expect(screen.getByRole('link', { name: 'Clients' }))
-      .toHaveAttribute('href', '/clients')
-
-    expect(screen.getByRole('link', { name: 'Calendar' }))
-      .toHaveAttribute('href', '/calendar')
-
-    expect(screen.getByRole('link', { name: 'Follow-Ups' }))
-      .toHaveAttribute('href', '/follow-ups')
-
-    expect(screen.getByRole('link', { name: 'Tasks' }))
-      .toHaveAttribute('href', '/tasks')
-
-    expect(screen.getByRole('link', { name: 'Documents' }))
-      .toHaveAttribute('href', '/documents')
-
-    expect(screen.getByRole('link', { name: 'AI Review' }))
-      .toHaveAttribute('href', '/ai-review')
-
-    expect(screen.getByRole('link', { name: 'Activity' }))
-      .toHaveAttribute('href', '/activity')
+    links.forEach(([name, href]) => {
+      expect(screen.getByRole('link', { name }))
+        .toHaveAttribute('href', href)
+    })
   })
 })
