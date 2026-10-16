@@ -59,6 +59,11 @@ jobs:
       - name: Run Migrations & Pytest Coverage
         env:
           DATABASE_URL: postgresql+psycopg://orbit_user:orbit_pssword@127.0.0.1:5432/orbit_db
+          DB_NAME: orbit_db
+          DB_USER: orbit_user
+          DB_PASSWORD: orbit_pssword
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
         run: |
           uv run alembic upgrade head
           uv run pytest --cov=. --cov-report=xml:coverage.xml --cov-report=term-missing
