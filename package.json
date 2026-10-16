@@ -1,8 +1,7 @@
 {
-<<<<<<< HEAD
   "dependencies": {
     "react-router-dom": "^7.18.4"
-=======
+  },
   "name": "orbit",
   "version": "1.0.0",
   "description": "",
@@ -15,6 +14,5 @@
   "license": "ISC",
   "devDependencies": {
     "@biomejs/biome": "^2.5.15"
->>>>>>> cef4289 (fix formatting)
   }
 }
