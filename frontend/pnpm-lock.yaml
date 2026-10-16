@@ -1624,6 +1624,10 @@ snapshots:
     dependencies:
       css-tree: 3.2.1
 
+  '@bramus/specificity@2.4.3':
+    dependencies:
+      css-tree: 3.2.1
+
   '@cacheable/memory@2.2.0':
     dependencies:
       '@cacheable/utils': 2.5.0
