@@ -43,7 +43,7 @@ jobs:
           version: "latest"
           working-directory: backend
           enable-cache: true
-          cache-dependency-glob: "backend/uv.lock"
+          cache-dependency-glob: "uv.lock"
 
       - name: Install Dependencies
         run: uv sync --frozen

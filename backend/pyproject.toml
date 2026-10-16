@@ -26,3 +26,9 @@ omit = ["tests/*", "migrations/*", "manage.py"]
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.14"
+explicit_package_bases = true
+mypy_path = "."
+exclude = ["^.venv/"]

@@ -34,10 +34,9 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Typecheck & Static Lint
+      - name: Typecheck, Lint & Format
         run: |
-          pnpm tsc --noEmit
-          pnpm biome check .
+          run: pnpm check
 
       - name: Build Application Bundle
         run: pnpm build

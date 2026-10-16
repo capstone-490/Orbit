@@ -6,9 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest"
+    "test": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome lint . && eslint .",
+    "format:check": "biome format .",
+    "check": "pnpm typecheck && pnpm biome check . && pnpm eslint ."
   },
   "dependencies": {
     "react": "^19.2.8",
@@ -17,6 +20,7 @@
     "react-router-dom": "^7.18.4"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.5.15",
     "@eslint/js": "^10.0.1",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
