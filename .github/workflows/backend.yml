@@ -58,7 +58,7 @@ jobs:
 
       - name: Run Migrations & Pytest Coverage
         env:
-          DATABASE_URL: postgresql+asyncpg://orbit_user:orbit_pssword@localhost:5432/orbit_db
+          DATABASE_URL: postgresql+psycopg://orbit_user:orbit_pssword@127.0.0.1:5432/orbit_db
         run: |
           uv run alembic upgrade head
           uv run pytest --cov=. --cov-report=xml:coverage.xml --cov-report=term-missing
