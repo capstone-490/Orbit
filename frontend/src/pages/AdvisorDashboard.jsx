@@ -25,9 +25,7 @@ function AdvisorDashboard() {
       <DashboardHeader
         advisorName={dashboardData.advisor.firstName}
         meetingCount={dashboardData.dashboardSummary.meetingCount}
-        criticalActionCount={
-          dashboardData.dashboardSummary.criticalActionCount
-        }
+        criticalActionCount={dashboardData.dashboardSummary.criticalActionCount}
       />
     </main>
   )

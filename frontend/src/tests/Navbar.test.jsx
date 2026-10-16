@@ -1,6 +1,6 @@
-import { render, screen, cleanup } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { describe, it, expect, afterEach } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import Navbar from '../components/dashboard/Navbar'
 
 afterEach(() => {
@@ -16,7 +16,7 @@ describe('Navbar', () => {
     render(
       <MemoryRouter>
         <Navbar user={mockUser} />
-      </MemoryRouter>
+      </MemoryRouter>,
     )
   }
 
@@ -43,8 +43,7 @@ describe('Navbar', () => {
     ]
 
     links.forEach(([name, href]) => {
-      expect(screen.getByRole('link', { name }))
-        .toHaveAttribute('href', href)
+      expect(screen.getByRole('link', { name })).toHaveAttribute('href', href)
     })
   })
 })

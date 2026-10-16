@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router-dom'
-import Navbar from './Navbar'
 import { mockAdvisor } from '../../data/mockDashboardData'
+import Navbar from './Navbar'
 
 function AdvisorLayout() {
   return (
