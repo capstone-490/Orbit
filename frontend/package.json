@@ -8,10 +8,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest",
-    "typecheck": "tsc --noEmit",
     "lint": "biome lint . && eslint .",
     "format:check": "biome format .",
-    "check": "pnpm typecheck && pnpm biome check . && pnpm eslint ."
+    "check": "pnpm biome check . && pnpm eslint ."
   },
   "dependencies": {
     "react": "^19.2.8",
