@@ -1,4 +1,12 @@
 node_modules/
-   .venv/
-   *.out.json
-   
+.venv/
+*.out.json
+
+# Python cache files
+__pycache__/
+*.py[cod]
+
+# Pytest and coverage files
+.pytest_cache/
+.coverage
+htmlcov/
