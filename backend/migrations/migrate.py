@@ -1,4 +1,4 @@
-from db import get_connection
+from orbit.backend.app.db.db import get_connection
 
 def create_risk_tolerance_enum():
     with get_connection() as conn:

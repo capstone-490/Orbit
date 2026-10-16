@@ -8,6 +8,9 @@ on:
       SONAR_TOKEN:
         required: false
 
+permissions:
+  contents: read
+
 jobs:
   test-frontend:
     runs-on: ubuntu-latest
@@ -19,36 +22,37 @@ jobs:
         with:
           fetch-depth: 0
 
-    #   - name: Set up pnpm
-    #     uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 #v3.0.0
-    #     with:
-    #       version: 12
-    #     #   cache: true
+      - name: Set up pnpm & Node
+        uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
+        with:
+          version: 12
+          runtime: node@22
+          working-directory: frontend
+          cache: true
+          install: false
 
-    #   - name: Run Tests
-    #     run: pnpm test
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
 
-    #   - name: Install Dependencies
-    #     run: pnpm install --frozen-lockfile
+      - name: Typecheck & Static Lint
+        run: |
+          pnpm tsc --noEmit
+          pnpm biome check .
 
-    #   - name: Typecheck & Static Lint
-    #     run: |
-    #       pnpm tsc --noEmit
-    #       pnpm biome check .
+      - name: Build Application Bundle
+        run: pnpm build
 
-    #   - name: Build Application Bundle
-    #     run: pnpm build
+      - name: Run Unit Tests & Coverage (Vitest)
+        run: pnpm vitest run --coverage
 
-    #   - name: Post-Build Unit Tests & Coverage
-    #     run: pnpm vitest run --coverage
-
-    #   - name: Upload Frontend Coverage
-    #     uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 #v7.1.1
-    #     with:
-    #       files: ./frontend/coverage/lcov.info
-    #       flags: frontend
-    #       token: ${{ secrets.CODECOV_TOKEN }}
-    #       fail_ci_if_error: false
+      - name: Upload Frontend Coverage to Codecov
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          files: ./frontend/coverage/lcov.info
+          flags: frontend
+          name: frontend-coverage
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
 
     #   - name: SonarQube Scan
     #     uses: SonarSource/sonarqube-scan-action@v8.3.0

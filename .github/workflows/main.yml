@@ -26,13 +26,17 @@ on:
         type: string
         default: ""
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   detect-changes:
-    name: detect what files changed
+    name: Detect changed files
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     outputs:
       backend: ${{ steps.changes.outputs.backend }}
@@ -46,14 +50,19 @@ jobs:
 
   backend-ci:
     needs: detect-changes
-    if: ${{ needs.detect-changes.outputs.backend == 'true' || github.ref == 'refs/heads/main' }}
+    if: >-
+      github.event_name != 'workflow_dispatch' &&
+      (needs.detect-changes.outputs.backend == 'true' || github.ref == 'refs/heads/main')
     uses: ./.github/workflows/backend.yml
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   frontend-ci:
     needs: detect-changes
-    if: ${{ needs.detect-changes.outputs.frontend == 'true' || github.ref == 'refs/heads/main' }}
+    if: >-
+      github.event_name != 'workflow_dispatch' &&
+      (needs.detect-changes.outputs.frontend == 'true' || github.ref == 'refs/heads/main')
     uses: ./.github/workflows/frontend.yml
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
@@ -69,12 +78,12 @@ jobs:
       contents: write
   
   publish-release:
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'publish_release'
+    if: github.event_name == 'workflow_dispatch' && inputs.action == 'publish_release'
     uses: ./.github/workflows/release-version.yml
     with:
       publish_mode: "publish"
-      target_tag: ${{ github.event.inputs.target_tag }}
-      iteration: ${{ github.event.inputs.iteration }}
+      target_tag: ${{ inputs.target_tag }}
+      iteration: ${{ inputs.iteration }}
     secrets:
       PROJECT_TOKEN: ${{ secrets.PROJECT_ACCESS_TOKEN }}
     permissions:
