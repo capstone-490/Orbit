@@ -35,8 +35,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Typecheck, Lint & Format
-        run: |
-          run: pnpm check
+        run: pnpm check
 
       - name: Build Application Bundle
         run: pnpm build
