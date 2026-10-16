@@ -1,6 +1,6 @@
-import psycopg
-
 import os
+
+import psycopg
 
 DB_CONFIG = {
     "host": os.environ.get("DB_HOST"),
@@ -11,6 +11,6 @@ DB_CONFIG = {
     "connect_timeout": 5,
 }
 
+
 def get_connection():
     return psycopg.connect(**DB_CONFIG)
-

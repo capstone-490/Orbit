@@ -1,10 +1,8 @@
 # Currently it affects the DB directly and delete all info after it runs
-
 import pytest
-import psycopg
+from db import get_connection
 from psycopg import errors
 
-from db import get_connection
 from migrations.migrate import migrate
 
 TABLES = [

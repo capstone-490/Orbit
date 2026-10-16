@@ -1,6 +1,15 @@
 {
-  "include": [
-    "src/**/*",
-    "vitest.config.ts"
-  ]
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "types": ["node", "vite/client"]
+  },
+  "include": ["src/**/*", "vite.config.ts", "vitest.config.ts"]
 }
