@@ -11,7 +11,9 @@ function AdvisorDashboard() {
       setDashboardData(data)
     }
 
-    loadDashboard()
+    loadDashboard().catch((error) => {
+      console.error('Failed to load dashboard:', error)
+    })
   }, [])
 
   if (!dashboardData) {
