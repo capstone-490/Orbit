@@ -1,14 +1,18 @@
-## Prerequisites
-You need Docker installed on your machine to run the backend.
+# Prerequisites
 
-### Installing Docker Desktop
+- Docker
+- uv
+
+## Installing Docker Desktop
+
 Follow the official installation guides for your system:
+
 - **Windows (with WSL2):** [Install Docker Desktop on Windows](https://docs.docker.com/desktop/setup/install/windows-install/)  
 - **macOS:** [Install Docker Desktop on Mac](https://docs.docker.com/desktop/setup/install/mac-install/)  
 - **Linux (Ubuntu/Debian):** [Install Docker Engine on Linux](https://docs.docker.com/engine/install/ubuntu/)  
 
-### Verify Installation
 After installation, check that Docker is working:
+
 ```bash
 docker --version
 docker compose version
@@ -17,20 +21,22 @@ docker compose version
 **IMPORTANT:** Before running any Docker commands, make sure Docker Desktop is running.
 
 ## Docker Configuration
-- **Backend Service**: Backend running on port 8001 with Python version 3.14
+
+- **Backend Service**: Backend running on port 8001 with Python version 3.14-slim
 - **Database**: PostgreSQL 16 container on port 6105
 - **Volume Mounts**: Code directory for live reload during development
 
 ## Local Development
 
 ### First Time Setup
+
 ```bash
 # Build and start containers (first time will download images and build)
 docker-compose up -d --build
 
-# If it throws no such file or directory for python:3.14 run the command below before
+# If it throws no such file or directory for python:3.14-slim run the command below before
 ```bash
-docker pull python:3.14
+docker pull python:3.14-slim
 docker-compose up -d --build
 
 #Currently it will not be available as no python code is running so the backend will exit with code 2 (remove this when code is present and its running)

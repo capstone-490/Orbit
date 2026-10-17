@@ -1,7 +1,4 @@
-import {
-  mockAdvisor,
-  mockDashboardSummary,
-} from '../data/mockDashboardData'
+import { mockAdvisor, mockDashboardSummary } from '../data/mockDashboardData'
 
 export async function getAdvisorDashboard() {
   return {

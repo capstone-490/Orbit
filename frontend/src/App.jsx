@@ -1,14 +1,13 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import AdvisorLayout from './components/dashboard/AdvisorLayout'
-
+import Activity from './pages/Activity'
 import AdvisorDashboard from './pages/AdvisorDashboard'
-import Clients from './pages/Clients'
+import AIReview from './pages/AIReview'
 import Calendar from './pages/Calendar'
+import Clients from './pages/Clients'
+import Documents from './pages/Documents'
 import FollowUps from './pages/FollowUps'
 import Tasks from './pages/Tasks'
-import Documents from './pages/Documents'
-import AIReview from './pages/AIReview'
-import Activity from './pages/Activity'
 
 function App() {
   return (
