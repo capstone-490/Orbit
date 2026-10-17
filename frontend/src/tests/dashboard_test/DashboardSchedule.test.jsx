@@ -1,10 +1,9 @@
-import React from 'react';
-import { describe, test, expect, afterEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import {afterEach, describe, expect, test } from 'vitest';
+import {cleanup, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import DashboardSchedule from '../../components/dashboard/DashboardSchedule';
 
-afterEach(() => cleanup());
+afterEach(() => cleanup())
 
 describe('DashboardSchedule Component', () => {
   const mockScheduleData = [
@@ -15,7 +14,7 @@ describe('DashboardSchedule Component', () => {
       category: 'Financial Review',
       agenda: 'Quarterly asset assessment',
       statusText: 'Confirmed',
-      actionButton: { label: 'Join Call' }
+      actionButton: { label: 'Join Call' },
     },
     {
       time: '11:30 AM',
@@ -24,21 +23,21 @@ describe('DashboardSchedule Component', () => {
       category: 'Initial Consultation',
       locationOrPlatform: 'Zoom Meeting',
       agenda: 'New portfolio setup',
-      actionButton: { label: 'View Details' }
-    }
+      actionButton: { label: 'View Details' },
+    },
   ];
 
   test('renders the schedule title and meeting items correctly', () => {
-    render(<DashboardSchedule scheduleData={mockScheduleData} />);
+    render(<DashboardSchedule scheduleData={mockScheduleData} />)
 
     // Check heading
-    expect(screen.getByText("Today's Schedule & Consultations")).toBeInTheDocument();
+    expect(screen.getByText("Today's Schedule & Consultations")).toBeInTheDocument()
 
     // Check client names and categories
-    expect(screen.getByText('Alice Johnson')).toBeInTheDocument();
-    expect(screen.getByText('Financial Review')).toBeInTheDocument();
-    expect(screen.getByText('Bob Smith')).toBeInTheDocument();
-    expect(screen.getByText('Initial Consultation')).toBeInTheDocument();
+    expect(screen.getByText('Alice Johnson')).toBeInTheDocument()
+    expect(screen.getByText('Financial Review')).toBeInTheDocument()
+    expect(screen.getByText('Bob Smith')).toBeInTheDocument()
+    expect(screen.getByText('Initial Consultation')).toBeInTheDocument()
   });
 
   test('renders meeting times, durations, and agendas', () => {

@@ -1,5 +1,5 @@
-import { NavLink } from 'react-router-dom'
 import { FiBell, FiUser } from 'react-icons/fi'
+import { NavLink } from 'react-router-dom'
 import orbitLogo from '../../assets/orbit-logo.png'
 import '../../styles/Navbar.css'
 
@@ -8,11 +8,7 @@ function Navbar({ user }) {
     <nav className="navbar">
 
     <div className="navbar-brand">
-         <img
-            src={orbitLogo}
-            alt="Orbit"
-            className="orbit-logo"
-         />
+         <img src={orbitLogo} alt="Orbit" className="orbit-logo"/>
 
         <span className="orbit-name">Orbit</span>
         <span className="advisor-label">{user.role}</span>
