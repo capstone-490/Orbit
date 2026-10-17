@@ -3,7 +3,6 @@ import DashboardHeader from '../components/dashboard/DashboardHeader'
 import DashboardSummary from '../components/dashboard/DashboardSummary'
 import DashboardTasks from '../components/dashboard/DashboardTasks'
 import DashboardSchedule from '../components/dashboard/DashboardSchedule'
-import { mockAdvisor, mockDashboardSummary, dashboardSummaryData, mockScheduleData, mockPriorityTasks } from '../data/mockDashboardData'
 import { getAdvisorDashboard } from '../services/AdvisorDashboardApi'
 
 function AdvisorDashboard() {
@@ -33,14 +32,14 @@ function AdvisorDashboard() {
           dashboardData.dashboardSummary.criticalActionCount
         }
       />
-      <DashboardSummary dashboardSummaryData={dashboardSummaryData} />
+      <DashboardSummary dashboardSummaryData={dashboardData.dashboardSummaryData} />
 
       <div className="dashboard-overview">
         <div className="dashboard-card">
-          <DashboardSchedule scheduleData={mockScheduleData} />
+          <DashboardSchedule scheduleData={dashboardData.scheduleData} />
         </div>
         <div className="dashboard-card">
-          <DashboardTasks priorityTasks={mockPriorityTasks} />
+          <DashboardTasks priorityTasks={dashboardData.priorityTasks} />
         </div>
       </div>
     </main>
