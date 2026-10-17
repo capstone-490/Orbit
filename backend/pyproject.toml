@@ -1,0 +1,36 @@
+[project]
+name = "backend"
+version = "0.1.0"
+description = "Orbit backend"
+requires-python = ">=3.14"
+dependencies = [
+    "alembic>=1.20.0",
+    "fastapi[standard]>=0.143.0",
+    "psycopg[binary]>=3.3.6",
+]
+
+[dependency-groups]
+dev = [
+    "faker>=40.43.0",
+    "mypy>=2.4.0",
+    "pytest==9.1.1",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.17.1",
+]
+
+[tool.uv]
+package = false
+
+[tool.coverage.run]
+source = ["app"]
+omit = ["tests/*", "migrations/*", "manage.py"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests", "test"]
+
+[tool.mypy]
+python_version = "3.14"
+explicit_package_bases = true
+mypy_path = "."
+exclude = ["^.venv/"]

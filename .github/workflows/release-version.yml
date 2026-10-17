@@ -38,39 +38,95 @@ jobs:
         with:
           fetch-depth: 0
 
-      # commit with fix: or perf -> increments patch (v1.0.0 > v1.0.1)
-      # commit with feat: -> increments minor (v1.0.0 > v1.1.0)
-      # commit with BREAKING CHANGE: or feat!: -> increments major (v1.0.0 > v2.0.0)
-      - name: Generate Tag
+      # DRAFT MODE on push to main
+      # calculates the cumulative version bump since the last PUBLISHED tag
+      # without pushing a tag, and keeps a single rolling draft release
+      - name: Calculate Next Version (Dry Run)
         id: versioning
         if: ${{ inputs.publish_mode == 'draft' }}
-        uses: mathieudutour/github-tag-action@af99e60ce8132224b8e6ebab5023449fe256ed46 #v7
+        uses: mathieudutour/github-tag-action@af99e60ce8132224b8e6ebab5023449fe256ed46 # v7
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           default_bump: patch
           release_branches: main
-
-      - name: Update Draft Release with Notes
-        if: ${{ inputs.publish_mode == 'draft' && steps.versioning.outputs.release_created == 'true' }}
-        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 #v3.0.3
-        with:
-          tag_name: ${{ steps.versioning.outputs.new_tag }}
-          name: Release ${{ steps.versioning.outputs.new_tag }}
-          body: ${{ steps.versioning.outputs.changelog }}
-          draft: true
-          prerelease: false
-          generate_release_notes: true
+          dry_run: true
       
-      # manual release
+      - name: Maintain Single Rolling Draft Release
+        if: >-
+          inputs.publish_mode == 'draft' &&
+          steps.versioning.outputs.new_tag != '' &&
+          steps.versioning.outputs.new_tag != steps.versioning.outputs.previous_tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEW_TAG: ${{ steps.versioning.outputs.new_tag }}
+          PREV_TAG: ${{ steps.versioning.outputs.previous_tag }}
+          TARGET_SHA: ${{ github.sha }}
+        run: |
+          # remove existing draft so version changes v1.0.1 -> v1.1.0 do not leave orphaned drafts
+          EXISTING_DRAFTS=$(gh release list --json tagName,isDraft --jq '.[] | select(.isDraft == true) | .tagName')
+          for draft_tag in $EXISTING_DRAFTS; do
+            echo "Removing old draft release: $draft_tag"
+            gh release delete "$draft_tag" --yes
+          done
+
+          # new draft with cumulative notes since the last published tag
+          NOTES_ARGS=(--generate-notes)
+          if [ -n "$PREV_TAG" ] && git rev-parse "$PREV_TAG" >/dev/null 2>&1; then
+            NOTES_ARGS+=(--notes-start-tag "$PREV_TAG")
+          fi
+
+          gh release create "$NEW_TAG" \
+            --draft \
+            --title "Release $NEW_TAG" \
+            --target "$TARGET_SHA" \
+            "${NOTES_ARGS[@]}"
+
+      
+    
+      # PUBLISH MODE on manual run
+      # finds pending draft release (or explicit target_tag), publishes it
       - name: Determine Tag for Manual Release
         id: manual-tag
         if: ${{ inputs.publish_mode == 'publish' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TARGET_TAG_INPUT: ${{ inputs.target_tag }}
         run: |
-          if [ -n "${{ inputs.target_tag }}" ]; then
-            echo "target=${{ inputs.target_tag }}" >> $GITHUB_OUTPUT
+          if [ -n "$TARGET_TAG_INPUT" ]; then
+            TARGET="$TARGET_TAG_INPUT"
+            echo "Using manually specified tag: $TARGET"
           else
-            LATEST_TAG=$(git describe --tags --abbrev=0)
-            echo "target=${LATEST_TAG}" >> $GITHUB_OUTPUT
+            # find current rolling draft
+            TARGET=$(gh release list --json tagName,isDraft --jq '[.[] | select(.isDraft == true)][0].tagName // empty')
+
+            # fallback to latest tag if no draft is waiting
+            if [ -z "$TARGET" ]; then
+              TARGET=$(git describe --tags --abbrev=0)
+              echo "No draft found; falling back to latest git tag: $TARGET"
+            else
+              echo "Found draft release tag: $TARGET"
+            fi
+          fi
+
+          echo "target=${TARGET}" >> "$GITHUB_OUTPUT"
+
+      - name: Publish Release
+        if: ${{ inputs.publish_mode == 'publish' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TARGET: ${{ steps.manual-tag.outputs.target }}
+        run: |
+          # if the release already exists; rolling draft, publish it
+          if gh release view "$TARGET" >/dev/null 2>&1; then
+            echo "Promoting release $TARGET to published..."
+            gh release edit "$TARGET" --draft=false --prerelease=false --latest
+          else
+            echo "Release $TARGET does not exist; creating and publishing..."
+            gh release create "$TARGET" \
+              --title "Release $TARGET" \
+              --target main \
+              --generate-notes \
+              --latest
           fi
 
       # Resolve iteration number
@@ -79,12 +135,11 @@ jobs:
         if: ${{ inputs.publish_mode == 'publish' }}
         env:
           GH_TOKEN: ${{ secrets.PROJECT_TOKEN || secrets.GITHUB_TOKEN }}
+          ITERATION_INPUT: ${{ inputs.iteration }}
         run: |
-          ITER=""
-
-          if [ -n "${{ inputs.iteration }}" ]; then
-            ITER="${{ inputs.iteration }}"
-
+          if [ -n "$ITERATION_INPUT" ]; then
+            ITER="$ITERATION_INPUT"
+            
           # fetch active iteration via gh cli
           elif command -v gh >/dev/null 2>&1; then
             TODAY_EST=$(TZ="America/New_York" date +%Y-%m-%d)
@@ -119,11 +174,10 @@ jobs:
                 [ -z "$start_date" ] && continue
                 END_DATE=$(date -d "${start_date} + ${duration} days" +%Y-%m-%d)
 
-                if [[ "$TODAY_EST" > "$start_date" || "$TODAY_EST" == "$start_date" ]] && \
-                   [[ "$TODAY_EST" < "$END_DATE"   || "$TODAY_EST" == "$END_DATE" ]]; then
-                    ITER=$(echo "$title" | grep -o -E '[0-9]+' | head -n 1)
-                    echo "$title -> resolved $ITER ($start_date to $END_DATE)"
-                    break
+                if [[ ! "$TODAY_EST" < "$start_date" ]] && [[ ! "$TODAY_EST" > "$END_DATE" ]]; then
+                  ITER=$(echo "$title" | grep -o -E '[0-9]+' | head -n 1)
+                  echo "$title -> resolved $ITER ($start_date to $END_DATE)"
+                  break
                 fi
             done <<< "$RAW_DATA"
           fi
@@ -146,15 +200,17 @@ jobs:
           prerelease: false
           generate_release_notes: true
       
-      # push iteration tag pointing to the release commit
       - name: Tag and Push Iteration
         if: ${{ inputs.publish_mode == 'publish' && steps.resolve-iter.outputs.iter_tag != '' }}
+        env:
+          TARGET: ${{ steps.manual-tag.outputs.target }}
+          ITER_TAG: ${{ steps.resolve-iter.outputs.iter_tag }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          TARGET="${{ steps.manual-tag.outputs.target }}"
-          ITER_TAG="${{ steps.resolve-iter.outputs.iter_tag }}"
+          # Fetch tags so the newly published release tag exists locally
+          git fetch origin --tags --force
 
           echo "Tagging commit associated with $TARGET with $ITER_TAG"
           git tag -f "$ITER_TAG" "$TARGET"
@@ -164,7 +220,7 @@ jobs:
         id: resolve-tag
         run: |
           if [ "${{ inputs.publish_mode }}" == "draft" ]; then
-            echo "tag=${{ steps.versioning.outputs.new_tag }}" >> $GITHUB_OUTPUT
+            echo "tag=${{ steps.versioning.outputs.new_tag }}" >> "$GITHUB_OUTPUT"
           else
-            echo "tag=${{ steps.manual-tag.outputs.target }}" >> $GITHUB_OUTPUT
+            echo "tag=${{ steps.manual-tag.outputs.target }}" >> "$GITHUB_OUTPUT"
           fi

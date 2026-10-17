@@ -7,7 +7,7 @@ services:
       - POSTGRES_USER=orbit_user
       - POSTGRES_PASSWORD=orbit_password
     ports:
-      - "6105:6105"
+      - "6105:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -23,6 +23,7 @@ services:
       - "8001:8001"
     volumes:
       - ./backend:/app
+      - /app/.venv
     environment:
       - DEBUG=True
       - SECRET_KEY=dev-secret-key-change-in-production
@@ -30,7 +31,7 @@ services:
       - DB_USER=orbit_user
       - DB_PASSWORD=orbit_password
       - DB_HOST=db
-      - DB_PORT=6105
+      - DB_PORT=5432
     depends_on:
       db:
         condition: service_healthy

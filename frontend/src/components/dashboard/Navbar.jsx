@@ -30,13 +30,12 @@ function Navbar({ user }) {
       </div>
 
       <div className="navbar-profile">
-          <FiBell className="notification-icon" size={20} />
+        <FiBell className="notification-icon" size={20} />
 
         <span className="profile-avatar">
           <FiUser size={18} />
         </span>
       </div>
-
     </nav>
   )
 }
