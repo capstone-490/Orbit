@@ -1,5 +1,5 @@
-
 from pprint import pprint
+
 from security.redactor import redact_data, redact_exception
 
 # Synthetic client information
@@ -24,9 +24,6 @@ pprint(redact_data(client))
 
 print("\n========== ERROR REDACTION ==========")
 try:
-    raise ValueError(
-        "Failed to process sarah@example.com "
-        "with SIN 123-456-789"
-    )
+    raise ValueError("Failed to process sarah@example.com with SIN 123-456-789")
 except ValueError as exc:
     print(redact_exception(exc))

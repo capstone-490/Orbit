@@ -3,6 +3,7 @@ from faker import Faker
 
 from security.redactor import redact_data
 
+
 @pytest.fixture
 def fake():
     """Create a reproducible Canadian Faker instance."""
@@ -54,4 +55,3 @@ def test_redaction_with_100_fake_clients(fake):
 
     # 5. Fail the test if any client was not redacted
     assert passed == total_clients
-

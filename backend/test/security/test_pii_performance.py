@@ -1,6 +1,8 @@
 import statistics
 import time
+
 from security.redactor import redact_data
+
 
 def test_pii_redaction_performance():
     client = {

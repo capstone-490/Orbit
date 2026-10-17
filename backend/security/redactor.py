@@ -34,4 +34,3 @@ def redact_exception(exc: BaseException) -> str:
         raise TypeError("redact_exception expects an exception")
     formatted = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
     return redact_text(formatted)
-

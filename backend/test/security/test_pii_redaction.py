@@ -1,9 +1,11 @@
 import pytest
+
 from security.redactor import (
-    redact_text,
     redact_data,
     redact_exception,
+    redact_text,
 )
+
 
 @pytest.mark.parametrize(
     "value",
@@ -21,6 +23,7 @@ from security.redactor import (
 )
 def test_redacts_supported_pii(value):
     assert redact_text(value) == "[REDACTED]"
+
 
 def test_redacts_pii_inside_sentence():
     text = "Contact client@example.com or call 514-555-0198."
@@ -104,26 +107,23 @@ def test_redact_exception_rejects_non_exceptions():
     with pytest.raises(TypeError):
         redact_exception("Not an exception")
 
+
 @pytest.mark.parametrize(
     "value",
     [
-        "1234567890",          # Longer than a SIN
-        "abc123456789xyz",     # SIN embedded in a word
-        "123-456 789",         # Mixed SIN separators
-        "client@localhost",    # Email without a public-style domain
-        "123-555-0198",        # Invalid NANP area code
+        "1234567890",  # Longer than a SIN
+        "abc123456789xyz",  # SIN embedded in a word
+        "123-456 789",  # Mixed SIN separators
+        "client@localhost",  # Email without a public-style domain
+        "123-555-0198",  # Invalid NANP area code
     ],
 )
-
 def test_does_not_redact_unsupported_or_invalid_formats(value):
     assert redact_text(value) == value
 
+
 def test_redacts_multiple_pii_types():
-    text = (
-        "Email: client@example.com, "
-        "SIN: 123-456-789, "
-        "Phone: 514-555-0198"
-    )
+    text = "Email: client@example.com, SIN: 123-456-789, Phone: 514-555-0198"
 
     result = redact_text(text)
 

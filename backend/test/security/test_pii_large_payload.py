@@ -1,8 +1,9 @@
-
 import json
 import statistics
 import time
+
 from security.redactor import redact_data
+
 
 def test_large_payload_performance():
     # Step 1: Create a synthetic client record
@@ -24,11 +25,7 @@ def test_large_payload_performance():
     number_of_clients = (target_bytes // client_size) + 1
 
     # Generate all clients at once
-    payload = {
-        "clients": [
-            client.copy() for _ in range(number_of_clients)
-        ]
-    }
+    payload = {"clients": [client.copy() for _ in range(number_of_clients)]}
 
     # Measure the actual serialized payload size
     size_bytes = len(json.dumps(payload).encode("utf-8"))
