@@ -21,3 +21,21 @@
 .dashboard-header .critical-action {
   color: #dc3545;
 }
+.dashboard-overview {
+  display: grid;
+  grid-template-columns: 2fr 1fr; /* 2:1 ratio */
+  gap: 0.2rem;                    /* Space between the two sections */
+  box-sizing: border-box;
+  margin: 20px;
+}
+
+/* Style each separated section as its own card */
+.dashboard-card {
+  padding: 20px;
+  background-color: #ffffff;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-sizing: border-box;
+  min-width: 0px; /* Prevents grid items from overflowing if content is too wide */
+}
