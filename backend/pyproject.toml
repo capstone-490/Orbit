@@ -27,7 +27,7 @@ omit = ["tests/*", "migrations/*", "manage.py"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
-testpaths = ["tests"]
+testpaths = ["tests", "test"]
 
 [tool.mypy]
 python_version = "3.14"
