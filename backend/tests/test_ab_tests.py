@@ -1,6 +1,7 @@
 #Below 50% AI-generated
 from app.feature_flags import set_flag
 
+
 def test_ab_test_returns_b(client):
     set_flag("demo-ab", True, 100, changed_by="test_user")
     response = client.get("/ab-test", headers={"User-ID": "user1"})
