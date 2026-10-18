@@ -246,7 +246,8 @@ def create_password_reset_tokens_table():
                 )""")
         conn.commit()
 
-def  create_feature_flags_table():
+
+def create_feature_flags_table():
     with get_connection() as conn:
         conn.execute("""
                 CREATE TABLE IF NOT EXISTS feature_flags(
@@ -261,6 +262,7 @@ def  create_feature_flags_table():
                 )""")
         conn.commit()
 
+
 def create_audit_log_table():
     with get_connection() as conn:
         conn.execute("""
@@ -273,6 +275,7 @@ def create_audit_log_table():
                     changed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
                 )""")
         conn.commit()
+
 
 def migrate():
     # Enums

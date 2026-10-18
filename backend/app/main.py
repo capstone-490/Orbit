@@ -6,9 +6,11 @@ from app.feature_flags import get_variant
 
 app = FastAPI()
 
+
 def get_user_id(user_id: str | None = Header(default=None)) -> str:
-    #Temporary: to be replaced with authenticated user when login is implemented.
+    # Temporary: to be replaced with authenticated user when login is implemented.
     return user_id or "unknown"
+
 
 @app.get("/")
 def read_root():
@@ -19,8 +21,9 @@ def read_root():
 def health():
     return {"status": "ok"}
 
-#Temporary endpoint for testing A/B feature flags. Add flag check to feature endpoint when needed.
+
+# Temporary endpoint for testing A/B feature flags. Add flag check to feature endpoint when needed.
 @app.get("/ab-test")
 def ab_test(user_id: str = Depends(get_user_id)):
     variant = get_variant("demo-ab", user_id)
-    return { "Variant": variant}
+    return {"Variant": variant}
