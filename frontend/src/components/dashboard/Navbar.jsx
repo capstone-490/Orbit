@@ -6,9 +6,8 @@ import '../../styles/Navbar.css'
 function Navbar({ user }) {
   return (
     <nav className="navbar">
-
-    <div className="navbar-brand">
-         <img src={orbitLogo} alt="Orbit" className="orbit-logo"/>
+      <div className="navbar-brand">
+        <img src={orbitLogo} alt="Orbit" className="orbit-logo" />
 
         <span className="orbit-name">Orbit</span>
         <span className="advisor-label">{user.role}</span>

@@ -1,60 +1,58 @@
 .dashboard-tasks h2 {
-    margin-top: 0;
-    margin-bottom: 1rem;
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #1a1a1a;
-    border-bottom: 1px solid #e9ecef;
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  border-bottom: 1px solid #e9ecef;
 }
 
 .task-checkbox {
-    appearance: none;
-    -webkit-appearance: none;
-    width: 18px;
-    height: 18px;
-    border: 1.5px solid #d0d5dd;
-    border-radius: 4px;
-    outline: none;
-    cursor: pointer;
-    display: grid;
-    place-content: center;
-    transition: all 0.2s ease-in-out;
-    background-color: #ffffff;
-
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid #d0d5dd;
+  border-radius: 4px;
+  outline: none;
+  cursor: pointer;
+  display: grid;
+  place-content: center;
+  transition: all 0.2s ease-in-out;
+  background-color: #ffffff;
 }
 
 .task-checkbox:hover {
-    border-color: #98a2b3;
-    background-color: #f9fafb;
+  border-color: #98a2b3;
+  background-color: #f9fafb;
 }
 
-
 .task-checkbox:checked {
-    background-color: #0d6efd;
-    border-color: #0d6efd;
+  background-color: #0d6efd;
+  border-color: #0d6efd;
 }
 
 .task-checkbox:checked::before {
-    content: "";
-    width: 10px;
-    height: 10px;
-    clip-path: polygon(14% 44%, 0 58%, 38% 90%, 100% 16%, 86% 2%, 38% 62%);
-    background-color: white;
+  content: '';
+  width: 10px;
+  height: 10px;
+  clip-path: polygon(14% 44%, 0 58%, 38% 90%, 100% 16%, 86% 2%, 38% 62%);
+  background-color: white;
 }
 
 .task-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 0;
-    border-bottom: 1px solid #e9ecef;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #e9ecef;
 }
 
 .task-details {
   display: flex;
   flex-direction: column;
   flex-grow: 1;
-  gap: 2px; 
+  gap: 2px;
 }
 
 .task-title {
@@ -65,17 +63,17 @@
 }
 
 .task-due-date {
-    font-size: 10px;
-    margin-right: 10px;
-    /* Adds space between due date and badge */
-    margin-left: auto;
-    background-color: #e2eefa;
-    color: #2779cc;
-    margin-bottom: 6px;
-    border: 1px solid #477db3;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-weight: 600;
+  font-size: 10px;
+  margin-right: 10px;
+  /* Adds space between due date and badge */
+  margin-left: auto;
+  background-color: #e2eefa;
+  color: #2779cc;
+  margin-bottom: 6px;
+  border: 1px solid #477db3;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
 }
 
 .task-client {

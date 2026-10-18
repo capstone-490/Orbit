@@ -24,7 +24,7 @@
 .dashboard-overview {
   display: grid;
   grid-template-columns: 2fr 1fr; /* 2:1 ratio */
-  gap: 0.2rem;                    /* Space between the two sections */
+  gap: 0.2rem; /* Space between the two sections */
   box-sizing: border-box;
   margin: 20px;
 }

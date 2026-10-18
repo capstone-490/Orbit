@@ -1,9 +1,9 @@
 import {
+  dashboardSummaryData,
   mockAdvisor,
   mockDashboardSummary,
-  dashboardSummaryData,
-  mockScheduleData,
   mockPriorityTasks,
+  mockScheduleData,
 } from '../data/mockDashboardData'
 
 export async function getAdvisorDashboard() {
@@ -12,6 +12,6 @@ export async function getAdvisorDashboard() {
     dashboardSummary: mockDashboardSummary,
     dashboardSummaryData: dashboardSummaryData,
     scheduleData: mockScheduleData,
-    priorityTasks: mockPriorityTasks, 
+    priorityTasks: mockPriorityTasks,
   }
 }
