@@ -1,7 +1,9 @@
 #Below 50% AI-generated
 
 import argparse
+
 from app.feature_flags import set_flag
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Set a feature flag and record in audit log.")

@@ -15,7 +15,7 @@ def get_bucket_value(flag_name: str, user_id: str) -> int:
         raise ValueError("flag_name cannot be None or empty")
     if user_id is None or user_id.strip() == "":
         raise ValueError("user_id cannot be None or empty")
-    hash_value = hashlib.sha256( f"{flag_name}:{user_id}".encode('utf-8')).hexdigest()
+    hash_value = hashlib.sha256( f"{flag_name}:{user_id}".encode()).hexdigest()
     bucket_value = int(hash_value, 16) % 100
     return bucket_value
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # No substantial AI-generated code
-from fastapi import FastAPI, Header, Depends
+from fastapi import Depends, FastAPI, Header
+
 from app.feature_flags import get_variant
 
 app = FastAPI()
