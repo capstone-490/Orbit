@@ -36,5 +36,5 @@ def main() -> None:
         f"Feature flag '{args.flag_name}' set to enabled = {enabled}, rollout_percent = {args.rollout_percent}, description ={args.description}, changed_by = {args.changed_by}"
     )
 
-    if __name__ == "__main__":
-        main()
+if __name__ == "__main__":
+    main()
