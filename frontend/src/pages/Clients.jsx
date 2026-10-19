@@ -1,86 +1,82 @@
+import { useEffect, useState } from 'react'
+import '../styles/Clients.css'
 
-import { useEffect, useState } from "react";
-import "../styles/Clients.css";
-
-const API_URL = "http://localhost:8001";
+const API_URL = 'http://localhost:8001'
 const emptyClient = {
-  name: "",
-  email: "",
-  phone_number: "",
-  address: "",
-  date_of_birth: "",
-  occupation: "",
-  risk_tolerance: "",
-  target_retirement_age: "",
-  timeline: "",
-};
+  name: '',
+  email: '',
+  phone_number: '',
+  address: '',
+  date_of_birth: '',
+  occupation: '',
+  risk_tolerance: '',
+  target_retirement_age: '',
+  timeline: '',
+}
 
 function Clients() {
-  const [search, setSearch] = useState("");
-  const [clients, setClients] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState("");
-  const [formError, setFormError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [showAddClient, setShowAddClient] = useState(false);
-  const [newClient, setNewClient] = useState({ ...emptyClient });
+  const [search, setSearch] = useState('')
+  const [clients, setClients] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
+  const [formError, setFormError] = useState('')
+  const [success, setSuccess] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [showAddClient, setShowAddClient] = useState(false)
+  const [newClient, setNewClient] = useState({ ...emptyClient })
 
   useEffect(() => {
-    let active = true;
+    let active = true
     const fetchClients = async () => {
       try {
-        const response = await fetch(`${API_URL}/clients`);
-        if (!response.ok) throw new Error("Failed to load clients.");
-        const data = await response.json();
-        if (active) setClients(data);
+        const response = await fetch(`${API_URL}/clients`)
+        if (!response.ok) throw new Error('Failed to load clients.')
+        const data = await response.json()
+        if (active) setClients(data)
       } catch (error) {
-        if (active) setLoadError(error.message);
+        if (active) setLoadError(error.message)
       } finally {
-        if (active) setLoading(false);
+        if (active) setLoading(false)
       }
-    };
-    void fetchClients();
-    return () => { active = false; };
-  }, []);
-
+    }
+    void fetchClients()
+    return () => {
+      active = false
+    }
+  }, [])
 
   useEffect(() => {
-  if (!success) return;
+    if (!success) return
 
-  const timer = setTimeout(() => {
-    setSuccess("");
-  }, 3000);
+    const timer = setTimeout(() => {
+      setSuccess('')
+    }, 3000)
 
-  return () => clearTimeout(timer);
-}, [success]);
-
+    return () => clearTimeout(timer)
+  }, [success])
 
   const filteredClients = clients.filter((client) => {
-    const term = search.trim().toLowerCase();
-    return (
-      client.name.toLowerCase().includes(term) ||
-      client.email.toLowerCase().includes(term)
-    );
-  });
+    const term = search.trim().toLowerCase()
+    return client.name.toLowerCase().includes(term) || client.email.toLowerCase().includes(term)
+  })
 
   const handleClientChange = (e) => {
-    const { name, value } = e.target;
-    setNewClient((prev) => ({ ...prev, [name]: value }));
-  };
+    const { name, value } = e.target
+    setNewClient((prev) => ({ ...prev, [name]: value }))
+  }
 
   const closeModal = () => {
-    if (saving) return;
-    setShowAddClient(false);
-    setFormError("");
-  };
+    if (saving) return
+    setShowAddClient(false)
+    setFormError('')
+  }
 
   const handleAddClient = async (e) => {
-    e.preventDefault();
-    if (saving) return;
-    setSaving(true);
-    setFormError("");
-    setSuccess("");
+    e.preventDefault()
+    if (saving) return
+    setSaving(true)
+    setFormError('')
+    setSuccess('')
 
     const payload = {
       name: newClient.name.trim(),
@@ -94,43 +90,43 @@ function Clients() {
         ? Number(newClient.target_retirement_age)
         : null,
       timeline: newClient.timeline || null,
-    };
+    }
 
     try {
       const response = await fetch(`${API_URL}/clients`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
-      });
+      })
       if (!response.ok) {
-        const details = await response.json().catch(() => ({}));
+        const details = await response.json().catch(() => ({}))
         throw new Error(
-          typeof details.detail === "string"
+          typeof details.detail === 'string'
             ? details.detail
-            : "Failed to add client. Please check the entered information."
-        );
+            : 'Failed to add client. Please check the entered information.',
+        )
       }
 
-      const created = await response.json();
+      const created = await response.json()
       // Re-fetch so the list always reflects the database.
       try {
-        const listResponse = await fetch(`${API_URL}/clients`);
-        if (!listResponse.ok) throw new Error("Refresh failed");
-        setClients(await listResponse.json());
-        setLoadError("");
+        const listResponse = await fetch(`${API_URL}/clients`)
+        if (!listResponse.ok) throw new Error('Refresh failed')
+        setClients(await listResponse.json())
+        setLoadError('')
       } catch {
-        setLoadError("Client saved, but the list could not be refreshed. Reload the page.");
+        setLoadError('Client saved, but the list could not be refreshed. Reload the page.')
       }
 
-      setNewClient({ ...emptyClient });
-      setShowAddClient(false);
-      setSuccess(`Client saved successfully (ID: ${created.id}).`);
+      setNewClient({ ...emptyClient })
+      setShowAddClient(false)
+      setSuccess(`Client saved successfully (ID: ${created.id}).`)
     } catch (error) {
-      setFormError(error.message);
+      setFormError(error.message)
     } finally {
-      setSaving(false);
+      setSaving(false)
     }
-  };
+  }
 
   return (
     <main className="clients-page">
@@ -141,7 +137,11 @@ function Clients() {
         <button
           type="button"
           className="add-client-button"
-          onClick={() => { setFormError(""); setSuccess(""); setShowAddClient(true); }}
+          onClick={() => {
+            setFormError('')
+            setSuccess('')
+            setShowAddClient(true)
+          }}
         >
           + Add Client
         </button>
@@ -165,8 +165,16 @@ function Clients() {
       </div>
 
       {loading && <p role="status">Loading clients...</p>}
-      {loadError && <p className="clients-error" role="alert">{loadError}</p>}
-      {success && <p role="status" style={{ color: "#166534" }}>{success}</p>}
+      {loadError && (
+        <p className="clients-error" role="alert">
+          {loadError}
+        </p>
+      )}
+      {success && (
+        <p role="status" style={{ color: '#166534' }}>
+          {success}
+        </p>
+      )}
 
       <section className="clients-list">
         {!loading && !loadError && filteredClients.length > 0 ? (
@@ -174,7 +182,13 @@ function Clients() {
             <div className="client-row" key={client.id}>
               <div className="client-info">
                 <div className="client-avatar">
-                  {client.name.trim().split(/\s+/).map((part) => part[0]).slice(0, 2).join("").toUpperCase()}
+                  {client.name
+                    .trim()
+                    .split(/\s+/)
+                    .map((part) => part[0])
+                    .slice(0, 2)
+                    .join('')
+                    .toUpperCase()}
                 </div>
 
                 <div className="client-details">
@@ -195,7 +209,11 @@ function Clients() {
           ))
         ) : (
           <div className="clients-empty">
-            {loading ? "Loading clients..." : loadError ? "Unable to display clients." : "No clients found."}
+            {loading
+              ? 'Loading clients...'
+              : loadError
+                ? 'Unable to display clients.'
+                : 'No clients found.'}
           </div>
         )}
       </section>
@@ -203,13 +221,13 @@ function Clients() {
       {/* Add Client Modal */}
       {showAddClient && (
         <div className="client-modal-overlay">
-        <button
-          type="button"
-          className="client-modal-backdrop"
-          aria-label="Close Add Client form"
-          onClick={closeModal}
-          disabled={saving}
-        />
+          <button
+            type="button"
+            className="client-modal-backdrop"
+            aria-label="Close Add Client form"
+            onClick={closeModal}
+            disabled={saving}
+          />
           <div
             className="client-modal"
             role="dialog"
@@ -231,7 +249,11 @@ function Clients() {
             </div>
 
             <form onSubmit={handleAddClient}>
-              {formError && <p className="clients-error" role="alert" style={{ color: "#dc2626" }}>{formError}</p>}
+              {formError && (
+                <p className="clients-error" role="alert" style={{ color: '#dc2626' }}>
+                  {formError}
+                </p>
+              )}
               <div className="client-form-grid">
                 <label>
                   Full Name *
@@ -324,11 +346,7 @@ function Clients() {
 
                 <label className="client-form-full">
                   Timeline
-                  <select
-                    name="timeline"
-                    value={newClient.timeline}
-                    onChange={handleClientChange}
-                  >
+                  <select name="timeline" value={newClient.timeline} onChange={handleClientChange}>
                     <option value="">Select current stage</option>
                     <option value="Corporate Introduction">Corporate Introduction</option>
                     <option value="Investment Education">Investment Education</option>
@@ -341,11 +359,7 @@ function Clients() {
               </div>
 
               <div className="client-modal-actions">
-                <button
-                  type="button"
-                  className="client-cancel-button"
-                  onClick={closeModal}
-                >
+                <button type="button" className="client-cancel-button" onClick={closeModal}>
                   Cancel
                 </button>
 
@@ -357,9 +371,8 @@ function Clients() {
           </div>
         </div>
       )}
-
     </main>
-  );
+  )
 }
 
-export default Clients;
+export default Clients
