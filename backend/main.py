@@ -1,13 +1,12 @@
-
 from datetime import date
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, EmailStr, Field
 from psycopg.errors import UniqueViolation
+from pydantic import BaseModel, EmailStr, Field
 
-from db import get_connection
+from app.db.db import get_connection
 
 app = FastAPI()
 
@@ -30,14 +29,17 @@ class ClientCreate(BaseModel):
     occupation: str | None = None
     risk_tolerance: Literal["Conservative", "Moderate", "Aggressive"] | None = None
     target_retirement_age: int | None = Field(default=None, ge=0, le=120)
-    timeline: Literal[
-        "Corporate Introduction",
-        "Investment Education",
-        "Tax Education",
-        "Insurance Education",
-        "Financial Needs Analysis",
-        "Financial Plan",
-    ] | None = None
+    timeline: (
+        Literal[
+            "Corporate Introduction",
+            "Investment Education",
+            "Tax Education",
+            "Insurance Education",
+            "Financial Needs Analysis",
+            "Financial Plan",
+        ]
+        | None
+    ) = None
 
 
 @app.get("/health")
@@ -62,10 +64,9 @@ def create_client(client: ClientCreate):
             data[field] = None
 
     try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
+        with get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
                     INSERT INTO clients (
                         name, email, phone_number, address,
                         date_of_birth, occupation, risk_tolerance,
@@ -79,9 +80,9 @@ def create_client(client: ClientCreate):
                     )
                     RETURNING id
                     """,
-                    data,
-                )
-                client_id = cur.fetchone()[0]
+                data,
+            )
+            client_id = cur.fetchone()[0]
 
         return {"id": client_id, "message": "Client created successfully"}
 
@@ -94,10 +95,9 @@ def create_client(client: ClientCreate):
 
 @app.get("/clients")
 def list_clients():
-    with get_connection() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                """
+    with get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
                 SELECT id, name, email, phone_number,
                        address, date_of_birth, occupation,
                        risk_tolerance, target_retirement_age,
@@ -105,9 +105,9 @@ def list_clients():
                 FROM clients
                 ORDER BY created_at DESC, id DESC
                 """
-            )
+        )
 
-            columns = [column.name for column in cur.description]
-            rows = cur.fetchall()
+        columns = [column.name for column in cur.description]
+        rows = cur.fetchall()
 
     return [dict(zip(columns, row)) for row in rows]

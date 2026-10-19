@@ -1,4 +1,4 @@
-
+from datetime import UTC
 from unittest.mock import MagicMock
 
 import pytest
@@ -6,7 +6,6 @@ from fastapi.testclient import TestClient
 from psycopg.errors import UniqueViolation
 
 import main
-
 
 client = TestClient(main.app)
 
@@ -146,11 +145,9 @@ def test_create_client_duplicate(mock_db):
 
 
 def test_list_clients(mock_db):
-    from datetime import datetime, timezone
+    from datetime import datetime
 
-    mock_db.description = [
-        MagicMock(name="column") for _ in COLUMNS
-    ]
+    mock_db.description = [MagicMock(name="column") for _ in COLUMNS]
 
     for column, name in zip(mock_db.description, COLUMNS):
         column.name = name
@@ -167,7 +164,7 @@ def test_list_clients(mock_db):
             None,
             None,
             None,
-            datetime(2026, 10, 15, tzinfo=timezone.utc),
+            datetime(2026, 10, 15, tzinfo=UTC),
         )
     ]
 
@@ -180,9 +177,7 @@ def test_list_clients(mock_db):
 
 
 def test_list_clients_empty(mock_db):
-    mock_db.description = [
-        MagicMock(name="column") for _ in COLUMNS
-    ]
+    mock_db.description = [MagicMock(name="column") for _ in COLUMNS]
 
     for column, name in zip(mock_db.description, COLUMNS):
         column.name = name
