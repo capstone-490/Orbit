@@ -40,7 +40,7 @@ function Clients() {
         if (active) setLoading(false);
       }
     };
-    fetchClients();
+    void fetchClients();
     return () => { active = false; };
   }, []);
 
@@ -202,16 +202,19 @@ function Clients() {
 
       {/* Add Client Modal */}
       {showAddClient && (
-        <div
-          className="client-modal-overlay"
+        <div className="client-modal-overlay">
+        <button
+          type="button"
+          className="client-modal-backdrop"
+          aria-label="Close Add Client form"
           onClick={closeModal}
-        >
+          disabled={saving}
+        />
           <div
             className="client-modal"
             role="dialog"
             aria-modal="true"
             aria-labelledby="add-client-title"
-            onClick={(e) => e.stopPropagation()}
           >
             <div className="client-modal-header">
               <h2 id="add-client-title">Add New Client</h2>
