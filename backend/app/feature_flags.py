@@ -66,18 +66,22 @@ def set_flag(
     try:
         with closing(get_connection()) as conn:
             try:
-                result = conn.execute(
-                    "SELECT enabled, rollout_percent, description FROM feature_flags WHERE name = %s FOR UPDATE",
-                    (flag_name,),
+                inserted = conn.execute(
+                    "INSERT INTO feature_flags (name, enabled, rollout_percent, description) VALUES (%s, %s, %s, %s) ON CONFLICT (name) DO NOTHING RETURNING enabled, rollout_percent, description",
+                    (flag_name, enabled, rollout_percent, description),
                 ).fetchone()
-                if result is None:
+                if inserted is not None:
                     old_values = None
-                    final_description = description
-                    conn.execute(
-                        "INSERT INTO feature_flags (name, enabled, rollout_percent, description) VALUES ( %s, %s, %s, %s)",
-                        (flag_name, enabled, rollout_percent, final_description),
-                    )
+                    final_description = inserted[2]
                 else:
+                    result = conn.execute(
+                        "SELECT enabled, rollout_percent, description FROM feature_flags WHERE name = %s FOR UPDATE",
+                        (flag_name,),
+                    ).fetchone()
+                    if result is None:
+                        raise RuntimeError(
+                            f"Feature flag {flag_name!r} disapeared during update"
+                        )
                     old_enabled, old_rollout_percent, old_description = result
                     old_values = {
                         "enabled": old_enabled,
