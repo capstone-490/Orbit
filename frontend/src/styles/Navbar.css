@@ -38,8 +38,6 @@
   font-weight: 600;
 }
 
-/* CENTER — Navigation */
-
 .navbar-links {
   height: 100%;
   display: flex;
@@ -70,7 +68,6 @@
   font-weight: 600;
   border-bottom-color: #2639a6;
 }
-
 
 .navbar-profile {
   display: flex;
