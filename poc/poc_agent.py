@@ -20,6 +20,7 @@ from pathlib import Path
 import requests
 
 OLLAMA_URL = "http://localhost:11434/api/chat"
+INPUT_ROOT = Path.cwd().resolve()
 
 SYSTEM_PROMPT = """You are a data-processing agent for financial advisor meeting notes.
 Read the input text and return ONLY valid JSON with exactly these keys:
@@ -44,8 +45,25 @@ Rules:
 - Do not add a year. Write dates as the text does, such as "October 21" or "Friday"."""
 
 
+def _resolve_input_path(path: Path) -> Path:
+    """Resolve an input path and keep it within the current working directory."""
+    resolved = path.resolve(strict=True)
+    if not resolved.is_file() or not resolved.is_relative_to(INPUT_ROOT):
+        raise ValueError(f"Input must be a file below {INPUT_ROOT}")
+    return resolved
+
+
+def _output_path(path: Path, suffix: str) -> Path:
+    output = path.with_suffix(suffix)
+    resolved = output.resolve(strict=False)
+    if not resolved.is_relative_to(INPUT_ROOT):
+        raise ValueError(f"Output must remain below {INPUT_ROOT}")
+    return output
+
+
 def ingest(path: Path) -> str:
     """Text files are read directly; audio is transcribed locally with Whisper."""
+    path = _resolve_input_path(path)
     if path.suffix.lower() in {".txt", ".md"}:
         return path.read_text(encoding="utf-8")
     if path.suffix.lower() in {".mp3", ".wav", ".m4a", ".flac"}:
@@ -88,16 +106,22 @@ def main():
     ap.add_argument("--ctx", type=int, default=4096, help="context window in tokens")
     args = ap.parse_args()
 
-    path = Path(args.input)
+    try:
+        path = _resolve_input_path(Path(args.input))
+        transcript = _output_path(path, ".transcript.txt")
+        output = _output_path(path, ".out.json")
+    except (OSError, ValueError) as exc:
+        ap.error(str(exc))
+
     text = ingest(path)
-    path.with_suffix(".transcript.txt").write_text(text, encoding="utf-8")
+    transcript.write_text(text, encoding="utf-8")
     print(f"[ingest] {len(text)} characters")
 
     t0 = time.time()
     result, raw = process(text, args.model, args.ctx)
     wall = time.time() - t0
 
-    out = path.with_suffix(".out.json")
+    out = output
     out.write_text(json.dumps(result, indent=2), encoding="utf-8")
 
     # Benchmark numbers for the findings write-up
