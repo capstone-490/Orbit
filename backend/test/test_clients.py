@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 from psycopg.errors import UniqueViolation
 
 import main
+from main import ClientCreate
 
 client = TestClient(main.app)
 
@@ -102,6 +103,21 @@ def test_create_client_invalid_fields(mock_db, field, value):
 
     assert response.status_code == 422
     mock_db.execute.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "phone",
+    ["12345", "abcdefghij", "111-111-1111", "514-ABC-1234"],
+)
+def test_invalid_phone_number(phone):
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
+        ClientCreate(
+            name="Test Client",
+            email="test@example.com",
+            phone_number=phone,
+        )
 
 
 def test_create_client_optional_fields(mock_db):

@@ -271,4 +271,26 @@ describe('US-16: Add client', () => {
 
     expect(await within(dialog).findByRole('alert')).toHaveTextContent('Network unavailable')
   })
+
+  it('rejects invalid phone numbers before sending a request', async () => {
+    mockInitialClients([])
+    render(<Clients />)
+
+    await screen.findByText('No clients found.')
+
+    const dialog = openForm()
+    fillRequiredFields(dialog)
+
+    fireEvent.change(within(dialog).getByLabelText(/phone number/i), {
+      target: { value: '12345' },
+    })
+
+    fireEvent.click(within(dialog).getByRole('button', { name: /save client/i }))
+
+    expect(
+      within(dialog).getByText(/please enter a valid canadian or us phone number/i),
+    ).toBeInTheDocument()
+
+    expect(fetch).toHaveBeenCalledTimes(1)
+  })
 })

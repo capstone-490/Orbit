@@ -2,6 +2,20 @@ import { useEffect, useState } from 'react'
 import '../styles/Clients.css'
 
 const API_URL = 'http://localhost:8001'
+
+const isValidPhoneNumber = (value) => {
+  const phone = value.trim()
+
+  if (!/^\+?[\d\s().-]+$/.test(phone)) return false
+
+  let digits = phone.replace(/\D/g, '')
+
+  if (digits.length === 11 && digits.startsWith('1')) {
+    digits = digits.slice(1)
+  }
+
+  return digits.length === 10 && /^[2-9]\d{2}[2-9]\d{6}$/.test(digits)
+}
 const emptyClient = {
   name: '',
   email: '',
@@ -74,9 +88,15 @@ function Clients() {
   const handleAddClient = async (e) => {
     e.preventDefault()
     if (saving) return
-    setSaving(true)
     setFormError('')
     setSuccess('')
+
+    if (!isValidPhoneNumber(newClient.phone_number)) {
+      setFormError('Please enter a valid Canadian or US phone number.')
+      return
+    }
+
+    setSaving(true)
 
     const payload = {
       name: newClient.name.trim(),
