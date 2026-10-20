@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # No substantial AI-generated code
-from fastapi import Depends, FastAPI, Header
+from fastapi import Depends, FastAPI, Header, Query
 
 from app.feature_flags import get_variant
 
@@ -27,3 +27,16 @@ def health():
 def ab_test(user_id: str = Depends(get_user_id)):
     variant = get_variant("demo-ab", user_id)
     return {"Variant": variant}
+
+
+@app.get("/flag")
+def read_flag(
+    name: str = Query(..., min_length=1, max_length=100),
+    user_id: str = Depends(get_user_id),
+):
+    variant = get_variant(name, user_id)
+    return {
+        "name": name,
+        "variant": variant,
+        "use_new_feature": variant == "B",
+    }
