@@ -159,6 +159,7 @@ class TestClients:
         run("DELETE FROM advisors WHERE id=%s", (aid,))
         assert count("clients") == 0
 
+
 class TestMeetings:
     def test_insert_valid(self):
         cid = make_client()
@@ -197,6 +198,7 @@ class TestMeetings:
         run("DELETE FROM clients WHERE id=%s", (cid,))
         assert count("meetings") == 0
 
+<<<<<<< HEAD
 class TestMeetings:
     def test_insert_valid(self):
         cid = make_client()
@@ -257,6 +259,8 @@ class TestMeetings:
         run("DELETE FROM advisors WHERE id=%s", (aid,))
         assert count("meetings") == 0
 
+=======
+>>>>>>> eddef59 (added whitespaces for linting)
 
 class TestDocuments:
     def test_default_status_is_unsent(self):
