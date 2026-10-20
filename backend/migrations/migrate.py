@@ -78,6 +78,18 @@ def create_author_type_enum():
                         $$;""")
         conn.commit()
 
+def create_meetings_enum():
+    with get_connection() as conn:
+        conn.execute("""
+                        DO $$
+                        BEGIN
+                            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'meeting_status') THEN
+                                create type meeting_status AS ENUM ('Scheduled','Completed','Cancelled');
+                            END IF;
+                        END
+                        $$;""")
+        conn.commit()
+
 
 def create_advisors_table():
     with get_connection() as conn:
@@ -151,7 +163,7 @@ def create_meetings_table():
                     advisor_id BIGINT NOT NULL,
                     client_id BIGINT NOT NULL,
                     meeting_date TIMESTAMPTZ NOT NULL,
-                    completion_status TEXT NOT NULL DEFAULT 'Scheduled',
+                    completion_status meeting_status NOT NULL DEFAULT 'Scheduled',
                     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
