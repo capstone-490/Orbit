@@ -357,7 +357,11 @@ def migrate():
     # Tables
     create_advisors_table()
     create_clients_table()
+<<<<<<< HEAD
     remove_unused_client_fields()
+=======
+    create_meetings_table()
+>>>>>>> daa9c00 (made sure to call the new create functions in migrate.migrate())
     create_documents_table()
     create_goals_table()
     create_agents_table()
