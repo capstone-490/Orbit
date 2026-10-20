@@ -1,0 +1,10 @@
+{
+    "flags": [
+        {
+            "name": "demo-ab",
+            "enabled": false,
+            "rollout_percent": 0,
+            "description": "Demo A/B test"
+        }
+    ]
+}
