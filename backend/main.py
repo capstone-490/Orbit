@@ -133,6 +133,7 @@ def list_clients():
 
     return [dict(zip(columns, row)) for row in rows]
 
+
 @app.get("/meetings/{advisor_id}")
 def list_meetings(advisor_id: int):
     with get_connection() as conn, conn.cursor() as cur:
@@ -150,6 +151,7 @@ def list_meetings(advisor_id: int):
         rows = cur.fetchall()
 
     return [dict(zip(columns, row)) for row in rows]
+
 
 @app.get("/scheduled_meetings/{advisor_id}")
 def list_scheduled_meetings(advisor_id: int):
@@ -169,6 +171,7 @@ def list_scheduled_meetings(advisor_id: int):
 
     return [dict(zip(columns, row)) for row in rows]
 
+
 @app.get("/completed_meetings/{advisor_id}")
 def list_completed_meetings(advisor_id: int):
     with get_connection() as conn, conn.cursor() as cur:
@@ -186,6 +189,7 @@ def list_completed_meetings(advisor_id: int):
         rows = cur.fetchall()
 
     return [dict(zip(columns, row)) for row in rows]
+
 
 @app.get("/meetings/{advisor_id}/{client_id}")
 def list_meetings_for_client(advisor_id: int, client_id: int):
