@@ -78,6 +78,7 @@ def create_author_type_enum():
                         $$;""")
         conn.commit()
 
+
 def create_meetings_enum():
     with get_connection() as conn:
         conn.execute("""
