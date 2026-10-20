@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "vitest",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "lint": "biome lint . && eslint .",
     "format:check": "biome format .",
     "check": "pnpm biome check . && pnpm eslint ."
