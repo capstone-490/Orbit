@@ -162,7 +162,11 @@ def create_meetings_table():
                     advisor_id BIGINT NOT NULL,
                     client_id BIGINT NOT NULL,
                     meeting_date TIMESTAMPTZ NOT NULL,
+<<<<<<< HEAD
                     completion_status meeting_status NOT NULL DEFAULT 'Scheduled',
+=======
+                    completion_status TEXT NOT NULL DEFAULT 'Scheduled',
+>>>>>>> 3a28995 (added routes for retrieving meeting information)
                     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
