@@ -324,10 +324,12 @@ def migrate():
     create_goal_duration_enum()
     create_assignment_status_enum()
     create_author_type_enum()
+    create_meetings_enum()
 
     # Tables
     create_advisors_table()
     create_clients_table()
+    create_meetings_table()
     create_documents_table()
     create_goals_table()
     create_agents_table()
