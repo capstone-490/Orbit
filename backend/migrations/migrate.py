@@ -287,7 +287,6 @@ def remove_unused_client_fields():
 def migrate():
     # Enums
     create_risk_tolerance_enum()
-    create_risk_tolerance_enum()
     create_timeline_enum()
     create_document_status_enum()
     create_goal_duration_enum()
