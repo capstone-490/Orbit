@@ -56,7 +56,7 @@ jobs:
     uses: ./.github/workflows/backend.yml
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
 
   frontend-ci:
     needs: detect-changes
@@ -66,7 +66,7 @@ jobs:
     uses: ./.github/workflows/frontend.yml
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      
 
   auto-tag:
     needs: [backend-ci, frontend-ci]
@@ -88,4 +88,3 @@ jobs:
       PROJECT_TOKEN: ${{ secrets.PROJECT_ACCESS_TOKEN }}
     permissions:
       contents: write
-
