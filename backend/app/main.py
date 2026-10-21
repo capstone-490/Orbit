@@ -1,10 +1,25 @@
 #!/usr/bin/env python3
 # No substantial AI-generated code
 from fastapi import Depends, FastAPI, Header, Query
-
 from app.feature_flags import get_variant
 
+from fastapi.middleware.cors import CORSMiddleware
+from app.routers.clients import router as clients_router
+
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=False,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
+)
+
+app.include_router(clients_router)
 
 
 def get_user_id(user_id: str | None = Header(default=None)) -> str:

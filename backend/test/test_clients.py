@@ -5,10 +5,12 @@ import pytest
 from fastapi.testclient import TestClient
 from psycopg.errors import UniqueViolation
 
-import main
-from main import ClientCreate
+from app.main import app
+from app.routers.clients import ClientCreate
+from app.routers import clients
 
-client = TestClient(main.app)
+
+client = TestClient(app)
 
 COLUMNS = [
     "id",
@@ -33,7 +35,7 @@ def mock_db(monkeypatch):
     conn.__enter__.return_value = conn
     conn.cursor.return_value.__enter__.return_value = cursor
 
-    monkeypatch.setattr(main, "get_connection", lambda: conn)
+    monkeypatch.setattr(clients, "get_connection", lambda: conn)
 
     return cursor
 

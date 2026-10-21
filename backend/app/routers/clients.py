@@ -1,26 +1,18 @@
+
 import re
 from datetime import date
 from typing import Literal
 
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import APIRouter, HTTPException
 from psycopg.errors import UniqueViolation
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from app.db.db import get_connection
 
-app = FastAPI()
-
-# Allow the React development server to call the API
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
-    allow_credentials=False,
-    allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type"],
-)
+router = APIRouter(prefix="/clients", tags=["Clients"])
 
 
+# Client data model and validation
 class ClientCreate(BaseModel):
     name: str = Field(min_length=1)
     email: EmailStr
@@ -28,8 +20,12 @@ class ClientCreate(BaseModel):
     address: str | None = None
     date_of_birth: date | None = None
     occupation: str | None = None
-    risk_tolerance: Literal["Conservative", "Moderate", "Aggressive"] | None = None
-    target_retirement_age: int | None = Field(default=None, ge=0, le=120)
+    risk_tolerance: Literal[
+        "Conservative", "Moderate", "Aggressive"
+    ] | None = None
+    target_retirement_age: int | None = Field(
+        default=None, ge=0, le=120
+    )
     timeline: (
         Literal[
             "Corporate Introduction",
@@ -48,31 +44,33 @@ class ClientCreate(BaseModel):
         phone = value.strip()
 
         if not re.fullmatch(r"\+?[\d\s().-]+", phone):
-            raise ValueError("Please enter a valid Canadian or US phone number.")
+            raise ValueError(
+                "Please enter a valid Canadian or US phone number."
+            )
 
         digits = re.sub(r"\D", "", phone)
 
         if len(digits) == 11 and digits.startswith("1"):
             digits = digits[1:]
         elif len(digits) != 10:
-            raise ValueError("Please enter a valid 10-digit phone number.")
+            raise ValueError(
+                "Please enter a valid 10-digit phone number."
+            )
 
         if digits[0] not in "23456789" or digits[3] not in "23456789":
-            raise ValueError("Please enter a valid Canadian or US phone number.")
+            raise ValueError(
+                "Please enter a valid Canadian or US phone number."
+            )
 
         return phone
 
 
-@app.get("/health")
-def health():
-    return {"status": "ok"}
-
-
-@app.post("/clients", status_code=201)
+# Create a new client
+@router.post("", status_code=201)
 def create_client(client: ClientCreate):
     data = client.model_dump(mode="json")
 
-    # Optional blank form fields should become SQL NULL
+    # Convert optional blank fields to SQL NULL
     for field in (
         "address",
         "date_of_birth",
@@ -88,44 +86,51 @@ def create_client(client: ClientCreate):
         with get_connection() as conn, conn.cursor() as cur:
             cur.execute(
                 """
-                    INSERT INTO clients (
-                        name, email, phone_number, address,
-                        date_of_birth, occupation, risk_tolerance,
-                        target_retirement_age, timeline
-                    )
-                    VALUES (
-                        %(name)s, %(email)s, %(phone_number)s,
-                        %(address)s, %(date_of_birth)s, %(occupation)s,
-                        %(risk_tolerance)s, %(target_retirement_age)s,
-                        %(timeline)s
-                    )
-                    RETURNING id
-                    """,
+                INSERT INTO clients (
+                    name, email, phone_number, address,
+                    date_of_birth, occupation, risk_tolerance,
+                    target_retirement_age, timeline
+                )
+                VALUES (
+                    %(name)s, %(email)s, %(phone_number)s,
+                    %(address)s, %(date_of_birth)s,
+                    %(occupation)s, %(risk_tolerance)s,
+                    %(target_retirement_age)s, %(timeline)s
+                )
+                RETURNING id
+                """,
                 data,
             )
             client_id = cur.fetchone()[0]
 
-        return {"id": client_id, "message": "Client created successfully"}
+        return {
+            "id": client_id,
+            "message": "Client created successfully",
+        }
 
     except UniqueViolation:
         raise HTTPException(
             status_code=409,
-            detail="A client with this email or phone number already exists.",
+            detail=(
+                "A client with this email or phone number "
+                "already exists."
+            ),
         )
 
 
-@app.get("/clients")
+# Retrieve all existing clients
+@router.get("")
 def list_clients():
     with get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             """
-                SELECT id, name, email, phone_number,
-                       address, date_of_birth, occupation,
-                       risk_tolerance, target_retirement_age,
-                       timeline, created_at
-                FROM clients
-                ORDER BY created_at DESC, id DESC
-                """
+            SELECT id, name, email, phone_number,
+                   address, date_of_birth, occupation,
+                   risk_tolerance, target_retirement_age,
+                   timeline, created_at
+            FROM clients
+            ORDER BY created_at DESC, id DESC
+            """
         )
 
         columns = [column.name for column in cur.description]
