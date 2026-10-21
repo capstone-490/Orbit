@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # No substantial AI-generated code
 from fastapi import Depends, FastAPI, Header, Query
-from app.feature_flags import get_variant
-
 from fastapi.middleware.cors import CORSMiddleware
+
+from app.feature_flags import get_variant
 from app.routers.clients import router as clients_router
 
 app = FastAPI()

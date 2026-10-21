@@ -284,6 +284,7 @@ def remove_unused_client_fields():
         """)
         conn.commit()
 
+
 def migrate():
     # Enums
     create_risk_tolerance_enum()

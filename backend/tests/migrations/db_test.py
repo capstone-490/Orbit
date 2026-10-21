@@ -142,7 +142,6 @@ class TestClients:
                 "INSERT INTO clients (name, phone_number, email) VALUES (NULL,'000-000-0000','test@example.com')"
             )
 
-
     def test_timeline_invalid(self):
         with pytest.raises(errors.InvalidTextRepresentation):
             run(

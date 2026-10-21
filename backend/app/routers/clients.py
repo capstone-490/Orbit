@@ -1,4 +1,3 @@
-
 import re
 from datetime import date
 from typing import Literal
@@ -38,23 +37,17 @@ class ClientCreate(BaseModel):
         phone = value.strip()
 
         if not re.fullmatch(r"\+?[\d\s().-]+", phone):
-            raise ValueError(
-                "Please enter a valid Canadian or US phone number."
-            )
+            raise ValueError("Please enter a valid Canadian or US phone number.")
 
         digits = re.sub(r"\D", "", phone)
 
         if len(digits) == 11 and digits.startswith("1"):
             digits = digits[1:]
         elif len(digits) != 10:
-            raise ValueError(
-                "Please enter a valid 10-digit phone number."
-            )
+            raise ValueError("Please enter a valid 10-digit phone number.")
 
         if digits[0] not in "23456789" or digits[3] not in "23456789":
-            raise ValueError(
-                "Please enter a valid Canadian or US phone number."
-            )
+            raise ValueError("Please enter a valid Canadian or US phone number.")
 
         return phone
 
@@ -101,10 +94,7 @@ def create_client(client: ClientCreate):
     except UniqueViolation:
         raise HTTPException(
             status_code=409,
-            detail=(
-                "A client with this email or phone number "
-                "already exists."
-            ),
+            detail=("A client with this email or phone number already exists."),
         )
 
 
