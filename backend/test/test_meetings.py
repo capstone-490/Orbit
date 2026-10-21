@@ -224,7 +224,10 @@ def test_list_meetings_for_client(mock_db):
         (1,),
     )
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 610e8c5 (adding http rest api tests and testing if signing is working)
 =======
 
 >>>>>>> 2bd0cf2 (testing commit verification)
+=======
+>>>>>>> 327a269 (reverting last change)
