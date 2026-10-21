@@ -79,10 +79,4 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
 
-    #   - name: SonarQube Scan
-    #     uses: SonarSource/sonarqube-scan-action@v8.3.0
-    #     env:
-    #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    #       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-    #     with:
-    #       projectBaseDir: backend
+   
