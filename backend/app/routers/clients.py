@@ -20,12 +20,6 @@ class ClientCreate(BaseModel):
     address: str | None = None
     date_of_birth: date | None = None
     occupation: str | None = None
-    risk_tolerance: Literal[
-        "Conservative", "Moderate", "Aggressive"
-    ] | None = None
-    target_retirement_age: int | None = Field(
-        default=None, ge=0, le=120
-    )
     timeline: (
         Literal[
             "Corporate Introduction",
@@ -75,8 +69,6 @@ def create_client(client: ClientCreate):
         "address",
         "date_of_birth",
         "occupation",
-        "risk_tolerance",
-        "target_retirement_age",
         "timeline",
     ):
         if data[field] == "":
@@ -88,14 +80,12 @@ def create_client(client: ClientCreate):
                 """
                 INSERT INTO clients (
                     name, email, phone_number, address,
-                    date_of_birth, occupation, risk_tolerance,
-                    target_retirement_age, timeline
+                    date_of_birth, occupation, timeline
                 )
                 VALUES (
                     %(name)s, %(email)s, %(phone_number)s,
                     %(address)s, %(date_of_birth)s,
-                    %(occupation)s, %(risk_tolerance)s,
-                    %(target_retirement_age)s, %(timeline)s
+                    %(occupation)s, %(timeline)s
                 )
                 RETURNING id
                 """,
@@ -126,7 +116,6 @@ def list_clients():
             """
             SELECT id, name, email, phone_number,
                    address, date_of_birth, occupation,
-                   risk_tolerance, target_retirement_age,
                    timeline, created_at
             FROM clients
             ORDER BY created_at DESC, id DESC

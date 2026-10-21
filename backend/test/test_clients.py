@@ -20,8 +20,6 @@ COLUMNS = [
     "address",
     "date_of_birth",
     "occupation",
-    "risk_tolerance",
-    "target_retirement_age",
     "timeline",
     "created_at",
 ]
@@ -88,9 +86,6 @@ def test_create_client_missing_required_field(mock_db, missing_field):
         ("name", ""),
         ("email", "not-an-email"),
         ("phone_number", ""),
-        ("target_retirement_age", -1),
-        ("target_retirement_age", 121),
-        ("risk_tolerance", "Unknown"),
     ],
 )
 def test_create_client_invalid_fields(mock_db, field, value):
@@ -141,8 +136,6 @@ def test_create_client_optional_fields(mock_db):
     assert params["address"] is None
     assert params["date_of_birth"] is None
     assert params["occupation"] is None
-    assert params["risk_tolerance"] is None
-    assert params["target_retirement_age"] is None
     assert params["timeline"] is None
 
 
@@ -176,8 +169,6 @@ def test_list_clients(mock_db):
             "Alice Smith",
             "alice@example.com",
             "514-555-1234",
-            None,
-            None,
             None,
             None,
             None,
