@@ -8,9 +8,10 @@ Usage:
     python poc_agent.py meeting.mp3 --model qwen2.5:3b
     python poc_agent.py sample_input.txt --ctx 8192   # larger context window (uses more RAM)
 
-Output: <input>.out.json  +  a benchmark summary printed to the console.
+Output: poc/results/<input hash>.out.json  +  a benchmark summary printed to the console.
 """
 import argparse
+import hashlib
 import json
 import platform
 import sys
@@ -21,6 +22,7 @@ import requests
 
 OLLAMA_URL = "http://localhost:11434/api/chat"
 INPUT_ROOT = Path.cwd().resolve()
+OUTPUT_ROOT = Path(__file__).resolve().parent / "results"
 
 SYSTEM_PROMPT = """You are a data-processing agent for financial advisor meeting notes.
 Read the input text and return ONLY valid JSON with exactly these keys:
@@ -54,11 +56,11 @@ def _resolve_input_path(path: Path) -> Path:
 
 
 def _output_path(path: Path, suffix: str) -> Path:
-    output = path.with_suffix(suffix)
-    resolved = output.resolve(strict=False)
-    if not resolved.is_relative_to(INPUT_ROOT):
-        raise ValueError(f"Output must remain below {INPUT_ROOT}")
-    return resolved
+    """Build an output path without using user-controlled path components."""
+    if suffix not in {".transcript.txt", ".out.json"}:
+        raise ValueError(f"Unsupported output suffix: {suffix}")
+    digest = hashlib.sha256(str(path).encode("utf-8")).hexdigest()
+    return OUTPUT_ROOT / f"{digest}{suffix}"
 
 
 def ingest(path: Path) -> str:
@@ -114,6 +116,7 @@ def main():
         ap.error(str(exc))
 
     text = ingest(path)
+    OUTPUT_ROOT.mkdir(parents=True, exist_ok=True)
     transcript.write_text(text, encoding="utf-8")
     print(f"[ingest] {len(text)} characters")
 
