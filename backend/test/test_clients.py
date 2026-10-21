@@ -5,10 +5,11 @@ import pytest
 from fastapi.testclient import TestClient
 from psycopg.errors import UniqueViolation
 
-import main
-from main import ClientCreate
+from app.main import app
+from app.routers import clients
+from app.routers.clients import ClientCreate
 
-client = TestClient(main.app)
+client = TestClient(app)
 
 COLUMNS = [
     "id",
@@ -18,8 +19,6 @@ COLUMNS = [
     "address",
     "date_of_birth",
     "occupation",
-    "risk_tolerance",
-    "target_retirement_age",
     "timeline",
     "created_at",
 ]
@@ -33,7 +32,7 @@ def mock_db(monkeypatch):
     conn.__enter__.return_value = conn
     conn.cursor.return_value.__enter__.return_value = cursor
 
-    monkeypatch.setattr(main, "get_connection", lambda: conn)
+    monkeypatch.setattr(clients, "get_connection", lambda: conn)
 
     return cursor
 
@@ -86,9 +85,6 @@ def test_create_client_missing_required_field(mock_db, missing_field):
         ("name", ""),
         ("email", "not-an-email"),
         ("phone_number", ""),
-        ("target_retirement_age", -1),
-        ("target_retirement_age", 121),
-        ("risk_tolerance", "Unknown"),
     ],
 )
 def test_create_client_invalid_fields(mock_db, field, value):
@@ -139,8 +135,6 @@ def test_create_client_optional_fields(mock_db):
     assert params["address"] is None
     assert params["date_of_birth"] is None
     assert params["occupation"] is None
-    assert params["risk_tolerance"] is None
-    assert params["target_retirement_age"] is None
     assert params["timeline"] is None
 
 
@@ -174,8 +168,6 @@ def test_list_clients(mock_db):
             "Alice Smith",
             "alice@example.com",
             "514-555-1234",
-            None,
-            None,
             None,
             None,
             None,

@@ -222,8 +222,6 @@ describe('US-16: Add client', () => {
       email: 'charlie@example.com',
       phone_number: '514-555-3333',
       address: null,
-      risk_tolerance: null,
-      target_retirement_age: null,
     })
 
     expect(fetch).toHaveBeenCalledTimes(3)

@@ -23,8 +23,6 @@ const emptyClient = {
   address: '',
   date_of_birth: '',
   occupation: '',
-  risk_tolerance: '',
-  target_retirement_age: '',
   timeline: '',
 }
 
@@ -105,10 +103,6 @@ function Clients() {
       address: newClient.address.trim() || null,
       date_of_birth: newClient.date_of_birth || null,
       occupation: newClient.occupation.trim() || null,
-      risk_tolerance: newClient.risk_tolerance || null,
-      target_retirement_age: newClient.target_retirement_age
-        ? Number(newClient.target_retirement_age)
-        : null,
       timeline: newClient.timeline || null,
     }
 
@@ -334,32 +328,6 @@ function Clients() {
                     type="text"
                     name="occupation"
                     value={newClient.occupation}
-                    onChange={handleClientChange}
-                  />
-                </label>
-
-                <label>
-                  Risk Tolerance
-                  <select
-                    name="risk_tolerance"
-                    value={newClient.risk_tolerance}
-                    onChange={handleClientChange}
-                  >
-                    <option value="">Select risk tolerance</option>
-                    <option value="Conservative">Conservative</option>
-                    <option value="Moderate">Moderate</option>
-                    <option value="Aggressive">Aggressive</option>
-                  </select>
-                </label>
-
-                <label>
-                  Target Retirement Age
-                  <input
-                    type="number"
-                    name="target_retirement_age"
-                    min="0"
-                    max="120"
-                    value={newClient.target_retirement_age}
                     onChange={handleClientChange}
                   />
                 </label>
