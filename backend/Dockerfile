@@ -25,4 +25,4 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 EXPOSE 8001
 
-CMD ["sh", "-c", "python manage.py migrate && fastapi run app/main.py --host 0.0.0.0 --port 8001"]
+CMD ["sh", "-c", "python manage.py migrate && python load_feature_flags.py && fastapi run app/main.py --host 0.0.0.0 --port 8001"]

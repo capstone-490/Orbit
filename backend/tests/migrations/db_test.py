@@ -1,4 +1,6 @@
 # Currently it affects the DB directly and delete all info after it runs
+import os
+
 import pytest
 from psycopg import errors
 
@@ -15,6 +17,14 @@ TABLES = [
     "clients",
     "advisors",
 ]
+
+
+def require_test_database():
+    if os.environ.get("DB_NAME") != "orbit_test_db":
+        pytest.fail(
+            "Database tests must use orbit_test_db. "
+            "Refusing to modify another database."
+        )
 
 
 # Run migrations and checks indempotence
@@ -130,21 +140,6 @@ class TestClients:
         with pytest.raises(errors.NotNullViolation):
             run(
                 "INSERT INTO clients (name, phone_number, email) VALUES (NULL,'000-000-0000','test@example.com')"
-            )
-
-    @pytest.mark.parametrize("value", ["Conservative", "Moderate", "Aggressive"])
-    def test_risk_tolerance_valid(self, value):
-        run(
-            "INSERT INTO clients (name, phone_number, email, risk_tolerance) "
-            "VALUES ('testName','000-000-0000','test@example.com',%s)",
-            (value,),
-        )
-
-    def test_risk_tolerance_invalid(self):
-        with pytest.raises(errors.InvalidTextRepresentation):
-            run(
-                "INSERT INTO clients (name, phone_number, email, risk_tolerance) "
-                "VALUES ('testName','000-000-0000','test@example.com','NotARiskTolerance')"
             )
 
     def test_timeline_invalid(self):

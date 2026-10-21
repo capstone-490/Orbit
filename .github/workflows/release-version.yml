@@ -50,7 +50,7 @@ jobs:
           default_bump: patch
           release_branches: main
           dry_run: true
-      
+
       - name: Maintain Single Rolling Draft Release
         if: >-
           inputs.publish_mode == 'draft' &&
@@ -81,8 +81,8 @@ jobs:
             --target "$TARGET_SHA" \
             "${NOTES_ARGS[@]}"
 
-      
-    
+
+
       # PUBLISH MODE on manual run
       # finds pending draft release (or explicit target_tag), publishes it
       - name: Determine Tag for Manual Release
@@ -139,7 +139,7 @@ jobs:
         run: |
           if [ -n "$ITERATION_INPUT" ]; then
             ITER="$ITERATION_INPUT"
-            
+
           # fetch active iteration via gh cli
           elif command -v gh >/dev/null 2>&1; then
             TODAY_EST=$(TZ="America/New_York" date +%Y-%m-%d)
@@ -199,7 +199,7 @@ jobs:
           draft: false
           prerelease: false
           generate_release_notes: true
-      
+
       - name: Tag and Push Iteration
         if: ${{ inputs.publish_mode == 'publish' && steps.resolve-iter.outputs.iter_tag != '' }}
         env:

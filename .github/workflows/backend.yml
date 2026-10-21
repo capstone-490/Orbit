@@ -69,7 +69,7 @@ jobs:
         run: |
           uv run alembic upgrade head
           uv run pytest --cov=. --cov-report=xml:coverage.xml --cov-report=term-missing
-        
+
       - name: Upload Backend Coverage to Codecov
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
