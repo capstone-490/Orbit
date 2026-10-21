@@ -41,4 +41,3 @@ def test_list_meetings_empty(mock_db):
                 """,
         (1,),
     )
-
