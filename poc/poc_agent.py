@@ -14,6 +14,7 @@ import argparse
 import hashlib
 import json
 import platform
+import re
 import sys
 import time
 from pathlib import Path
@@ -46,21 +47,53 @@ Rules:
 - Do not invent information that is not in the text.
 - Do not add a year. Write dates as the text does, such as "October 21" or "Friday"."""
 
+_SHA256_HEX = re.compile(r"[0-9a-f]{64}")
+_ALLOWED_OUTPUT_SUFFIXES = {".transcript.txt", ".out.json"}
+
 
 def _resolve_input_path(path: Path) -> Path:
-    """Resolve an input path and keep it within the current working directory."""
+    """Resolve an input file below the working directory.
+
+    The returned path is rebuilt segment by segment from the actual directory
+    listing, so it never carries user-supplied text straight into file access.
+    """
     resolved = path.resolve(strict=True)
     if not resolved.is_file() or not resolved.is_relative_to(INPUT_ROOT):
         raise ValueError(f"Input must be a file below {INPUT_ROOT}")
-    return resolved
+
+    current = INPUT_ROOT
+    for part in resolved.relative_to(INPUT_ROOT).parts:
+        match = next((child for child in current.iterdir() if child.name == part), None)
+        if match is None:
+            raise ValueError(f"Input must be a file below {INPUT_ROOT}")
+        current = match
+
+    if not current.is_file():
+        raise ValueError(f"Input must be a file below {INPUT_ROOT}")
+    return current
 
 
 def _output_path(path: Path, suffix: str) -> Path:
     """Build an output path without using user-controlled path components."""
-    if suffix not in {".transcript.txt", ".out.json"}:
+    if suffix not in _ALLOWED_OUTPUT_SUFFIXES:
         raise ValueError(f"Unsupported output suffix: {suffix}")
     digest = hashlib.sha256(str(path).encode("utf-8")).hexdigest()
-    return OUTPUT_ROOT / f"{digest}{suffix}"
+    if not _SHA256_HEX.fullmatch(digest):
+        raise ValueError("Unexpected digest format")
+    candidate = OUTPUT_ROOT / f"{digest}{suffix}"
+    if candidate.parent != OUTPUT_ROOT:
+        raise ValueError("Output must be written directly inside the results directory")
+    return candidate
+
+
+def _write_output(target: Path, content: str) -> None:
+    """Write content to a pre-validated output path.
+
+    The path is only used to open the file; the content goes through the file
+    handle, so file content never reaches a path-taking call.
+    """
+    with target.open("w", encoding="utf-8") as fh:
+        fh.write(content)
 
 
 def ingest(path: Path) -> str:
@@ -117,15 +150,14 @@ def main():
 
     text = ingest(path)
     OUTPUT_ROOT.mkdir(parents=True, exist_ok=True)
-    transcript.write_text(text, encoding="utf-8")
+    _write_output(transcript, text)
     print(f"[ingest] {len(text)} characters")
 
     t0 = time.time()
     result, raw = process(text, args.model, args.ctx)
     wall = time.time() - t0
 
-    out = output
-    out.write_text(json.dumps(result, indent=2), encoding="utf-8")
+    _write_output(output, json.dumps(result, indent=2))
 
     # Benchmark numbers for the findings write-up
     tok = raw.get("eval_count", 0)
@@ -138,7 +170,7 @@ def main():
     print(f"output tokens  : {tok}")
     print(f"speed          : {tok_s:.1f} tokens/sec")
     print(f"wall time      : {wall:.1f}s")
-    print(f"output file    : {out}")
+    print(f"output file    : {output}")
     print("Also run `ollama ps` in another terminal to see RAM/VRAM used.")
 
 
