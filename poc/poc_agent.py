@@ -58,7 +58,7 @@ def _output_path(path: Path, suffix: str) -> Path:
     resolved = output.resolve(strict=False)
     if not resolved.is_relative_to(INPUT_ROOT):
         raise ValueError(f"Output must remain below {INPUT_ROOT}")
-    return output
+    return resolved
 
 
 def ingest(path: Path) -> str:
