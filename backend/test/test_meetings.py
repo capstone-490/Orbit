@@ -1,8 +1,13 @@
+<<<<<<< HEAD
 from types import SimpleNamespace
+=======
+from datetime import UTC
+>>>>>>> 610e8c5 (adding http rest api tests and testing if signing is working)
 from unittest.mock import MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
+<<<<<<< HEAD
 
 from app.main import app
 from app.routers import meetings
@@ -19,6 +24,14 @@ def CreateMeeting(advisor_id, client_id, meeting_date, completion_status):
         "completion_status": completion_status,
     }
 
+=======
+from psycopg.errors import UniqueViolation
+
+import main
+from main import ClientCreate
+
+client = TestClient(main.app)
+>>>>>>> 610e8c5 (adding http rest api tests and testing if signing is working)
 
 @pytest.fixture
 def mock_db(monkeypatch):
@@ -28,19 +41,28 @@ def mock_db(monkeypatch):
     conn.__enter__.return_value = conn
     conn.cursor.return_value.__enter__.return_value = cursor
 
+<<<<<<< HEAD
     monkeypatch.setattr(meetings, "get_connection", lambda: conn)
+=======
+    monkeypatch.setattr(main, "get_connection", lambda: conn)
+>>>>>>> 610e8c5 (adding http rest api tests and testing if signing is working)
 
     return cursor
 
 
 def test_list_meetings_empty(mock_db):
     mock_db.fetchall.return_value = []
+<<<<<<< HEAD
+=======
+    mock_db.description = [MagicMock(name="id"), MagicMock(name="client_id"), MagicMock(name="advisor_id"), MagicMock(name="meeting_date"), MagicMock(name="completion_status")]
+>>>>>>> 610e8c5 (adding http rest api tests and testing if signing is working)
 
     response = client.get("/meetings/1")
 
     assert response.status_code == 200
     assert response.json() == []
 
+<<<<<<< HEAD
     mock_db.execute.assert_called_once()
     query, params = mock_db.execute.call_args.args
 
@@ -191,3 +213,14 @@ def test_list_meetings_for_client(mock_db):
     assert "SELECT id, client_id, advisor_id, meeting_date, completion_status" in query
     assert params["advisor_id"] == 1
     assert params["client_id"] == 1
+=======
+    mock_db.execute.assert_called_once_with(
+        """
+                SELECT id, client_id, advisor_id, meeting_date, completion_status
+                FROM meetings
+                WHERE advisor_id = %s
+                ORDER BY meeting_date DESC, id DESC
+                """,
+        (1,),
+    )
+>>>>>>> 610e8c5 (adding http rest api tests and testing if signing is working)
