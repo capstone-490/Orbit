@@ -23,6 +23,9 @@ COPY manage.py /backend/manage.py
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-build
 
+RUN addgroup --system app && adduser --system --ingroup app app
+USER app
+
 EXPOSE 8001
 
 CMD ["sh", "-c", "python manage.py migrate && python load_feature_flags.py && fastapi run app/main.py --host 0.0.0.0 --port 8001"]
