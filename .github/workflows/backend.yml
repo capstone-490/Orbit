@@ -52,11 +52,11 @@ jobs:
      
       - name: Lint & Formatting (Ruff)
         run: |
-          uv run ruff check .
-          uv run ruff format --check .
+          uv run --locked --no-build ruff check .
+          uv run --locked --no-build ruff format --check .
 
       - name: Static Type Check (Mypy)
-        run: uv run mypy .
+        run: uv run --locked --no-build mypy .
 
       - name: Run Migrations & Pytest Coverage
         env:
@@ -67,8 +67,8 @@ jobs:
           DB_HOST: 127.0.0.1
           DB_PORT: 5432
         run: |
-          uv run alembic upgrade head
-          uv run pytest --cov=. --cov-report=xml:coverage.xml --cov-report=term-missing
+          uv run --locked --no-build alembic upgrade head
+          uv run --locked --no-build pytest --cov=. --cov-report=xml:coverage.xml --cov-report=term-missing
 
       - name: Upload Backend Coverage to Codecov
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
