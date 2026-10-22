@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+
+>>>>>>> 0b70d36 (used ruff to fix formatting issues)
 from fastapi import APIRouter
 
 from app.db.db import get_connection

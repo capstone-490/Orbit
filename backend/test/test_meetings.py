@@ -1,12 +1,17 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 from types import SimpleNamespace
 =======
 from datetime import UTC
 >>>>>>> 610e8c5 (adding http rest api tests and testing if signing is working)
+=======
+>>>>>>> 0b70d36 (used ruff to fix formatting issues)
 from unittest.mock import MagicMock
 
+import main
 import pytest
 from fastapi.testclient import TestClient
+<<<<<<< HEAD
 <<<<<<< HEAD
 
 from app.main import app
@@ -29,6 +34,8 @@ from psycopg.errors import UniqueViolation
 
 import main
 from main import ClientCreate
+=======
+>>>>>>> 0b70d36 (used ruff to fix formatting issues)
 
 client = TestClient(main.app)
 >>>>>>> 610e8c5 (adding http rest api tests and testing if signing is working)
