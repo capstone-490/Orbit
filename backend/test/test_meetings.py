@@ -1,12 +1,8 @@
-from datetime import UTC
 from unittest.mock import MagicMock
 
+import main
 import pytest
 from fastapi.testclient import TestClient
-from psycopg.errors import UniqueViolation
-
-import main
-from main import ClientCreate
 
 client = TestClient(main.app)
 

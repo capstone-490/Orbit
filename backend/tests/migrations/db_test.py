@@ -2,10 +2,9 @@
 import os
 
 import pytest
-from psycopg import errors
-
 from app.db.db import get_connection
 from migrations.migrate import migrate
+from psycopg import errors
 
 TABLES = [
     "password_reset_tokens",

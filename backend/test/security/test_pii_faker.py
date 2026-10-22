@@ -1,6 +1,5 @@
 import pytest
 from faker import Faker
-
 from security.redactor import redact_data
 
 

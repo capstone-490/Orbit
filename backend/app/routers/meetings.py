@@ -1,10 +1,5 @@
-import re
-from datetime import date
-from typing import Literal
 
-from fastapi import APIRouter, HTTPException
-from psycopg.errors import UniqueViolation
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from fastapi import APIRouter
 
 from app.db.db import get_connection
 
