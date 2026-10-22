@@ -36,10 +36,14 @@ from main import ClientCreate
 =======
 >>>>>>> 0b70d36 (used ruff to fix formatting issues)
 
-from app.main import main
+from app.main import app
 
+<<<<<<< HEAD
 client = TestClient(main.app)
 >>>>>>> 610e8c5 (adding http rest api tests and testing if signing is working)
+=======
+client = TestClient(app)
+>>>>>>> 1aef9be (fixed small issue)
 
 
 @pytest.fixture
