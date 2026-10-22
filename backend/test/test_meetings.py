@@ -3,9 +3,9 @@ from unittest.mock import MagicMock
 import pytest
 from fastapi.testclient import TestClient
 
-from app.main import main
+from app.main import app
 
-client = TestClient(main.app)
+client = TestClient(app)
 
 
 @pytest.fixture
