@@ -33,6 +33,7 @@ from main import ClientCreate
 client = TestClient(main.app)
 >>>>>>> 610e8c5 (adding http rest api tests and testing if signing is working)
 
+
 @pytest.fixture
 def mock_db(monkeypatch):
     conn = MagicMock()
@@ -53,9 +54,19 @@ def mock_db(monkeypatch):
 def test_list_meetings_empty(mock_db):
     mock_db.fetchall.return_value = []
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
     mock_db.description = [MagicMock(name="id"), MagicMock(name="client_id"), MagicMock(name="advisor_id"), MagicMock(name="meeting_date"), MagicMock(name="completion_status")]
 >>>>>>> 610e8c5 (adding http rest api tests and testing if signing is working)
+=======
+    mock_db.description = [
+        MagicMock(name="id"),
+        MagicMock(name="client_id"),
+        MagicMock(name="advisor_id"),
+        MagicMock(name="meeting_date"),
+        MagicMock(name="completion_status"),
+    ]
+>>>>>>> e3e9a9c (changed formatting using ruff and moved things around)
 
     response = client.get("/meetings/1")
 
