@@ -10,6 +10,7 @@ from main import ClientCreate
 
 client = TestClient(main.app)
 
+
 @pytest.fixture
 def mock_db(monkeypatch):
     conn = MagicMock()
@@ -25,7 +26,13 @@ def mock_db(monkeypatch):
 
 def test_list_meetings_empty(mock_db):
     mock_db.fetchall.return_value = []
-    mock_db.description = [MagicMock(name="id"), MagicMock(name="client_id"), MagicMock(name="advisor_id"), MagicMock(name="meeting_date"), MagicMock(name="completion_status")]
+    mock_db.description = [
+        MagicMock(name="id"),
+        MagicMock(name="client_id"),
+        MagicMock(name="advisor_id"),
+        MagicMock(name="meeting_date"),
+        MagicMock(name="completion_status"),
+    ]
 
     response = client.get("/meetings/1")
 
