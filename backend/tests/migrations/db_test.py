@@ -160,6 +160,67 @@ class TestClients:
         assert count("clients") == 0
 
 
+class TestMeetings:
+    def test_insert_valid(self):
+        cid = make_client()
+        aid = make_advisor()
+        run(
+            "INSERT INTO meetings (client_id, advisor_id, meeting_date) "
+            "VALUES (%s,%s,NOW())",
+            (cid, aid),
+        )
+
+    def test_completion_status_invalid(self):
+        cid = make_client()
+        aid = make_advisor()
+        with pytest.raises(errors.InvalidTextRepresentation):
+            run(
+                "INSERT INTO meetings (client_id, advisor_id, meeting_date, completion_status) "
+                "VALUES (%s,%s,NOW(),'NotAStatus')",
+                (cid, aid),
+            )
+
+    def test_fk_invalid_client(self):
+        aid = make_advisor()
+        with pytest.raises(errors.ForeignKeyViolation):
+            run(
+                "INSERT INTO meetings (client_id, advisor_id, meeting_date) "
+                "VALUES (10000,%s,NOW())",
+                (aid,),
+            )
+
+    def test_fk_invalid_advisor(self):
+        cid = make_client()
+        with pytest.raises(errors.ForeignKeyViolation):
+            run(
+                "INSERT INTO meetings (client_id, advisor_id, meeting_date) "
+                "VALUES (%s, 10000, NOW())",
+                (cid,),
+            )
+
+    def test_cascade_delete_client(self):
+        cid = make_client()
+        aid = make_advisor()
+        run(
+            "INSERT INTO meetings (client_id, advisor_id, meeting_date) "
+            "VALUES (%s,%s,NOW())",
+            (cid, aid),
+        )
+        run("DELETE FROM clients WHERE id=%s", (cid,))
+        assert count("meetings") == 0
+
+    def test_cascade_delete_advisor(self):
+        cid = make_client()
+        aid = make_advisor()
+        run(
+            "INSERT INTO meetings (client_id, advisor_id, meeting_date) "
+            "VALUES (%s,%s,NOW())",
+            (cid, aid),
+        )
+        run("DELETE FROM advisors WHERE id=%s", (aid,))
+        assert count("meetings") == 0
+
+
 class TestDocuments:
     def test_default_status_is_unsent(self):
         cid = make_client()
