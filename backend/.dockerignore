@@ -13,3 +13,7 @@ coverage.xml
 .gitignore
 .env
 *.log
+*.env
+*.pem
+*.key
+*secret*

@@ -1,6 +1,6 @@
 FROM python:3.14-slim
 
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:0.9.5 /uv /uvx /bin/
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -14,11 +14,17 @@ WORKDIR /backend
 # install dependencies first
 COPY pyproject.toml uv.lock .python-version ./
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-install-project
+    uv sync --frozen --no-build --no-install-project
 
-COPY . /backend/
+COPY app /backend/app
+COPY migrations /backend/migrations
+COPY security /backend/security
+COPY manage.py /backend/manage.py
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen
+    uv sync --frozen --no-build
+
+RUN addgroup --system app && adduser --system --ingroup app app
+USER app
 
 EXPOSE 8001
 

@@ -142,21 +142,6 @@ class TestClients:
                 "INSERT INTO clients (name, phone_number, email) VALUES (NULL,'000-000-0000','test@example.com')"
             )
 
-    @pytest.mark.parametrize("value", ["Conservative", "Moderate", "Aggressive"])
-    def test_risk_tolerance_valid(self, value):
-        run(
-            "INSERT INTO clients (name, phone_number, email, risk_tolerance) "
-            "VALUES ('testName','000-000-0000','test@example.com',%s)",
-            (value,),
-        )
-
-    def test_risk_tolerance_invalid(self):
-        with pytest.raises(errors.InvalidTextRepresentation):
-            run(
-                "INSERT INTO clients (name, phone_number, email, risk_tolerance) "
-                "VALUES ('testName','000-000-0000','test@example.com','NotARiskTolerance')"
-            )
-
     def test_timeline_invalid(self):
         with pytest.raises(errors.InvalidTextRepresentation):
             run(

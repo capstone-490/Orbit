@@ -120,8 +120,6 @@ def create_clients_table():
                     address TEXT,
                     date_of_birth DATE,
                     occupation TEXT,
-                    risk_tolerance risk_tolerance,
-                    target_retirement_age INT,
                     timeline timeline,
                     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -316,9 +314,18 @@ def create_audit_log_table():
         conn.commit()
 
 
+def remove_unused_client_fields():
+    with get_connection() as conn:
+        conn.execute("""
+            ALTER TABLE clients
+                DROP COLUMN IF EXISTS risk_tolerance,
+                DROP COLUMN IF EXISTS target_retirement_age;
+        """)
+        conn.commit()
+
+
 def migrate():
     # Enums
-    create_risk_tolerance_enum()
     create_risk_tolerance_enum()
     create_timeline_enum()
     create_document_status_enum()
@@ -331,6 +338,7 @@ def migrate():
     create_advisors_table()
     create_clients_table()
     create_meetings_table()
+    remove_unused_client_fields()
     create_documents_table()
     create_goals_table()
     create_agents_table()
