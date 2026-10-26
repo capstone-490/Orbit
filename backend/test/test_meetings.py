@@ -271,6 +271,7 @@ def test_list_meetings_for_client(mock_db):
     assert "SELECT id, client_id, advisor_id, meeting_date, completion_status" in query
     assert params["advisor_id"] == 1
     assert params["client_id"] == 1
+<<<<<<< HEAD
 =======
     mock_db.execute.assert_called_once_with(
         """
@@ -372,3 +373,5 @@ def test_list_meetings_for_client(mock_db):
     assert params["advisor_id"] == 1
     assert params["client_id"] == 1
 >>>>>>> 6bf19b5 (finished adding tests for meetings)
+=======
+>>>>>>> 6fb07ea (ruff formatting)
