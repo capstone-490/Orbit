@@ -2,7 +2,7 @@
 
 A review must provide sufficient technical evidence:
 
-- \>=1 technical question, concern, suggestion **OR**
+- At least 1 technical question, concern, suggestion **OR**
 - A requested change on correctness, testing, security, error handling, architecture, maintainability, or another relevant property
 - A reviewer approves and leaves a comment describing >=1 aspect checked, even when no change is required
 
@@ -44,20 +44,20 @@ Contributors: @
 
 ## 4. Responsible Use of AI Disclosure
 
-**AI Contribution Level for this PR (Select ONE):**
+**AI Contribution Level:**
 
 - [ ] No substantial AI-generated code
 - [ ] Below 50% AI-generated
 - [ ] 50% or more AI-generated
 
-**AI-Assisted Source Files in this PR:**
+**AI-Assisted source files:**
 
 - `none` <!-- or list files, e.g., src/auth/service.ts -->
 
 **AI Compliance Checklist:**
 
 - [ ] Every modified source file contains the required AI-contribution declaration header at the top of the file.
-- [ ] If substantial AI assistance was used, updated `AI_USAGE.md` with the feature, verification method (test/review), and any corrections made to AI output
+- [ ] If substantial AI assistance was used, updated `AI_USAGE.md` with the feature, and includes evidence showing how the AI code was verified (test/substantive review comment), and any corrections made to AI output
 
 ## Notes for Reviewers
 
