@@ -13,12 +13,16 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
+<<<<<<< HEAD
 from fastapi.testclient import TestClient
 <<<<<<< HEAD
 <<<<<<< HEAD
 
+=======
+>>>>>>> 6cbe5a7 (ruff formatting)
 from app.main import app
 from app.routers import meetings
+from fastapi.testclient import TestClient
 
 client = TestClient(app)
 
