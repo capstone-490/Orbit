@@ -195,6 +195,7 @@ def test_list_scheduled_meetings(mock_db):
     query, params = mock_db.execute.call_args.args
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     assert "SELECT id, client_id, advisor_id, meeting_date, completion_status" in query
     assert params["advisor_id"] == 1
 
@@ -293,6 +294,9 @@ def test_list_meetings_for_client(mock_db):
         "SELECT id, client_id, advisor_id, meeting_date, completion_status"
         in query
     )
+=======
+    assert "SELECT id, client_id, advisor_id, meeting_date, completion_status" in query
+>>>>>>> d856ac5 (ruff formatting)
     assert params["advisor_id"] == 1
 
 
@@ -324,10 +328,7 @@ def test_list_completed_meetings(mock_db):
     mock_db.execute.assert_called_once()
     query, params = mock_db.execute.call_args.args
 
-    assert (
-        "SELECT id, client_id, advisor_id, meeting_date, completion_status"
-        in query
-    )
+    assert "SELECT id, client_id, advisor_id, meeting_date, completion_status" in query
     assert params["advisor_id"] == 1
 
 
@@ -367,10 +368,7 @@ def test_list_meetings_for_client(mock_db):
     mock_db.execute.assert_called_once()
     query, params = mock_db.execute.call_args.args
 
-    assert (
-        "SELECT id, client_id, advisor_id, meeting_date, completion_status"
-        in query
-    )
+    assert "SELECT id, client_id, advisor_id, meeting_date, completion_status" in query
     assert params["advisor_id"] == 1
     assert params["client_id"] == 1
 >>>>>>> 6bf19b5 (finished adding tests for meetings)
