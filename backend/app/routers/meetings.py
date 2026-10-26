@@ -12,10 +12,10 @@ def list_meetings(advisor_id: int):
             """
                 SELECT id, client_id, advisor_id, meeting_date, completion_status
                 FROM meetings
-                WHERE advisor_id = %s
+                WHERE advisor_id = %(advisor_id)s
                 ORDER BY meeting_date DESC, id DESC
                 """,
-            (advisor_id,),
+            {"advisor_id": advisor_id},
         )
 
         columns = [column.name for column in cur.description]
@@ -31,10 +31,10 @@ def list_scheduled_meetings(advisor_id: int):
             """
                 SELECT id, client_id, advisor_id, meeting_date, completion_status
                 FROM meetings
-                WHERE advisor_id = %s AND completion_status = 'Scheduled'
+                WHERE advisor_id = %(advisor_id)s AND completion_status = 'Scheduled'
                 ORDER BY meeting_date DESC, id DESC
                 """,
-            (advisor_id,),
+            {"advisor_id": advisor_id},
         )
 
         columns = [column.name for column in cur.description]
@@ -50,10 +50,10 @@ def list_completed_meetings(advisor_id: int):
             """
                 SELECT id, client_id, advisor_id, meeting_date, completion_status
                 FROM meetings
-                WHERE advisor_id = %s AND completion_status = 'Completed'
+                WHERE advisor_id = %(advisor_id)s AND completion_status = 'Completed'
                 ORDER BY meeting_date DESC, id DESC
                 """,
-            (advisor_id,),
+            {"advisor_id": advisor_id},
         )
 
         columns = [column.name for column in cur.description]
@@ -69,10 +69,10 @@ def list_meetings_for_client(advisor_id: int, client_id: int):
             """
                 SELECT id, client_id, advisor_id, meeting_date, completion_status
                 FROM meetings
-                WHERE advisor_id = %s AND client_id = %s
+                WHERE advisor_id = %(advisor_id)s AND client_id = %(client_id)s
                 ORDER BY meeting_date DESC, id DESC
                 """,
-            (advisor_id, client_id),
+            {"advisor_id": advisor_id, "client_id": client_id},
         )
 
         columns = [column.name for column in cur.description]
