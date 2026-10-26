@@ -12,6 +12,7 @@ TABLES = [
     "agents",
     "goals",
     "documents",
+    "tasks",
     "clients",
     "advisors",
 ]
@@ -387,3 +388,76 @@ class TestPasswordResetTokens:
         self._insert(aid, "testHash")
         run("DELETE FROM advisors WHERE id=%s", (aid,))
         assert count("password_reset_tokens") == 0
+
+class TestTasks:
+    def test_insert_valid(self):
+        cid = make_client()
+        task_id = run(
+            "INSERT INTO tasks (title, description, client_id, due_date) "
+            "VALUES ('testTitle', 'testDescription', %s, NOW()) RETURNING id",
+            (cid,),
+            fetch=True,
+        )[0]
+        assert task_id is not None
+
+    def test_client_id_required(self):
+        with pytest.raises(errors.NotNullViolation):
+            run(
+                "INSERT INTO tasks (title, description, client_id, due_date) "
+                "VALUES ('testTitle', 'testDescription', NULL, NOW())"
+            )
+
+    def test_due_date_required(self):
+        cid = make_client()
+        with pytest.raises(errors.NotNullViolation):
+            run(
+                "INSERT INTO tasks (title, description, client_id, due_date) "
+                "VALUES ('testTitle', 'testDescription', %s, NULL)",
+                (cid,),
+            )
+
+    def test_fk_invalid_client(self):
+        with pytest.raises(errors.ForeignKeyViolation):
+            run(
+                "INSERT INTO tasks (title, description, client_id, due_date) "
+                "VALUES ('testTitle', 'testDescription', 100000, NOW())"
+            )
+
+    def test_default_last_contact_date(self):
+        cid = make_client()
+        row = run(
+            "INSERT INTO tasks (title, description, client_id, due_date) "
+            "VALUES ('testTitle', 'testDescription', %s, NOW()) "
+            "RETURNING last_contact_date",
+            (cid,),
+            fetch=True,
+        )
+        assert row[0] is not None
+
+    def test_status_valid(self):
+        cid = make_client()
+        # Replace 'Pending' with a valid value from your task_status enum.
+        run(
+            "INSERT INTO tasks (title, description, client_id, due_date, status) "
+            "VALUES ('testTitle', 'testDescription', %s, NOW(), 'Pending')",
+            (cid,),
+        )
+
+    def test_status_invalid(self):
+        cid = make_client()
+        with pytest.raises(errors.InvalidTextRepresentation):
+            run(
+                "INSERT INTO tasks (title, description, client_id, due_date, status) "
+                "VALUES ('testTitle', 'testDescription', %s, NOW(), 'NotAStatus')",
+                (cid,),
+            )
+
+    def test_cascade_delete_client(self):
+        cid = make_client()
+        run(
+            "INSERT INTO tasks (title, description, client_id, due_date) "
+            "VALUES ('testTitle', 'testDescription', %s, NOW())",
+            (cid,),
+        )
+        run("DELETE FROM clients WHERE id=%s", (cid,))
+        assert count("tasks") == 0
