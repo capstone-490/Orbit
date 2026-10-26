@@ -1,5 +1,4 @@
 import pytest
-
 from security.redactor import (
     redact_data,
     redact_exception,
