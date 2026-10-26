@@ -2,10 +2,9 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
-from fastapi.testclient import TestClient
-
 from app.main import app
 from app.routers import meetings
+from fastapi.testclient import TestClient
 
 client = TestClient(app)
 
