@@ -7,7 +7,6 @@ from app.feature_flags import get_variant
 from app.routers.clients import router as clients_router
 from app.routers.meetings import router as meetings_router
 
-
 app = FastAPI()
 
 app.add_middleware(
