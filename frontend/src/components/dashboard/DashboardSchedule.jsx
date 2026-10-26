@@ -1,6 +1,21 @@
 import '../../styles/DashboardSchedule.css'
 
+const formatShortTime = (timestamp) => {
+  if (!timestamp) return '';
+  const safeString = typeof timestamp === 'string' ? timestamp.replace(' ', 'T') : timestamp;
+  const date = new Date(safeString);
+  if (isNaN(date.getTime())) return '';
+  
+  // Format to 12-hour time and remove spaces (e.g., "10:00 PM" -> "10:00PM")
+  return date.toLocaleTimeString([], { 
+    hour: 'numeric', 
+    minute: '2-digit', 
+    hour12: true 
+  }).replace(/\s+/g, '');
+};
+
 function DashboardSchedule({ scheduleData }) {
+
   return (
     <div className="dashboard-schedule">
       <h2>Today's Schedule & Consultations</h2>
@@ -8,7 +23,7 @@ function DashboardSchedule({ scheduleData }) {
         <div key={item.id || `${item.time}-${item.clientName}`} className="schedule-item">
           <span className="meeting-time">
             <div className={`item-time ${index === 0 ? 'text-blue' : 'item-time'}`}>
-              {item.time}
+              {formatShortTime(item.time)}
             </div>
             <div className="item-duration">{item.duration}</div>
           </span>
@@ -23,7 +38,7 @@ function DashboardSchedule({ scheduleData }) {
             )}
           </span>
           <span className={`item-time ${index === 0 ? 'full-blue' : 'action-button'}`}>
-            {item.actionButton.label}
+            {item.actionButtonLabel}
           </span>
         </div>
       ))}

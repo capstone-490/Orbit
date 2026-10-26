@@ -1,9 +1,12 @@
-import { cleanup, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, test } from 'vitest'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { afterEach, describe, expect, test, vi } from 'vitest'
 import '@testing-library/jest-dom/vitest'
 import DashboardTasks from '../../components/dashboard/DashboardTasks'
 
-afterEach(() => cleanup())
+afterEach(() => {
+  cleanup()
+  vi.unstubAllGlobals()
+})
 
 describe('DashboardTasks Component', () => {
   const mockTasks = [
@@ -53,5 +56,39 @@ describe('DashboardTasks Component', () => {
 
     // Verify the 4th task is excluded due to slice(0, 3)
     expect(screen.queryByText('Extra Task Beyond Limit')).not.toBeInTheDocument()
+  })
+
+  test('shows a message when a task has no assigned client', () => {
+    render(
+      <DashboardTasks
+        priorityTasks={[{ ...mockTasks[0], clientName: null }]}
+      />
+    )
+
+    expect(screen.getByText('No client assigned')).toBeInTheDocument()
+  })
+
+  test('updates task completion through the API and notifies the parent', async () => {
+    const updatedTask = { ...mockTasks[0], completed: true }
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => updatedTask,
+    })
+    const onTaskUpdated = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<DashboardTasks priorityTasks={mockTasks} onTaskUpdated={onTaskUpdated} />)
+    fireEvent.click(screen.getAllByRole('checkbox')[0])
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        'http://localhost:8001/advisors/tasks/1',
+        expect.objectContaining({
+          method: 'PATCH',
+          body: JSON.stringify({ completed: true }),
+        })
+      )
+      expect(onTaskUpdated).toHaveBeenCalledWith(updatedTask)
+    })
   })
 })

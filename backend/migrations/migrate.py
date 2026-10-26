@@ -285,6 +285,63 @@ def remove_unused_client_fields():
         conn.commit()
 
 
+def create_consultations_table():
+    with get_connection() as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS consultations (
+                id SERIAL PRIMARY KEY,
+                client_id INT NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+                advisor_id INT NOT NULL REFERENCES advisors(id) ON DELETE CASCADE,
+                meeting_time TIMESTAMPTZ NOT NULL,
+                duration VARCHAR(50),
+                category VARCHAR(100),
+                agenda TEXT,
+                status_text VARCHAR(100),
+                location_or_platform VARCHAR(150),
+                action_button_label VARCHAR(50),
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+        """)
+        conn.commit()
+
+
+def create_tasks_table():
+    with get_connection() as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS tasks (
+                id SERIAL PRIMARY KEY,
+                advisor_id INT NOT NULL REFERENCES advisors(id) ON DELETE CASCADE,
+                client_id BIGINT REFERENCES clients(id) ON DELETE SET NULL,
+                task_title VARCHAR(255) NOT NULL,
+                due_date DATE NOT NULL,
+                tag VARCHAR(50),
+                completed BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+        """)
+        conn.execute("""
+            ALTER TABLE tasks
+            ADD COLUMN IF NOT EXISTS client_id BIGINT
+        """)
+        conn.execute("""
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1
+                    FROM pg_constraint
+                    WHERE conname = 'fk_tasks_client'
+                      AND conrelid = 'tasks'::regclass
+                ) THEN
+                    ALTER TABLE tasks
+                    ADD CONSTRAINT fk_tasks_client
+                    FOREIGN KEY (client_id) REFERENCES clients(id)
+                    ON DELETE SET NULL;
+                END IF;
+            END
+            $$;
+        """)
+        conn.commit()
+        
 def migrate():
     # Enums
     create_risk_tolerance_enum()
@@ -306,7 +363,8 @@ def migrate():
     create_password_reset_tokens_table()
     create_feature_flags_table()
     create_audit_log_table()
-
+    create_consultations_table()
+    create_tasks_table()
 
 if __name__ == "__main__":
     migrate()
