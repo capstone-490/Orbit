@@ -79,6 +79,7 @@ def mock_db(monkeypatch):
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     monkeypatch.setattr(meetings, "get_connection", lambda: conn)
 =======
     monkeypatch.setattr(main, "get_connection", lambda: conn)
@@ -86,12 +87,16 @@ def mock_db(monkeypatch):
 =======
     monkeypatch.setattr(meetings, "get_connection", lambda: conn)
 >>>>>>> 6bf19b5 (finished adding tests for meetings)
+=======
+    monkeypatch.setattr(app, "get_connection", lambda: conn)
+>>>>>>> d85747f (trying to fix merging issues)
 
     return cursor
 
 
 def test_list_meetings_empty(mock_db):
     mock_db.fetchall.return_value = []
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -109,6 +114,9 @@ def test_list_meetings_empty(mock_db):
 >>>>>>> e3e9a9c (changed formatting using ruff and moved things around)
 =======
 >>>>>>> 6bf19b5 (finished adding tests for meetings)
+=======
+    mock_db.description = [MagicMock(name="id"), MagicMock(name="client_id"), MagicMock(name="advisor_id"), MagicMock(name="meeting_date"), MagicMock(name="completion_status")]
+>>>>>>> d85747f (trying to fix merging issues)
 
     response = client.get("/meetings/1")
 
