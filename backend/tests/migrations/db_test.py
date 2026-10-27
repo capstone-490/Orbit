@@ -159,7 +159,6 @@ class TestClients:
         run("DELETE FROM advisors WHERE id=%s", (aid,))
         assert count("clients") == 0
 
-<<<<<<< HEAD
 
 class TestMeetings:
     def test_insert_valid(self):
@@ -181,25 +180,14 @@ class TestMeetings:
                 (cid, aid),
             )
 
-    def test_fk_invalid_client(self):
-        aid = make_advisor()
+    def test_fk_invalid_client_and_advisor(self):
         with pytest.raises(errors.ForeignKeyViolation):
             run(
                 "INSERT INTO meetings (client_id, advisor_id, meeting_date) "
-                "VALUES (10000,%s,NOW())",
-                (aid,),
+                "VALUES (10000, 10000, NOW())"
             )
 
-    def test_fk_invalid_advisor(self):
-        cid = make_client()
-        with pytest.raises(errors.ForeignKeyViolation):
-            run(
-                "INSERT INTO meetings (client_id, advisor_id, meeting_date) "
-                "VALUES (%s, 10000, NOW())",
-                (cid,),
-            )
-
-    def test_cascade_delete_client(self):
+    def test_cascade_delete_client_and_advisor(self):
         cid = make_client()
         aid = make_advisor()
         run(
@@ -210,141 +198,6 @@ class TestMeetings:
         run("DELETE FROM clients WHERE id=%s", (cid,))
         assert count("meetings") == 0
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-class TestMeetings:
-    def test_insert_valid(self):
-        cid = make_client()
-        aid = make_advisor()
-        run(
-            "INSERT INTO meetings (client_id, advisor_id, meeting_date) "
-            "VALUES (%s,%s,NOW())",
-            (cid, aid),
-        )
-
-    def test_completion_status_invalid(self):
-        cid = make_client()
-        aid = make_advisor()
-        with pytest.raises(errors.InvalidTextRepresentation):
-            run(
-                "INSERT INTO meetings (client_id, advisor_id, meeting_date, completion_status) "
-                "VALUES (%s,%s,NOW(),'NotAStatus')",
-                (cid, aid),
-            )
-
-    def test_fk_invalid_client(self):
-        aid = make_advisor()
-        with pytest.raises(errors.ForeignKeyViolation):
-            run(
-                "INSERT INTO meetings (client_id, advisor_id, meeting_date) "
-                "VALUES (10000,%s,NOW())",
-                (aid,),
-            )
-
-    def test_fk_invalid_advisor(self):
-        cid = make_client()
-        with pytest.raises(errors.ForeignKeyViolation):
-            run(
-                "INSERT INTO meetings (client_id, advisor_id, meeting_date) "
-                "VALUES (%s, 10000, NOW())",
-                (cid,),
-            )
-
-    def test_cascade_delete_client(self):
-        cid = make_client()
-        aid = make_advisor()
-        run(
-            "INSERT INTO meetings (client_id, advisor_id, meeting_date) "
-            "VALUES (%s,%s,NOW())",
-            (cid, aid),
-        )
-        run("DELETE FROM clients WHERE id=%s", (cid,))
-        assert count("meetings") == 0
-
-=======
->>>>>>> 5a000d1 (made changes recommended by Hildthesta)
-    def test_cascade_delete_advisor(self):
-        cid = make_client()
-        aid = make_advisor()
-        run(
-            "INSERT INTO meetings (client_id, advisor_id, meeting_date) "
-            "VALUES (%s,%s,NOW())",
-            (cid, aid),
-        )
-        run("DELETE FROM advisors WHERE id=%s", (aid,))
-        assert count("meetings") == 0
-
-<<<<<<< HEAD
-=======
->>>>>>> eddef59 (added whitespaces for linting)
-=======
->>>>>>> 5a000d1 (made changes recommended by Hildthesta)
-=======
-
-class TestMeetings:
-    def test_insert_valid(self):
-        cid = make_client()
-        aid = make_advisor()
-        run(
-            "INSERT INTO meetings (client_id, advisor_id, meeting_date) "
-            "VALUES (%s,%s,NOW())",
-            (cid, aid),
-        )
-
-    def test_completion_status_invalid(self):
-        cid = make_client()
-        aid = make_advisor()
-        with pytest.raises(errors.InvalidTextRepresentation):
-            run(
-                "INSERT INTO meetings (client_id, advisor_id, meeting_date, completion_status) "
-                "VALUES (%s,%s,NOW(),'NotAStatus')",
-                (cid, aid),
-            )
-
-    def test_fk_invalid_client(self):
-        aid = make_advisor()
-        with pytest.raises(errors.ForeignKeyViolation):
-            run(
-                "INSERT INTO meetings (client_id, advisor_id, meeting_date) "
-                "VALUES (10000,%s,NOW())",
-                (aid,),
-            )
-
-    def test_fk_invalid_advisor(self):
-        cid = make_client()
-        with pytest.raises(errors.ForeignKeyViolation):
-            run(
-                "INSERT INTO meetings (client_id, advisor_id, meeting_date) "
-                "VALUES (%s, 10000, NOW())",
-                (cid,),
-            )
-
-    def test_cascade_delete_client(self):
-        cid = make_client()
-        aid = make_advisor()
-        run(
-            "INSERT INTO meetings (client_id, advisor_id, meeting_date) "
-            "VALUES (%s,%s,NOW())",
-            (cid, aid),
-        )
-        run("DELETE FROM clients WHERE id=%s", (cid,))
-        assert count("meetings") == 0
-
-<<<<<<< HEAD
->>>>>>> 61791a2 (still trying to fix it)
-=======
-    def test_cascade_delete_advisor(self):
-        cid = make_client()
-        aid = make_advisor()
-        run(
-            "INSERT INTO meetings (client_id, advisor_id, meeting_date) "
-            "VALUES (%s,%s,NOW())",
-            (cid, aid),
-        )
-        run("DELETE FROM advisors WHERE id=%s", (aid,))
-        assert count("meetings") == 0
-
->>>>>>> acf7cab (reset branch to earlier commit)
 
 class TestDocuments:
     def test_default_status_is_unsent(self):
