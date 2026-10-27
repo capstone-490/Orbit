@@ -221,7 +221,6 @@ class TestMeetings:
         assert count("meetings") == 0
 
 
-
 class TestDocuments:
     def test_default_status_is_unsent(self):
         cid = make_client()
