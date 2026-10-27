@@ -27,7 +27,7 @@ def test_anonymizer_is_deterministic_without_retaining_raw_values():
     assert first["name"] != "Alice Smith"
     assert first["email"] != "alice@example.com"
     assert first["email"].startswith("client-")
-    assert first["phone_number"].startswith("+1-514-")
+    assert first["phone_number"].startswith("+1-555-")
     assert first["date_of_birth"] != date(1988, 4, 12)
     assert "Alice Smith" not in repr(store.__dict__)
     assert "alice@example.com" not in repr(store.__dict__)
