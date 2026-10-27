@@ -67,7 +67,9 @@ class ClientAnonymizer:
 
     def anonymize(self, client: dict) -> dict:
         result = dict(client)
-        result["name"] = self._value("name", client["name"], lambda token: f"Client {token[:12]}")
+        result["name"] = self._value(
+            "name", client["name"], lambda token: f"Client {token[:12]}"
+        )
         result["email"] = self._value(
             "email", client["email"], lambda token: f"client-{token}@example.com"
         )
@@ -77,17 +79,22 @@ class ClientAnonymizer:
             lambda token: _fake_phone(token),
         )
         result["address"] = self._value(
-            "address", client.get("address"), lambda token: f"Synthetic Address {token[:16]}"
+            "address",
+            client.get("address"),
+            lambda token: f"Synthetic Address {token[:16]}",
         )
         result["occupation"] = self._value(
-            "occupation", client.get("occupation"), lambda token: f"Synthetic Occupation {token[:12]}"
+            "occupation",
+            client.get("occupation"),
+            lambda token: f"Synthetic Occupation {token[:12]}",
         )
         if client.get("date_of_birth"):
             result["date_of_birth"] = self._store.get_or_create(
                 "date_of_birth",
                 str(client["date_of_birth"]),
-                lambda token: date(1960, 1, 1)
-                + timedelta(days=int(token[:6], 16) % (40 * 365)),
+                lambda token: (
+                    date(1960, 1, 1) + timedelta(days=int(token[:6], 16) % (40 * 365))
+                ),
             )
         return result
 
