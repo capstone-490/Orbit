@@ -94,7 +94,7 @@ class ClientAnonymizer:
                 str(client["date_of_birth"]),
                 lambda token: (
                     date(1960, 1, 1) + timedelta(days=int(token[:6], 16) % (40 * 365))
-                ),
+                ).isoformat(),
             )
         return result
 
