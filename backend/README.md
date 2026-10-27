@@ -100,3 +100,12 @@ docker compose run --rm backend pytest -v
 - Hot-reloading is enabled via volume mounting
 - Database credentials are in `docker-compose.yml` (Prob need to remove them in the future from it)
 - Python packages are installed through pip using information contained in requirements.txt
+
+### Client anonymization
+
+Client creation stores deterministic synthetic values for names, contact details,
+addresses, occupations, and dates of birth. The in-memory token store retains only
+HMAC digests and generated values; it never stores the submitted PII. Set
+`ORBIT_ANONYMIZATION_SECRET` to a stable, deployment-managed secret when generated
+values must remain stable across backend restarts. If it is unset, a random process
+secret is used and values change after restart.
