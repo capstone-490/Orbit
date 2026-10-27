@@ -80,6 +80,7 @@ def mock_db(monkeypatch):
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     monkeypatch.setattr(meetings, "get_connection", lambda: conn)
 =======
     monkeypatch.setattr(main, "get_connection", lambda: conn)
@@ -90,6 +91,9 @@ def mock_db(monkeypatch):
 =======
     monkeypatch.setattr(app, "get_connection", lambda: conn)
 >>>>>>> d85747f (trying to fix merging issues)
+=======
+    monkeypatch.setattr(meetings, "get_connection", lambda: conn)
+>>>>>>> 158544f (fixing little error)
 
     return cursor
 
