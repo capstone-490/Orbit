@@ -7,6 +7,7 @@ from psycopg.errors import UniqueViolation
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from app.db.db import get_connection
+from security.anonymizer import client_anonymizer
 
 router = APIRouter(prefix="/clients", tags=["Clients"])
 
@@ -55,7 +56,7 @@ class ClientCreate(BaseModel):
 # Create a new client
 @router.post("", status_code=201)
 def create_client(client: ClientCreate):
-    data = client.model_dump(mode="json")
+    data = client_anonymizer.anonymize(client.model_dump(mode="json"))
 
     # Convert optional blank fields to SQL NULL
     for field in (
