@@ -353,16 +353,18 @@ def migrate():
     create_goal_duration_enum()
     create_assignment_status_enum()
     create_author_type_enum()
-    create_meetings_enum()
 
     # Tables
     create_advisors_table()
     create_clients_table()
 <<<<<<< HEAD
     remove_unused_client_fields()
+<<<<<<< HEAD
 =======
     create_meetings_table()
 >>>>>>> daa9c00 (made sure to call the new create functions in migrate.migrate())
+=======
+>>>>>>> 712b70f (Revert "trying to fix merge conflict")
     create_documents_table()
     create_goals_table()
     create_agents_table()
