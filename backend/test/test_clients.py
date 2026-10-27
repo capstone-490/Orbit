@@ -60,8 +60,9 @@ def test_create_client_success(mock_db):
 
     assert "INSERT INTO clients" in query
     assert params["name"] != "Alice Smith"
-    assert params["email"].endswith("@example.com")
-    assert params["phone_number"].startswith("+1-555-")
+    assert params["email"] != "alice@example.com"
+    assert params["email"].startswith("client-")
+    assert params["phone_number"].startswith("+1-514-")
 
 
 @pytest.mark.parametrize("missing_field", ["name", "email", "phone_number"])
