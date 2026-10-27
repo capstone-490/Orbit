@@ -28,15 +28,6 @@ class TokenStore:
             return configured.encode("utf-8")
         return secrets.token_bytes(32)
 
-    def token_for(self, field: str, value: str) -> str:
-        normalized = value.strip().casefold()
-        digest = hmac.new(
-            self._secret,
-            f"{field}:{normalized}".encode(),
-            hashlib.sha256,
-        ).digest()
-        return digest.hex()[:24]
-
     def get_or_create(
         self,
         field: str,
@@ -78,12 +69,12 @@ class ClientAnonymizer:
         result = dict(client)
         result["name"] = self._value("name", client["name"], lambda token: f"Client {token[:12]}")
         result["email"] = self._value(
-            "email", client["email"], lambda token: f"client-{token}@invalid.test"
+            "email", client["email"], lambda token: f"client-{token}@example.com"
         )
         result["phone_number"] = self._value(
             "phone_number",
             client["phone_number"],
-            lambda token: f"+1-555-555-{int(token[:8], 16) % 10_000_000:07d}",
+            lambda token: _fake_phone(token),
         )
         result["address"] = self._value(
             "address", client.get("address"), lambda token: f"Synthetic Address {token[:16]}"
@@ -95,10 +86,15 @@ class ClientAnonymizer:
             result["date_of_birth"] = self._store.get_or_create(
                 "date_of_birth",
                 str(client["date_of_birth"]),
-                lambda token: date(1970, 1, 1)
-                + timedelta(days=int(token[:6], 16) % (50 * 365)),
+                lambda token: date(1960, 1, 1)
+                + timedelta(days=int(token[:6], 16) % (40 * 365)),
             )
         return result
+
+
+def _fake_phone(token: str) -> str:
+    number = int(token[:12], 16) % 8_000_000 + 2_000_000
+    return f"+1-555-{number // 10_000}-{number % 10_000:04d}"
 
 
 client_anonymizer = ClientAnonymizer()
