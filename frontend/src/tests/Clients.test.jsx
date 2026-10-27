@@ -67,7 +67,7 @@ describe('US-14: Client directory', () => {
       id: 1,
       name: 'Client name',
       email: 'client-name@example.com',
-      phone_number: '+1-555-200-0000',
+      phone_number: '+1-514-200-0000',
     }
     mockInitialClients([syntheticClient])
     render(<Clients />)

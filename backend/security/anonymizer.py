@@ -94,7 +94,7 @@ class ClientAnonymizer:
 
 def _fake_phone(token: str) -> str:
     number = int(token[:12], 16) % 8_000_000 + 2_000_000
-    return f"+1-555-{number // 10_000}-{number % 10_000:04d}"
+    return f"+1-514-{number // 10_000}-{number % 10_000:04d}"
 
 
 client_anonymizer = ClientAnonymizer()
