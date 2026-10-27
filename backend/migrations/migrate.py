@@ -92,19 +92,6 @@ def create_meetings_enum():
         conn.commit()
 
 
-def create_meetings_enum():
-    with get_connection() as conn:
-        conn.execute("""
-                        DO $$
-                        BEGIN
-                            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'meeting_status') THEN
-                                create type meeting_status AS ENUM ('Scheduled','Completed','Cancelled');
-                            END IF;
-                        END
-                        $$;""")
-        conn.commit()
-
-
 def create_advisors_table():
     with get_connection() as conn:
         # XXXXX
@@ -353,6 +340,7 @@ def migrate():
     create_goal_duration_enum()
     create_assignment_status_enum()
     create_author_type_enum()
+    create_meetings_enum()
 
     # Tables
     create_advisors_table()
