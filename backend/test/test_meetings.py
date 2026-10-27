@@ -104,6 +104,7 @@ def test_list_meetings_empty(mock_db):
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
     mock_db.description = [MagicMock(name="id"), MagicMock(name="client_id"), MagicMock(name="advisor_id"), MagicMock(name="meeting_date"), MagicMock(name="completion_status")]
 >>>>>>> 610e8c5 (adding http rest api tests and testing if signing is working)
@@ -121,6 +122,8 @@ def test_list_meetings_empty(mock_db):
 =======
     mock_db.description = [MagicMock(name="id"), MagicMock(name="client_id"), MagicMock(name="advisor_id"), MagicMock(name="meeting_date"), MagicMock(name="completion_status")]
 >>>>>>> d85747f (trying to fix merging issues)
+=======
+>>>>>>> 712b00e (fixing more small issues)
 
     response = client.get("/meetings/1")
 
