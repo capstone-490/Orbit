@@ -346,6 +346,10 @@ def migrate():
     create_advisors_table()
     create_clients_table()
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+    create_meetings_table()
+>>>>>>> 4430dd0 (fixing more small issues)
     remove_unused_client_fields()
 <<<<<<< HEAD
 =======
