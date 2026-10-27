@@ -65,9 +65,9 @@ describe('US-14: Client directory', () => {
   it('displays synthetic values returned by the API instead of raw client data', async () => {
     const syntheticClient = {
       id: 1,
-      name: 'Client a1b2c3d4e5f6',
-      email: 'client-a1b2c3d4e5f6@invalid.test',
-      phone_number: '+1-555-555-1234567',
+      name: 'Client name',
+      email: 'client-name@example.com',
+      phone_number: '+1-555-200-0000',
     }
     mockInitialClients([syntheticClient])
     render(<Clients />)
