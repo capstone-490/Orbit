@@ -62,7 +62,7 @@ def test_create_client_success(mock_db):
     assert params["name"] != "Alice Smith"
     assert params["email"] != "alice@example.com"
     assert params["email"].startswith("client-")
-    assert params["phone_number"].startswith("+1-514-")
+    assert params["phone_number"].startswith("+1-555-")
 
 
 @pytest.mark.parametrize("missing_field", ["name", "email", "phone_number"])
