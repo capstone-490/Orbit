@@ -337,6 +337,7 @@ def migrate():
     # Tables
     create_advisors_table()
     create_clients_table()
+    create_meetings_table()
     remove_unused_client_fields()
     create_documents_table()
     create_goals_table()
