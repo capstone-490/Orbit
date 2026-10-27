@@ -162,15 +162,7 @@ def create_meetings_table():
                     advisor_id BIGINT NOT NULL,
                     client_id BIGINT NOT NULL,
                     meeting_date TIMESTAMPTZ NOT NULL,
-<<<<<<< HEAD
-<<<<<<< HEAD
                     completion_status meeting_status NOT NULL DEFAULT 'Scheduled',
-=======
-                    completion_status TEXT NOT NULL DEFAULT 'Scheduled',
->>>>>>> 3a28995 (added routes for retrieving meeting information)
-=======
-                    completion_status meeting_status NOT NULL DEFAULT 'Scheduled',
->>>>>>> 8d3265a (added tests and meeting_status enum)
                     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
@@ -345,18 +337,7 @@ def migrate():
     # Tables
     create_advisors_table()
     create_clients_table()
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-    create_meetings_table()
->>>>>>> 4430dd0 (fixing more small issues)
     remove_unused_client_fields()
-<<<<<<< HEAD
-=======
-    create_meetings_table()
->>>>>>> daa9c00 (made sure to call the new create functions in migrate.migrate())
-=======
->>>>>>> 712b70f (Revert "trying to fix merge conflict")
     create_documents_table()
     create_goals_table()
     create_agents_table()
