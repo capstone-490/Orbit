@@ -1,15 +1,17 @@
 import re
 from datetime import date
 from typing import Literal
+from uuid import uuid4
 
 from fastapi import APIRouter, HTTPException
 from psycopg.errors import UniqueViolation
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from app.db.db import get_connection
-from security.anonymizer import client_anonymizer
+from security.anonymizer import ClientAnonymizer
 
 router = APIRouter(prefix="/clients", tags=["Clients"])
+client_anonymizer: ClientAnonymizer | None = None
 
 
 # Client data model and validation
@@ -56,14 +58,21 @@ class ClientCreate(BaseModel):
 # Create a new client
 @router.post("", status_code=201)
 def create_client(client: ClientCreate):
-    data = client_anonymizer.anonymize(client.model_dump(mode="json"))
+    global client_anonymizer
+    if client_anonymizer is None:
+        client_anonymizer = ClientAnonymizer()
+    data = client_anonymizer.anonymize(
+        client.model_dump(mode="json"),
+        client_key=str(uuid4()),
+    )
 
     # Convert optional blank fields to SQL NULL
     for field in (
         "address",
-        "date_of_birth",
+        "age",
         "occupation",
         "timeline",
+        "anonymized_client_id",
     ):
         if data[field] == "":
             data[field] = None
@@ -74,12 +83,12 @@ def create_client(client: ClientCreate):
                 """
                 INSERT INTO clients (
                     name, email, phone_number, address,
-                    date_of_birth, occupation, timeline
+                    age, occupation, timeline, anonymized_client_id
                 )
                 VALUES (
                     %(name)s, %(email)s, %(phone_number)s,
-                    %(address)s, %(date_of_birth)s,
-                    %(occupation)s, %(timeline)s
+                    %(address)s, %(age)s, %(occupation)s,
+                    %(timeline)s, %(anonymized_client_id)s
                 )
                 RETURNING id
                 """,
@@ -106,7 +115,7 @@ def list_clients():
         cur.execute(
             """
             SELECT id, name, email, phone_number,
-                   address, date_of_birth, occupation,
+                   address, age, occupation, anonymized_client_id,
                    timeline, created_at
             FROM clients
             ORDER BY created_at DESC, id DESC
