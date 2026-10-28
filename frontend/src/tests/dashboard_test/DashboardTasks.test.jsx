@@ -14,6 +14,7 @@ const renderDashboardTasks = (props) =>
 afterEach(() => {
   cleanup()
   vi.unstubAllGlobals()
+  vi.restoreAllMocks()
 })
 
 describe('DashboardTasks Component', () => {
@@ -94,6 +95,21 @@ describe('DashboardTasks Component', () => {
       )
       expect(onTaskUpdated).toHaveBeenCalledWith(updatedTask)
     })
+  })
+
+  test('shows an error and re-enables the checkbox if the update fails', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: false })
+    vi.stubGlobal('fetch', fetchMock)
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    renderDashboardTasks({ priorityTasks: mockTasks })
+    const checkbox = screen.getAllByRole('checkbox')[0]
+    fireEvent.click(checkbox)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Could not update task. Please try again.',
+    )
+    expect(checkbox).toBeEnabled()
   })
 
   test('links to the Tasks page', () => {

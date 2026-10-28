@@ -86,4 +86,24 @@ describe('AdvisorDashboard', () => {
       expect(fetchMock).toHaveBeenCalledWith('http://localhost:8001/advisors/1/clients')
     })
   })
+
+  test('shows an error when dashboard API requests fail', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        json: async () => [],
+      }),
+    )
+
+    render(
+      <MemoryRouter>
+        <AdvisorDashboard />
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Could not load dashboard data: Failed to fetch dashboard data',
+    )
+  })
 })

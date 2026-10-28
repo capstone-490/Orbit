@@ -67,4 +67,17 @@ describe('DashboardSchedule Component', () => {
     expect(screen.getByText('Join Call')).toBeInTheDocument()
     expect(screen.getByText('View Details')).toBeInTheDocument()
   })
+
+  test('renders an empty schedule without meeting items', () => {
+    render(<DashboardSchedule scheduleData={[]} />)
+
+    expect(screen.getByText("Today's Schedule & Consultations")).toBeInTheDocument()
+    expect(document.querySelectorAll('.schedule-item')).toHaveLength(0)
+  })
+
+  test('omits a meeting time when the timestamp is invalid', () => {
+    render(<DashboardSchedule scheduleData={[{ ...mockScheduleData[0], time: 'not-a-date' }]} />)
+
+    expect(document.querySelector('.meeting-time .item-time')).toBeEmptyDOMElement()
+  })
 })
