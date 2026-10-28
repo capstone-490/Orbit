@@ -11,6 +11,7 @@ function Login() {
   const [password, setPassword] = useState('')
   const [rememberDevice, setRememberDevice] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [workspaceType, setWorkspaceType] = useState('advisor')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -55,8 +56,22 @@ function Login() {
 
         <div className="login-card">
           <div className="login-tabs" aria-label="Workspace type">
-            <span className="login-tab login-tab-active">Advisor Workspace</span>
-            <span className="login-tab">Book A Meeting</span>
+            <button
+              type="button"
+              className={`login-tab ${workspaceType === 'advisor' ? 'login-tab-active' : ''}`}
+              aria-pressed={workspaceType === 'advisor'}
+              onClick={() => setWorkspaceType('advisor')}
+            >
+              Advisor Workspace
+            </button>
+            <button
+              type="button"
+              className={`login-tab ${workspaceType === 'meeting' ? 'login-tab-active' : ''}`}
+              aria-pressed={workspaceType === 'meeting'}
+              onClick={() => setWorkspaceType('meeting')}
+            >
+              Book A Meeting
+            </button>
           </div>
 
           <form onSubmit={handleSubmit} noValidate>
