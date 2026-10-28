@@ -103,8 +103,10 @@ class ClientAnonymizer:
             if isinstance(birth_date, str):
                 birth_date = date.fromisoformat(birth_date)
             today = date.today()
-            result["age"] = today.year - birth_date.year - (
-                (today.month, today.day) < (birth_date.month, birth_date.day)
+            result["age"] = (
+                today.year
+                - birth_date.year
+                - ((today.month, today.day) < (birth_date.month, birth_date.day))
             )
         result.pop("date_of_birth", None)
         result["anonymized_client_id"] = client_key

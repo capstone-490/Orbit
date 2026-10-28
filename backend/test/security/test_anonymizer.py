@@ -131,16 +131,15 @@ def test_valid_environment_secret_allows_startup(monkeypatch):
 
 
 @pytest.mark.parametrize("configured", [None, "", " " * 32, "short"])
-def test_application_refuses_invalid_anonymization_secret(
-    monkeypatch, configured
-):
+def test_application_refuses_invalid_anonymization_secret(monkeypatch, configured):
     if configured is None:
         monkeypatch.delenv("ORBIT_ANONYMIZATION_SECRET", raising=False)
     else:
         monkeypatch.setenv("ORBIT_ANONYMIZATION_SECRET", configured)
 
-    with pytest.raises(RuntimeError, match="ORBIT_ANONYMIZATION_SECRET"), TestClient(
-        app
+    with (
+        pytest.raises(RuntimeError, match="ORBIT_ANONYMIZATION_SECRET"),
+        TestClient(app),
     ):
         pass
 
@@ -174,7 +173,9 @@ def test_values_remain_stable_after_cache_eviction():
     original = client_payload()
 
     first = anonymizer.anonymize(original, client_key="client-1")
-    anonymizer.anonymize({**original, "email": "other@example.com"}, client_key="client-2")
+    anonymizer.anonymize(
+        {**original, "email": "other@example.com"}, client_key="client-2"
+    )
     second = anonymizer.anonymize(original, client_key="client-1")
 
     assert first == second
