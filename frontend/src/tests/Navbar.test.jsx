@@ -32,7 +32,7 @@ describe('Navbar', () => {
     renderNavbar()
 
     const links = [
-      ['Dashboard', '/'],
+      ['Dashboard', '/dashboard'],
       ['Clients', '/clients'],
       ['Calendar', '/calendar'],
       ['Follow-Ups', '/follow-ups'],
