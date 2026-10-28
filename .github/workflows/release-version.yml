@@ -1,3 +1,4 @@
+#50% or more AI-generated
 name: Release & Versioning
 
 on:
@@ -6,11 +7,15 @@ on:
       publish_mode:
         required: true
         type: string # draft or publish
+      release_type:
+        required: false
+        type: string # 'iteration' or 'milestone'
+        default: "iteration"
       target_tag:
         required: false
         type: string
         default: ""
-      iteration:
+      iteration:  # for 'iteration' mode: sprint number. for 'milestone' mode: release number (optional override)
         required: false
         type: string
         default: ""
@@ -21,9 +26,9 @@ on:
       new_tag:
         description: "The newly generated or targeted tag"
         value: ${{ jobs.manage-release.outputs.new_tag }}
-      iteration_tag:
-        description: "The current iteration as a tag"
-        value: ${{ jobs.manage-release.outputs.iteration_tag }}
+      primary_tag:
+        description: "The primary release tag created (iteration-X or release-X)"
+        value: ${{ jobs.manage-release.outputs.primary_tag }}
 
 jobs:
   manage-release:
@@ -32,24 +37,137 @@ jobs:
       contents: write
     outputs:
       new_tag: ${{ steps.resolve-tag.outputs.tag }}
-      iteration_tag: ${{ steps.resolve-iter.outputs.iter_tag }}
+      primary_tag: ${{ steps.resolve-track.outputs.primary_tag }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 #v7.0.1
         with:
           fetch-depth: 0
+      
+      # resolve current tag & previous baseline tag based on release_type
+      - name: Resolve Track Tag & Baseline Tag
+        id: resolve-track
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN || secrets.GITHUB_TOKEN }}
+          RELEASE_TYPE: ${{ inputs.release_type }}
+          INPUT_NUM: ${{ inputs.iteration }}
+        run: |
+          if [ "$RELEASE_TYPE" == "milestone" ]; then
+            # MILESTONE TRACK : release-X
+            PREV_TAG=$(git tag -l "release-*" --sort=-version:refname | head -n 1)
+            echo "prev_track_tag=${PREV_TAG}" >> "$GITHUB_OUTPUT"
+            echo "Previous milestone tag: ${PREV_TAG:-<none - will start from first commit>}"
 
-      # DRAFT MODE on push to main
-      # calculates the cumulative version bump since the last PUBLISHED tag
-      # without pushing a tag, and keeps a single rolling draft release
+            if [ -n "$INPUT_NUM" ]; then
+              REL_NUM="${INPUT_NUM#release-}"
+            elif [ -n "$PREV_TAG" ]; then
+              LAST_NUM=$(echo "$PREV_TAG" | grep -o -E '[0-9]+' | head -n 1)
+              REL_NUM=$((LAST_NUM + 1))
+            else
+              REL_NUM=1
+            fi
+
+            PRIMARY_TAG="release-${REL_NUM}"
+            echo "primary_tag=${PRIMARY_TAG}" >> "$GITHUB_OUTPUT"
+            echo "Resolved milestone tag: ${PRIMARY_TAG}"
+
+          else
+            # SPRINT TRACK : iteration-X
+            PREV_TAG=$(git tag -l "iteration-*" --sort=-version:refname | head -n 1)
+            echo "prev_track_tag=${PREV_TAG}" >> "$GITHUB_OUTPUT"
+            echo "Previous iteration tag: ${PREV_TAG:-<none - will start from first commit>}"
+
+            ITER=""
+            if [ -n "$INPUT_NUM" ]; then
+              ITER="${INPUT_NUM#iteration-}"
+            elif command -v gh >/dev/null 2>&1; then
+              TODAY_EST=$(TZ="America/New_York" date +%Y-%m-%d)
+              echo "Current date EST: ${TODAY_EST}"
+
+              QUERY='
+              query($org: String!, $num: Int!) {
+                organization(login: $org) {
+                  projectV2(number: $num) {
+                    field(name: "Iteration") {
+                      ... on ProjectV2IterationField {
+                        configuration {
+                          iterations {
+                            title
+                            startDate
+                            duration
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }'
+
+              RAW_DATA=$(gh api graphql -F org="capstone-490" -F num=3 -f query="$QUERY" --jq '
+                .data.organization.projectV2.field.configuration.iterations[]
+                | [.title, .startDate, (.duration | tostring)]
+                | @tsv
+              ' || true)
+
+              while IFS=$'\t' read -r title start_date duration; do
+                [ -z "$start_date" ] && continue
+                END_DATE=$(date -d "${start_date} + $((duration - 1)) days" +%Y-%m-%d)
+
+                if [[ ! "$TODAY_EST" < "$start_date" ]] && [[ ! "$TODAY_EST" > "$END_DATE" ]]; then
+                  ITER=$(echo "$title" | grep -o -E '[0-9]+' | head -n 1)
+                  echo "$title -> resolved $ITER ($start_date to $END_DATE)"
+                  break
+                fi
+              done <<< "$RAW_DATA"
+            fi
+
+            if [ -n "$ITER" ]; then
+              echo "primary_tag=iteration-${ITER}" >> "$GITHUB_OUTPUT"
+              echo "Resolved iteration tag: iteration-${ITER}"
+            else
+              echo "primary_tag=" >> "$GITHUB_OUTPUT"
+              echo "No current iteration matched."
+            fi
+          fi
+
+      # calculates semantic version, maintains rolling draft release
       - name: Calculate Next Version (Dry Run)
         id: versioning
-        if: ${{ inputs.publish_mode == 'draft' }}
         uses: mathieudutour/github-tag-action@af99e60ce8132224b8e6ebab5023449fe256ed46 # v7
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           default_bump: patch
           release_branches: main
           dry_run: true
+      
+      # prepare Baseline Tag for Release Notes, only when creating/updating a draft or publishing
+      - name: Prepare Notes Start Tag
+        id: notes-baseline
+        if: >-
+          inputs.publish_mode == 'publish' ||
+          (inputs.publish_mode == 'draft' &&
+           steps.versioning.outputs.new_tag != '' &&
+           steps.versioning.outputs.new_tag != steps.versioning.outputs.previous_tag)
+        env:
+          PREV_TRACK_TAG: ${{ steps.resolve-track.outputs.prev_track_tag }}
+          PRIMARY_TAG: ${{ steps.resolve-track.outputs.primary_tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if [ -n "$PREV_TRACK_TAG" ] && [ "$PREV_TRACK_TAG" != "$PRIMARY_TAG" ] && git rev-parse "$PREV_TRACK_TAG" >/dev/null 2>&1; then
+            echo "Using existing previous tag for notes: $PREV_TRACK_TAG"
+            echo "start_tag=${PREV_TRACK_TAG}" >> "$GITHUB_OUTPUT"
+            echo "temp_tag_created=false" >> "$GITHUB_OUTPUT"
+          else
+            # No previous tag in this track: create temp tag at the root commit
+            ROOT_SHA=$(git rev-list --max-parents=0 HEAD | tail -n 1)
+            TEMP_TAG="_notes-root-baseline-${{ github.run_id }}"
+            echo "No previous tag found for this track. Tagging root commit ($ROOT_SHA) as $TEMP_TAG..."
+            git tag -f "$TEMP_TAG" "$ROOT_SHA"
+            git push origin "$TEMP_TAG" --force
+            echo "start_tag=${TEMP_TAG}" >> "$GITHUB_OUTPUT"
+            echo "temp_tag_created=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Maintain Single Rolling Draft Release
         if: >-
@@ -59,162 +177,95 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NEW_TAG: ${{ steps.versioning.outputs.new_tag }}
-          PREV_TAG: ${{ steps.versioning.outputs.previous_tag }}
+          PRIMARY_TAG: ${{ steps.resolve-track.outputs.primary_tag }}
+          START_TAG: ${{ steps.notes-baseline.outputs.start_tag }}
           TARGET_SHA: ${{ github.sha }}
         run: |
-          # remove existing draft so version changes v1.0.1 -> v1.1.0 do not leave orphaned drafts
           EXISTING_DRAFTS=$(gh release list --json tagName,isDraft --jq '.[] | select(.isDraft == true) | .tagName')
           for draft_tag in $EXISTING_DRAFTS; do
             echo "Removing old draft release: $draft_tag"
             gh release delete "$draft_tag" --yes
           done
 
-          # new draft with cumulative notes since the last published tag
-          NOTES_ARGS=(--generate-notes)
-          if [ -n "$PREV_TAG" ] && git rev-parse "$PREV_TAG" >/dev/null 2>&1; then
-            NOTES_ARGS+=(--notes-start-tag "$PREV_TAG")
-          fi
+          DRAFT_TAG="${PRIMARY_TAG:-$NEW_TAG}"
 
-          gh release create "$NEW_TAG" \
+          gh release create "$DRAFT_TAG" \
             --draft \
-            --title "Release $NEW_TAG" \
+            --title "Release $DRAFT_TAG ($NEW_TAG)" \
             --target "$TARGET_SHA" \
-            "${NOTES_ARGS[@]}"
+            --generate-notes \
+            --notes-start-tag "$START_TAG"
 
-
-
-      # PUBLISH MODE on manual run
-      # finds pending draft release (or explicit target_tag), publishes it
-      - name: Determine Tag for Manual Release
-        id: manual-tag
+      # PUBLISH MODE: Tag and Publish Official Release
+      - name: Publish Release (Iteration or Milestone)
+        id: publish-step
         if: ${{ inputs.publish_mode == 'publish' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TARGET_TAG_INPUT: ${{ inputs.target_tag }}
+          CALC_VERSION: ${{ steps.versioning.outputs.new_tag }}
+          TRACK_TAG: ${{ steps.resolve-track.outputs.primary_tag }}
+          START_TAG: ${{ steps.notes-baseline.outputs.start_tag }}
+          RELEASE_TYPE: ${{ inputs.release_type }}
         run: |
           if [ -n "$TARGET_TAG_INPUT" ]; then
-            TARGET="$TARGET_TAG_INPUT"
-            echo "Using manually specified tag: $TARGET"
+            SEMVER_TAG="$TARGET_TAG_INPUT"
+          elif [ -n "$CALC_VERSION" ]; then
+            SEMVER_TAG="$CALC_VERSION"
           else
-            # find current rolling draft
-            TARGET=$(gh release list --json tagName,isDraft --jq '[.[] | select(.isDraft == true)][0].tagName // empty')
-
-            # fallback to latest tag if no draft is waiting
-            if [ -z "$TARGET" ]; then
-              TARGET=$(git describe --tags --abbrev=0)
-              echo "No draft found; falling back to latest git tag: $TARGET"
-            else
-              echo "Found draft release tag: $TARGET"
-            fi
+            SEMVER_TAG=$(git describe --tags --match "v*" --abbrev=0 2>/dev/null || echo "")
           fi
 
-          echo "target=${TARGET}" >> "$GITHUB_OUTPUT"
+          PRIMARY_TAG="${TRACK_TAG:-$SEMVER_TAG}"
+          if [ -z "$PRIMARY_TAG" ]; then
+            echo "::error::Could not resolve a primary release tag."
+            exit 1
+          fi
 
-      - name: Publish Release
-        if: ${{ inputs.publish_mode == 'publish' }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TARGET: ${{ steps.manual-tag.outputs.target }}
+          echo "semver_tag=${SEMVER_TAG}" >> "$GITHUB_OUTPUT"
+
+          # push primary tag (iteration-X or Release-X) and secondary semver tag (vX.X.X)
+          git tag -f "$PRIMARY_TAG" HEAD
+          git push origin "$PRIMARY_TAG" --force
+
+          if [ -n "$SEMVER_TAG" ] && [ "$SEMVER_TAG" != "$PRIMARY_TAG" ]; then
+            git tag -f "$SEMVER_TAG" HEAD
+            git push origin "$SEMVER_TAG" --force
+          fi
+
+          # Remove pending rolling drafts only when publishing an iteration (or if draft matches primary tag)
+          if [ "$RELEASE_TYPE" == "iteration" ]; then
+            EXISTING_DRAFTS=$(gh release list --json tagName,isDraft --jq '.[] | select(.isDraft == true) | .tagName')
+            for draft_tag in $EXISTING_DRAFTS; do
+              echo "Removing pending draft release: $draft_tag"
+              gh release delete "$draft_tag" --yes
+            done
+          fi
+
+          # if re-publishing the same tag, replace it
+          if gh release view "$PRIMARY_TAG" >/dev/null 2>&1; then
+            gh release delete "$PRIMARY_TAG" --yes
+          fi
+
+          TITLE="Release $PRIMARY_TAG"
+          if [ -n "$SEMVER_TAG" ] && [ "$SEMVER_TAG" != "$PRIMARY_TAG" ]; then
+            TITLE="Release $PRIMARY_TAG ($SEMVER_TAG)"
+          fi
+
+          gh release create "$PRIMARY_TAG" \
+            --title "$TITLE" \
+            --target "${{ github.sha }}" \
+            --latest \
+            --generate-notes \
+            --notes-start-tag "$START_TAG"
+      
+      - name: Cleanup Temporary Baseline Tag
+        if: always() && steps.notes-baseline.outputs.temp_tag_created == 'true'
         run: |
-          # if the release already exists; rolling draft, publish it
-          if gh release view "$TARGET" >/dev/null 2>&1; then
-            echo "Promoting release $TARGET to published..."
-            gh release edit "$TARGET" --draft=false --prerelease=false --latest
-          else
-            echo "Release $TARGET does not exist; creating and publishing..."
-            gh release create "$TARGET" \
-              --title "Release $TARGET" \
-              --target main \
-              --generate-notes \
-              --latest
-          fi
-
-      # Resolve iteration number
-      - name: Resolve Iteration Number
-        id: resolve-iter
-        if: ${{ inputs.publish_mode == 'publish' }}
-        env:
-          GH_TOKEN: ${{ secrets.PROJECT_TOKEN || secrets.GITHUB_TOKEN }}
-          ITERATION_INPUT: ${{ inputs.iteration }}
-        run: |
-          if [ -n "$ITERATION_INPUT" ]; then
-            ITER="$ITERATION_INPUT"
-
-          # fetch active iteration via gh cli
-          elif command -v gh >/dev/null 2>&1; then
-            TODAY_EST=$(TZ="America/New_York" date +%Y-%m-%d)
-            echo "current date EST: ${TODAY_EST}"
-
-            QUERY='
-            query($org: String!, $num: Int!) {
-                organization(login: $org) {
-                projectV2(number: $num) {
-                    field(name: "Iteration") {
-                    ... on ProjectV2IterationField {
-                        configuration {
-                        iterations {
-                            title
-                            startDate
-                            duration
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }'
-
-            RAW_DATA=$(gh api graphql -F org="capstone-490" -F num=3 -f query="$QUERY" --jq '
-                .data.organization.projectV2.field.configuration.iterations[]
-                | [.title, .startDate, (.duration | tostring)]
-                | @tsv
-            ')
-
-            while IFS=$'\t' read -r title start_date duration; do
-                [ -z "$start_date" ] && continue
-                END_DATE=$(date -d "${start_date} + ${duration} days" +%Y-%m-%d)
-
-                if [[ ! "$TODAY_EST" < "$start_date" ]] && [[ ! "$TODAY_EST" > "$END_DATE" ]]; then
-                  ITER=$(echo "$title" | grep -o -E '[0-9]+' | head -n 1)
-                  echo "$title -> resolved $ITER ($start_date to $END_DATE)"
-                  break
-                fi
-            done <<< "$RAW_DATA"
-          fi
-
-          if [ -n "$ITER" ]; then
-            echo "iter_tag=iteration-${ITER}" >> "$GITHUB_OUTPUT"
-            echo "Resolved tag: iteration-${ITER}"
-          else
-            echo "iter_tag=" >> "$GITHUB_OUTPUT"
-            echo "No current iteration matched."
-          fi
-
-      - name: Publish Official Release
-        if: ${{ inputs.publish_mode == 'publish' }}
-        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 #v3.0.3
-        with:
-          tag_name: ${{ steps.manual-tag.outputs.target }}
-          name: Release ${{ steps.manual-tag.outputs.target }}
-          draft: false
-          prerelease: false
-          generate_release_notes: true
-
-      - name: Tag and Push Iteration
-        if: ${{ inputs.publish_mode == 'publish' && steps.resolve-iter.outputs.iter_tag != '' }}
-        env:
-          TARGET: ${{ steps.manual-tag.outputs.target }}
-          ITER_TAG: ${{ steps.resolve-iter.outputs.iter_tag }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          # Fetch tags so the newly published release tag exists locally
-          git fetch origin --tags --force
-
-          echo "Tagging commit associated with $TARGET with $ITER_TAG"
-          git tag -f "$ITER_TAG" "$TARGET"
-          git push origin "$ITER_TAG" --force
+          TEMP_TAG="${{ steps.notes-baseline.outputs.start_tag }}"
+          echo "Cleaning up temporary baseline tag $TEMP_TAG..."
+          git push origin --delete "$TEMP_TAG" || true
+          git tag -d "$TEMP_TAG" || true
 
       - name: Resolve Output Tag
         id: resolve-tag
@@ -222,5 +273,6 @@ jobs:
           if [ "${{ inputs.publish_mode }}" == "draft" ]; then
             echo "tag=${{ steps.versioning.outputs.new_tag }}" >> "$GITHUB_OUTPUT"
           else
-            echo "tag=${{ steps.manual-tag.outputs.target }}" >> "$GITHUB_OUTPUT"
+            echo "tag=${{ steps.publish-step.outputs.semver_tag }}" >> "$GITHUB_OUTPUT"
           fi
+

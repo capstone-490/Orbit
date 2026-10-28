@@ -10,6 +10,7 @@ Usage:
 
 Output: poc/results/<input hash>.out.json  +  a benchmark summary printed to the console.
 """
+
 import argparse
 import hashlib
 import json
@@ -130,7 +131,10 @@ def process(text: str, model: str, ctx: int) -> tuple[dict, dict]:
     try:
         result = json.loads(data["message"]["content"])
     except json.JSONDecodeError:
-        result = {"error": "model returned invalid JSON", "raw": data["message"]["content"]}
+        result = {
+            "error": "model returned invalid JSON",
+            "raw": data["message"]["content"],
+        }
     return result, data
 
 

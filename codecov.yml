@@ -14,7 +14,7 @@ coverage:
           - frontend
     patch:
       default:
-        target: 40%
+        target: 80%
 
 flag_management:
   default_rules:

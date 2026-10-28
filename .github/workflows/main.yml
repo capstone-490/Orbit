@@ -1,3 +1,4 @@
+# Below 50% AI-generated
 name: CI/CD Orchestrator
 
 on:
@@ -5,23 +6,28 @@ on:
     branches: [main]
   push:
     branches: [main]
-  # allow manual releae
+
+  schedule:
+    - cron: "0 22 * * *"
+
   workflow_dispatch:
     inputs:
-      action:
-        description: "Action to perform"
+      release_type:
+        description: "Which release track to publish"
         required: true
-        default: "publish_release"
+        default: "iteration"
         type: choice
         options:
-          - "publish_release"
+          - "iteration"
+          - "milestone"
+          - "both"
       target_tag:
-        description: "Tag to publish (leave blank for latest tag)"
+        description: "Semantic version tag override (leave blank to auto-calculate)"
         required: false
         type: string
         default: ""
       iteration:
-        description: "Iteration number (leave blank to auto-detect)"
+        description: "Iteration or Milestone number override (leave blank to auto-detect)"
         required: false
         type: string
         default: ""
@@ -36,7 +42,7 @@ concurrency:
 jobs:
   detect-changes:
     name: Detect changed files
-    if: github.event_name != 'workflow_dispatch'
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     outputs:
       backend: ${{ steps.changes.outputs.backend }}
@@ -51,7 +57,7 @@ jobs:
   backend-ci:
     needs: detect-changes
     if: >-
-      github.event_name != 'workflow_dispatch' &&
+      (github.event_name == 'push' || github.event_name == 'pull_request') &&
       (needs.detect-changes.outputs.backend == 'true' || github.ref == 'refs/heads/main')
     uses: ./.github/workflows/backend.yml
     secrets:
@@ -61,29 +67,141 @@ jobs:
   frontend-ci:
     needs: detect-changes
     if: >-
-      github.event_name != 'workflow_dispatch' &&
+      (github.event_name == 'push' || github.event_name == 'pull_request') &&
       (needs.detect-changes.outputs.frontend == 'true' || github.ref == 'refs/heads/main')
     uses: ./.github/workflows/frontend.yml
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-      
 
   auto-tag:
     needs: [backend-ci, frontend-ci]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     uses: ./.github/workflows/release-version.yml
     with:
-      publish_mode: "draft" # prepares draft/tag without publishing
+      publish_mode: "draft"
+      release_type: "iteration"
+    secrets:
+      PROJECT_TOKEN: ${{ secrets.PROJECT_ACCESS_TOKEN }}
     permissions:
       contents: write
   
-  publish-release:
-    if: github.event_name == 'workflow_dispatch' && inputs.action == 'publish_release'
+
+  check-release-schedule:
+    name: Check Sprint & Milestone Schedule
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    outputs:
+      run_iteration: ${{ steps.check.outputs.run_iteration }}
+      run_milestone: ${{ steps.check.outputs.run_milestone }}
+      iter_num: ${{ steps.check.outputs.iter_num }}
+      milestone_num: ${{ steps.check.outputs.milestone_num }}
+    steps:
+      - name: Determine Release Eligibility
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_ACCESS_TOKEN || secrets.GITHUB_TOKEN }}
+          EVENT_NAME: ${{ github.event_name }}
+          DISPATCH_TYPE: ${{ inputs.release_type }}
+          DISPATCH_NUM: ${{ inputs.iteration }}
+        run: |
+          if [ "$EVENT_NAME" == "workflow_dispatch" ]; then
+            if [ "$DISPATCH_TYPE" == "iteration" ] || [ "$DISPATCH_TYPE" == "both" ]; then
+              echo "run_iteration=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "run_iteration=false" >> "$GITHUB_OUTPUT"
+            fi
+
+            if [ "$DISPATCH_TYPE" == "milestone" ] || [ "$DISPATCH_TYPE" == "both" ]; then
+              echo "run_milestone=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "run_milestone=false" >> "$GITHUB_OUTPUT"
+            fi
+
+            echo "iter_num=${DISPATCH_NUM}" >> "$GITHUB_OUTPUT"
+            echo "milestone_num=${DISPATCH_NUM}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          TODAY_EST=$(TZ="America/New_York" date +%Y-%m-%d)
+          echo "Checking schedule for date EST: ${TODAY_EST}"
+
+          QUERY='
+          query($org: String!, $num: Int!) {
+            organization(login: $org) {
+              projectV2(number: $num) {
+                field(name: "Iteration") {
+                  ... on ProjectV2IterationField {
+                    configuration {
+                      iterations {
+                        title
+                        startDate
+                        duration
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }'
+
+          RAW_DATA=$(gh api graphql -F org="capstone-490" -F num=3 -f query="$QUERY" --jq '
+            .data.organization.projectV2.field.configuration.iterations[]
+            | [.title, .startDate, (.duration | tostring)]
+            | @tsv
+          ' || true)
+
+          RUN_ITER="false"
+          RUN_MILE="false"
+          ITER_NUM=""
+          MILE_NUM=""
+
+          while IFS=$'\t' read -r title start_date duration; do
+            [ -z "$start_date" ] && continue
+            END_DATE=$(date -d "${start_date} + $((duration - 1)) days" +%Y-%m-%d)
+
+            if [ "$TODAY_EST" == "$END_DATE" ]; then
+              ITER_NUM=$(echo "$title" | grep -o -E '[0-9]+' | head -n 1)
+              RUN_ITER="true"
+              echo "Today ($TODAY_EST) is the end of $title (iteration-$ITER_NUM)."
+
+              if [[ "$ITER_NUM" == "0" || "$ITER_NUM" == "8" || "$ITER_NUM" == "13" ]]; then
+                RUN_MILE="true"
+                MILE_NUM="" # leave blank so release-version.yml auto-increments release-1
+                echo "Iteration $ITER_NUM is a Release! Scheduling release-$MILE_NUM."
+              fi
+              break
+            fi
+          done <<< "$RAW_DATA"
+
+          echo "run_iteration=${RUN_ITER}" >> "$GITHUB_OUTPUT"
+          echo "run_milestone=${RUN_MILE}" >> "$GITHUB_OUTPUT"
+          echo "iter_num=${ITER_NUM}" >> "$GITHUB_OUTPUT"
+          echo "milestone_num=${MILE_NUM}" >> "$GITHUB_OUTPUT"
+
+  publish-iteration-release:
+    needs: check-release-schedule
+    if: needs.check-release-schedule.outputs.run_iteration == 'true'
     uses: ./.github/workflows/release-version.yml
     with:
       publish_mode: "publish"
-      target_tag: ${{ inputs.target_tag }}
-      iteration: ${{ inputs.iteration }}
+      release_type: "iteration"
+      target_tag: ${{ inputs.target_tag || '' }}
+      iteration: ${{ needs.check-release-schedule.outputs.iter_num }}
+    secrets:
+      PROJECT_TOKEN: ${{ secrets.PROJECT_ACCESS_TOKEN }}
+    permissions:
+      contents: write
+
+  publish-milestone-release:
+    needs: check-release-schedule
+    # if both iteration and milestone run on the same day, run milestone after iteration finishes
+    if: needs.check-release-schedule.outputs.run_milestone == 'true'
+    uses: ./.github/workflows/release-version.yml
+    with:
+      publish_mode: "publish"
+      release_type: "milestone"
+      target_tag: ${{ inputs.target_tag || '' }}
+      iteration: ${{ needs.check-release-schedule.outputs.milestone_num }}
     secrets:
       PROJECT_TOKEN: ${{ secrets.PROJECT_ACCESS_TOKEN }}
     permissions:
