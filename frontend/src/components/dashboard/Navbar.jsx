@@ -1,3 +1,4 @@
+// Substantial AI assistance used; verified with frontend tests and production build.
 import { FiBell, FiUser } from 'react-icons/fi'
 import { NavLink } from 'react-router-dom'
 import orbitLogo from '../../assets/orbit-logo.png'
