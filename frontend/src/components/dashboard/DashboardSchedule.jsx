@@ -1,21 +1,22 @@
 import '../../styles/DashboardSchedule.css'
 
 const formatShortTime = (timestamp) => {
-  if (!timestamp) return '';
-  const safeString = typeof timestamp === 'string' ? timestamp.replace(' ', 'T') : timestamp;
-  const date = new Date(safeString);
-  if (isNaN(date.getTime())) return '';
-  
+  if (!timestamp) return ''
+  const safeString = typeof timestamp === 'string' ? timestamp.replace(' ', 'T') : timestamp
+  const date = new Date(safeString)
+  if (Number.isNaN(date.getTime())) return ''
+
   // Format to 12-hour time and remove spaces (e.g., "10:00 PM" -> "10:00PM")
-  return date.toLocaleTimeString([], { 
-    hour: 'numeric', 
-    minute: '2-digit', 
-    hour12: true 
-  }).replace(/\s+/g, '');
-};
+  return date
+    .toLocaleTimeString([], {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    })
+    .replace(/\s+/g, '')
+}
 
 function DashboardSchedule({ scheduleData }) {
-
   return (
     <div className="dashboard-schedule">
       <h2>Today's Schedule & Consultations</h2>

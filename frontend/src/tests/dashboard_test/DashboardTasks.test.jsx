@@ -8,7 +8,7 @@ const renderDashboardTasks = (props) =>
   render(
     <MemoryRouter>
       <DashboardTasks {...props} />
-    </MemoryRouter>
+    </MemoryRouter>,
   )
 
 afterEach(() => {
@@ -90,11 +90,10 @@ describe('DashboardTasks Component', () => {
         expect.objectContaining({
           method: 'PATCH',
           body: JSON.stringify({ completed: true }),
-        })
+        }),
       )
       expect(onTaskUpdated).toHaveBeenCalledWith(updatedTask)
     })
-
   })
 
   test('links to the Tasks page', () => {
@@ -102,7 +101,7 @@ describe('DashboardTasks Component', () => {
 
     expect(screen.getByRole('link', { name: 'View All (4) Tasks' })).toHaveAttribute(
       'href',
-      '/tasks'
+      '/tasks',
     )
   })
 })

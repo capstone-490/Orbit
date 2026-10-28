@@ -39,16 +39,16 @@ function DashboardTasks({ priorityTasks, onTaskUpdated }) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ completed }),
-      });
+      })
 
       if (!response.ok) {
-        throw new Error('Failed to update task completion status');
+        throw new Error('Failed to update task completion status')
       }
 
       const updatedTask = await response.json()
       onTaskUpdated?.(updatedTask)
     } catch (error) {
-      console.error('Error updating task:', error);
+      console.error('Error updating task:', error)
       setUpdateError('Could not update task. Please try again.')
     } finally {
       setUpdatingTaskIds((current) => {
@@ -57,7 +57,7 @@ function DashboardTasks({ priorityTasks, onTaskUpdated }) {
         return next
       })
     }
-  };
+  }
 
   return (
     <div className="dashboard-tasks">

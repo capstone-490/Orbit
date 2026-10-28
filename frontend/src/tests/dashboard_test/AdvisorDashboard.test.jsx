@@ -72,7 +72,7 @@ describe('AdvisorDashboard', () => {
     render(
       <MemoryRouter>
         <AdvisorDashboard />
-      </MemoryRouter>
+      </MemoryRouter>,
     )
 
     expect(await screen.findByText('Call client')).toBeInTheDocument()

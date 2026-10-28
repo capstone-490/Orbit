@@ -2,6 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
+from psycopg import OperationalError
 
 from app.main import app
 from app.routers import advisor
@@ -117,7 +118,7 @@ def test_update_task_completion_requires_boolean(mock_db):
 
 def test_update_task_completion_reports_database_errors(mock_db):
     _, cursor = mock_db
-    cursor.execute.side_effect = RuntimeError("database unavailable")
+    cursor.execute.side_effect = OperationalError("database unavailable")
 
     response = client.patch("/advisors/tasks/1", json={"completed": True})
 
@@ -135,7 +136,7 @@ def test_update_task_completion_reports_database_errors(mock_db):
 )
 def test_advisor_routes_report_database_errors(mock_db, path, method):
     _, cursor = mock_db
-    cursor.execute.side_effect = RuntimeError("database unavailable")
+    cursor.execute.side_effect = OperationalError("database unavailable")
 
     response = getattr(client, method)(path)
 

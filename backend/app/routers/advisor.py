@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, StrictBool
+from psycopg import Error as PsycopgError
 from psycopg.rows import dict_row
+from pydantic import BaseModel, StrictBool
 
 from app.db.db import get_connection
 
@@ -34,7 +35,7 @@ def get_advisor_tasks(advisor_id: int):
         with get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
             cur.execute(query, (advisor_id,))
             return cur.fetchall()
-    except Exception as e:
+    except PsycopgError as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.patch("/tasks/{task_id}")
@@ -59,7 +60,7 @@ def update_task_completion(task_id: int, body: TaskCompletionUpdate):
             cur.execute(query, (body.completed, task_id))
             updated_task = cur.fetchone()
             conn.commit()
-    except Exception as e:
+    except PsycopgError as e:
         raise HTTPException(status_code=500, detail=str(e))
 
     if not updated_task:
@@ -92,7 +93,7 @@ def get_advisor_schedule(advisor_id: int):
         with get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
             cur.execute(query, (advisor_id,))
             return cur.fetchall()
-    except Exception as e:
+    except PsycopgError as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -120,5 +121,5 @@ def get_advisor_clients(advisor_id: int):
         with get_connection() as conn, conn.cursor() as cur:
             cur.execute(query, (advisor_id,))
             return cur.fetchall()
-    except Exception as e:
+    except PsycopgError as e:
         raise HTTPException(status_code=500, detail=str(e))

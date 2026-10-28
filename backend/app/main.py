@@ -4,8 +4,8 @@ from fastapi import Depends, FastAPI, Header, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.feature_flags import get_variant
+from app.routers.advisor import router as advisor_router
 from app.routers.clients import router as clients_router
-from app.routers.advisor import router as advisor_router    
 
 app = FastAPI()
 
