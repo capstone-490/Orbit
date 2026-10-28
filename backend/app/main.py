@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.feature_flags import get_variant
 from app.routers.advisor import router as advisor_router
 from app.routers.clients import router as clients_router
+from app.routers.meetings import router as meetings_router
 
 app = FastAPI()
 
@@ -22,6 +23,7 @@ app.add_middleware(
 
 app.include_router(clients_router)
 app.include_router(advisor_router)
+app.include_router(meetings_router)
 
 
 def get_user_id(user_id: str | None = Header(default=None)) -> str:
