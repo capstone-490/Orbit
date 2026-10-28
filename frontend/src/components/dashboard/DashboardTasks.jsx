@@ -1,5 +1,6 @@
 import '../../styles/DashboardTasks.css'
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 
 function DashboardTasks({ priorityTasks, onTaskUpdated }) {
   const [updatingTaskIds, setUpdatingTaskIds] = useState(() => new Set())
@@ -60,7 +61,13 @@ function DashboardTasks({ priorityTasks, onTaskUpdated }) {
 
   return (
     <div className="dashboard-tasks">
-      <h2> Priority Tasks</h2>
+      <div className="section-header">
+        <span className="priority-task-title">Priority Tasks</span>
+        <Link className="all-tasks-link" to="/tasks">
+          View All ({priorityTasks.length}) Tasks
+        </Link>
+      </div>
+      <hr className="task-divider" />
       {updateError && <p role="alert">{updateError}</p>}
       {priorityTasks.slice(0, 3).map((item) => (
         <div key={item.id} className="task-item">
