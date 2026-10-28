@@ -104,12 +104,18 @@ docker compose run --rm backend pytest -v
 ### Client anonymization
 
 Client creation stores deterministic synthetic values for names, contact details,
-addresses, occupations, and dates of birth. Real values are never persisted by the
-client creation flow. The in-memory store is only a cache: deterministic fake values
-come from the HMAC, while the cache retains generated values for efficiency. Phone
-and email collisions are possible but rare, so database uniqueness constraints still
-apply. Existing database rows are not masked by this feature. Set
-`ORBIT_ANONYMIZATION_SECRET` to a stable, deployment-managed secret when generated
-values must remain stable across backend restarts. If it is unset, a random process
-secret is used and values change after restart. The Compose development setup
-provides a development default; production deployments should override it.
+addresses, occupations, and age. Real values are never persisted by the client
+creation flow. A UUID is generated before anonymization and stored as
+`anonymized_client_id`; every synthetic field is derived from that identifier, so
+fields for one client remain correlated without storing the original PII.
+
+The in-memory store is only a cache: deterministic fake values come from the HMAC,
+while the cache retains generated values for efficiency. Cache eviction therefore
+does not change values. Existing database rows are not masked by this feature.
+The backend refuses to start unless `ORBIT_ANONYMIZATION_SECRET` is configured,
+non-blank, and at least 32 characters long. Use a stable, deployment-managed
+secret in development, tests, Docker Compose, and production; never use a shared
+development secret in production.
+
+The API accepts `date_of_birth` only to calculate age during client creation.
+Only `age` is persisted and returned.

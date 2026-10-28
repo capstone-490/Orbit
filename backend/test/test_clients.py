@@ -17,8 +17,9 @@ COLUMNS = [
     "email",
     "phone_number",
     "address",
-    "date_of_birth",
+    "age",
     "occupation",
+    "anonymized_client_id",
     "timeline",
     "created_at",
 ]
@@ -134,7 +135,7 @@ def test_create_client_optional_fields(mock_db):
     _, params = mock_db.execute.call_args.args
 
     assert params["address"] is None
-    assert params["date_of_birth"] is None
+    assert params["age"] is None
     assert params["occupation"] is None
     assert params["timeline"] is None
 
