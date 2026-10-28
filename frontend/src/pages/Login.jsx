@@ -29,9 +29,7 @@ function Login() {
       navigate('/dashboard')
     } catch (loginError) {
       setError(
-        loginError instanceof Error
-          ? loginError.message
-          : 'Unable to sign in. Please try again.',
+        loginError instanceof Error ? loginError.message : 'Unable to sign in. Please try again.',
       )
     } finally {
       setIsLoading(false)
@@ -52,15 +50,20 @@ function Login() {
             <img src={orbitLogo} alt="Orbit" />
           </div>
           <h1 id="login-title">Welcome to Orbit</h1>
-          <p>Manage your workspace, clients, and<br />automate workflows.</p>
+          <p>
+            Manage your workspace, clients, and
+            <br />
+            automate workflows.
+          </p>
         </div>
 
         <div className="login-card">
-          <div className="login-tabs" aria-label="Workspace type">
+          <div className="login-tabs" role="tablist" aria-label="Workspace type">
             <button
               type="button"
               className={`login-tab ${workspaceType === 'advisor' ? 'login-tab-active' : ''}`}
-              aria-pressed={workspaceType === 'advisor'}
+              role="tab"
+              aria-selected={workspaceType === 'advisor'}
               onClick={() => setWorkspaceType('advisor')}
             >
               Advisor Workspace
@@ -68,7 +71,8 @@ function Login() {
             <button
               type="button"
               className={`login-tab ${workspaceType === 'meeting' ? 'login-tab-active' : ''}`}
-              aria-pressed={workspaceType === 'meeting'}
+              role="tab"
+              aria-selected={workspaceType === 'meeting'}
               onClick={() => setWorkspaceType('meeting')}
             >
               Book A Meeting
@@ -96,7 +100,9 @@ function Login() {
             <div className="login-field">
               <div className="login-label-row">
                 <label htmlFor="password">Password</label>
-                <button type="button" className="forgot-password">Forgot?</button>
+                <button type="button" className="forgot-password">
+                  Forgot?
+                </button>
               </div>
               <div className="login-input-wrap">
                 <FiLock aria-hidden="true" />

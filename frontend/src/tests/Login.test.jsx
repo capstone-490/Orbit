@@ -39,16 +39,16 @@ describe('Login', () => {
   it('switches the selected workspace tab without navigating', () => {
     renderLogin()
 
-    const advisorTab = screen.getByRole('button', { name: 'Advisor Workspace' })
-    const meetingTab = screen.getByRole('button', { name: 'Book A Meeting' })
+    const advisorTab = screen.getByRole('tab', { name: 'Advisor Workspace' })
+    const meetingTab = screen.getByRole('tab', { name: 'Book A Meeting' })
 
-    expect(advisorTab).toHaveAttribute('aria-pressed', 'true')
-    expect(meetingTab).toHaveAttribute('aria-pressed', 'false')
+    expect(advisorTab).toHaveAttribute('aria-selected', 'true')
+    expect(meetingTab).toHaveAttribute('aria-selected', 'false')
 
     fireEvent.click(meetingTab)
 
-    expect(advisorTab).toHaveAttribute('aria-pressed', 'false')
-    expect(meetingTab).toHaveAttribute('aria-pressed', 'true')
+    expect(advisorTab).toHaveAttribute('aria-selected', 'false')
+    expect(meetingTab).toHaveAttribute('aria-selected', 'true')
     expect(screen.getByTestId('location')).toHaveTextContent('/')
   })
 
@@ -111,9 +111,7 @@ describe('Login', () => {
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'secret' } })
     fireEvent.click(screen.getByRole('button', { name: 'Sign In' }))
 
-    await waitFor(() =>
-      expect(screen.getByTestId('location')).toHaveTextContent('/dashboard'),
-    )
+    await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent('/dashboard'))
     expect(localStorage.getItem('orbit_auth_token')).toBe('test-token')
   })
 })

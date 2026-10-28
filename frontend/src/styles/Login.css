@@ -7,8 +7,7 @@
   position: relative;
   padding: 32px 20px;
   background:
-    radial-gradient(circle at 50% 42%, rgba(216, 228, 255, 0.9), transparent 34rem),
-    #f7f9ff;
+    radial-gradient(circle at 50% 42%, rgba(216, 228, 255, 0.9), transparent 34rem), #f7f9ff;
 }
 
 .login-shell {
@@ -280,9 +279,19 @@
   box-shadow: 0 0 0 4px rgba(110, 162, 255, 0.16);
 }
 
-.login-dot-one { top: 14%; left: 22%; }
-.login-dot-two { top: 27%; right: 14%; }
-.login-dot-three { bottom: 17%; left: 60%; background: #5ce4b1; }
+.login-dot-one {
+  top: 14%;
+  left: 22%;
+}
+.login-dot-two {
+  top: 27%;
+  right: 14%;
+}
+.login-dot-three {
+  bottom: 17%;
+  left: 60%;
+  background: #5ce4b1;
+}
 
 @media (max-width: 520px) {
   .login-page {
