@@ -35,6 +35,22 @@ describe('Login', () => {
     expect(password).toHaveValue('secret')
   })
 
+  it('switches the selected workspace tab without navigating', () => {
+    renderLogin()
+
+    const advisorTab = screen.getByRole('button', { name: 'Advisor Workspace' })
+    const meetingTab = screen.getByRole('button', { name: 'Book A Meeting' })
+
+    expect(advisorTab).toHaveAttribute('aria-pressed', 'true')
+    expect(meetingTab).toHaveAttribute('aria-pressed', 'false')
+
+    fireEvent.click(meetingTab)
+
+    expect(advisorTab).toHaveAttribute('aria-pressed', 'false')
+    expect(meetingTab).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByTestId('location')).toHaveTextContent('/')
+  })
+
   it('shows a loading state while the login request is pending', async () => {
     let resolveLogin
     vi.stubGlobal(
