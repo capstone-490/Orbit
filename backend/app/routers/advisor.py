@@ -1,9 +1,14 @@
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, StrictBool
 from psycopg.rows import dict_row
 
 from app.db.db import get_connection
 
 router = APIRouter(prefix="/advisors", tags=["Advisors"])
+
+
+class TaskCompletionUpdate(BaseModel):
+    completed: StrictBool
 
 
 # 1. Fetch Tasks for a Specific Advisor
@@ -33,8 +38,7 @@ def get_advisor_tasks(advisor_id: int):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.patch("/tasks/{task_id}")
-def update_task_completion(task_id: int, body: dict):
-    completed = body.get("completed")
+def update_task_completion(task_id: int, body: TaskCompletionUpdate):
     
     query = """
         UPDATE tasks
@@ -52,16 +56,16 @@ def update_task_completion(task_id: int, body: dict):
     """
     try:
         with get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
-            cur.execute(query, (completed, task_id))
+            cur.execute(query, (body.completed, task_id))
             updated_task = cur.fetchone()
             conn.commit()
-            
-            if not updated_task:
-                raise HTTPException(status_code=404, detail="Task not found")
-                
-            return updated_task
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+    if not updated_task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    return updated_task
 
 
 # 2. Fetch Schedule/Consultations for a Specific Advisor (JOINing with Clients)

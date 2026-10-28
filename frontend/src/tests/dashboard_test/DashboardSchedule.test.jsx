@@ -8,22 +8,24 @@ afterEach(() => cleanup())
 describe('DashboardSchedule Component', () => {
   const mockScheduleData = [
     {
-      time: '09:00 AM',
+      id: 1,
+      time: '2026-10-25T09:00:00',
       duration: '45 mins',
       clientName: 'Alice Johnson',
       category: 'Financial Review',
       agenda: 'Quarterly asset assessment',
       statusText: 'Confirmed',
-      actionButton: { label: 'Join Call' },
+      actionButtonLabel: 'Join Call',
     },
     {
-      time: '11:30 AM',
+      id: 2,
+      time: '2026-10-25T11:30:00',
       duration: '30 mins',
       clientName: 'Bob Smith',
       category: 'Initial Consultation',
       locationOrPlatform: 'Zoom Meeting',
       agenda: 'New portfolio setup',
-      actionButton: { label: 'View Details' },
+      actionButtonLabel: 'View Details',
     },
   ]
 
@@ -43,11 +45,11 @@ describe('DashboardSchedule Component', () => {
   test('renders meeting times, durations, and agendas', () => {
     render(<DashboardSchedule scheduleData={mockScheduleData} />)
 
-    expect(screen.getByText('09:00 AM')).toBeInTheDocument()
+    expect(screen.getByText('9:00AM')).toBeInTheDocument()
     expect(screen.getByText('45 mins')).toBeInTheDocument()
     expect(screen.getByText(/Quarterly asset assessment/i)).toBeInTheDocument()
 
-    expect(screen.getByText('11:30 AM')).toBeInTheDocument()
+    expect(screen.getByText('11:30AM')).toBeInTheDocument()
     expect(screen.getByText('30 mins')).toBeInTheDocument()
     expect(screen.getByText(/New portfolio setup/i)).toBeInTheDocument()
   })
