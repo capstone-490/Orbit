@@ -14,7 +14,7 @@ function Navbar({ user }) {
       </div>
 
       <div className="navbar-links">
-        <NavLink to="/">Dashboard</NavLink>
+        <NavLink to="/dashboard">Dashboard</NavLink>
         <NavLink to="/clients">Clients</NavLink>
         <NavLink to="/calendar">Calendar</NavLink>
         <NavLink to="/follow-ups">Follow-Ups</NavLink>

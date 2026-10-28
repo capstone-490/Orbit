@@ -7,14 +7,17 @@ import Calendar from './pages/Calendar'
 import Clients from './pages/Clients'
 import Documents from './pages/Documents'
 import FollowUps from './pages/FollowUps'
+import Login from './pages/Login'
 import Tasks from './pages/Tasks'
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />
         <Route element={<AdvisorLayout />}>
-          <Route path="/" element={<AdvisorDashboard />} />
+          <Route path="/dashboard" element={<AdvisorDashboard />} />
           <Route path="/clients" element={<Clients />} />
           <Route path="/calendar" element={<Calendar />} />
           <Route path="/follow-ups" element={<FollowUps />} />
