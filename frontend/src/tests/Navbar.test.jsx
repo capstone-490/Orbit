@@ -1,3 +1,4 @@
+// Substantial AI assistance used; verified with frontend tests and production build.
 import { cleanup, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it } from 'vitest'
