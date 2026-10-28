@@ -23,6 +23,7 @@ app.add_middleware(
 app.include_router(clients_router)
 app.include_router(advisor_router)
 
+
 def get_user_id(user_id: str | None = Header(default=None)) -> str:
     # Temporary: to be replaced with authenticated user when login is implemented.
     return user_id or "unknown"

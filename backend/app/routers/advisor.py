@@ -38,9 +38,10 @@ def get_advisor_tasks(advisor_id: int):
     except PsycopgError as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @router.patch("/tasks/{task_id}")
 def update_task_completion(task_id: int, body: TaskCompletionUpdate):
-    
+
     query = """
         UPDATE tasks
         SET completed = %s

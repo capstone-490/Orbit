@@ -380,7 +380,8 @@ def create_tasks_table():
             $$;
         """)
         conn.commit()
-        
+
+
 def migrate():
     # Enums
     create_risk_tolerance_enum()
@@ -406,6 +407,7 @@ def migrate():
     create_audit_log_table()
     create_consultations_table()
     create_tasks_table()
+
 
 if __name__ == "__main__":
     migrate()
