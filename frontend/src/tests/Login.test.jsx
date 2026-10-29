@@ -61,9 +61,22 @@ describe('Login', () => {
     expect(password).toHaveAttribute('type', 'password')
     fireEvent.click(toggle)
     expect(password).toHaveAttribute('type', 'text')
-    expect(screen.getByRole('button', { name: 'Hide password' })).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Hide password' }))
+    const hideToggle = screen.getByRole('button', { name: 'Hide password' })
+    expect(hideToggle).toBeInTheDocument()
+    fireEvent.click(hideToggle)
     expect(password).toHaveAttribute('type', 'password')
+  })
+
+  it('uses native validation before submitting empty credentials', () => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+    renderLogin()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sign In' }))
+
+    expect(screen.getByLabelText('Email')).toBeInvalid()
+    expect(screen.getByLabelText('Password')).toBeInvalid()
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 
   it('selects the advisor workspace tab', () => {

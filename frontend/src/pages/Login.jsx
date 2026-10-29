@@ -73,7 +73,7 @@ function Login() {
             </Link>
           </div>
 
-          <form onSubmit={handleSubmit} noValidate>
+          <form onSubmit={handleSubmit}>
             <div className="login-field">
               <label htmlFor="email">Email</label>
               <div className="login-input-wrap">
@@ -116,7 +116,7 @@ function Login() {
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                   onClick={() => setShowPassword((visible) => !visible)}
                 >
-                  {showPassword ? <FiEyeOff aria-hidden="true" /> : <FiEye aria-hidden="true" />}
+                  {showPassword ? <FiEye aria-hidden="true" /> : <FiEyeOff aria-hidden="true" />}
                 </button>
               </div>
             </div>
