@@ -52,6 +52,41 @@ describe('Login', () => {
     expect(screen.getByTestId('location')).toHaveTextContent('/create-account')
   })
 
+  it('toggles password visibility', () => {
+    renderLogin()
+
+    const password = screen.getByLabelText('Password')
+    const toggle = screen.getByRole('button', { name: 'Show password' })
+
+    expect(password).toHaveAttribute('type', 'password')
+    fireEvent.click(toggle)
+    expect(password).toHaveAttribute('type', 'text')
+    expect(screen.getByRole('button', { name: 'Hide password' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Hide password' }))
+    expect(password).toHaveAttribute('type', 'password')
+  })
+
+  it('selects the advisor workspace tab', () => {
+    renderLogin()
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Advisor Workspace' }))
+
+    expect(screen.getByRole('tab', { name: 'Advisor Workspace' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    )
+  })
+
+  it('toggles remember this device', () => {
+    renderLogin()
+
+    const rememberDevice = screen.getByRole('checkbox', { name: 'Remember this device' })
+
+    expect(rememberDevice).not.toBeChecked()
+    fireEvent.click(rememberDevice)
+    expect(rememberDevice).toBeChecked()
+  })
+
   it('shows a loading state while the login request is pending', async () => {
     let resolveLogin
     vi.stubGlobal(
