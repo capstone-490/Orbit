@@ -2,10 +2,10 @@
 
 import argparse
 
-from app.feature_flags import set_flag
+from app.core.feature_flags import set_flag
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(
         description="Set a feature flag and record in audit log."
     )
@@ -26,7 +26,8 @@ def main() -> None:
     parser.add_argument(
         "--changed_by", type=str, default=None, help="Who is making the change"
     )
-    args = parser.parse_args()
+
+    args = parser.parse_args(argv)
     enabled = args.enabled == "true"
 
     set_flag(

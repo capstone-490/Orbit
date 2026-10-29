@@ -2,7 +2,7 @@ import json
 import statistics
 import time
 
-from security.redactor import redact_data
+from app.core.security.redactor import redact_data
 
 
 def test_large_payload_performance():

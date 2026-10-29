@@ -1,6 +1,6 @@
 import pytest
 
-from security.redactor import (
+from app.core.security.redactor import (
     redact_data,
     redact_exception,
     redact_text,

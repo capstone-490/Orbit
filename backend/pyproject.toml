@@ -5,15 +5,24 @@ description = "Orbit backend"
 requires-python = ">=3.14"
 dependencies = [
     "alembic>=1.20.0",
+    "asyncpg>=0.32.0",
+    "email-validator>=2.3.0",
     "fastapi[standard]>=0.143.0",
+    "httpx2>=2.16.0",
     "psycopg[binary]>=3.3.6",
+    "pydantic>=2.14.1",
+    "pydantic-settings>=2.15.0",
+    "sqlalchemy>=2.1.4",
 ]
 
 [dependency-groups]
 dev = [
     "faker>=40.43.0",
+    "httpx>=0.28.1",
+    "httpx2>=2.16.0",
     "mypy>=2.4.0",
     "pytest==9.1.1",
+    "pytest-asyncio>=1.4.0",
     "pytest-cov>=7.1.0",
     "ruff>=0.17.1",
 ]
@@ -22,15 +31,25 @@ dev = [
 package = false
 
 [tool.coverage.run]
-source = ["app"]
-omit = ["tests/*", "migrations/*", "manage.py"]
+source = ["app", "scripts"]
+omit = ["tests/*", "migrations/*"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
-testpaths = ["tests", "test"]
+testpaths = ["tests"]
+asyncio_mode = "auto"
 
 [tool.mypy]
 python_version = "3.14"
 explicit_package_bases = true
 mypy_path = "."
+packages = ["app", "scripts", "tests"]
 exclude = ["^.venv/"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app", "scripts"]

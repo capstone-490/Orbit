@@ -1,33 +1,51 @@
 # Below 50% AI-generated
-from app.feature_flags import set_flag
+import pytest
+
+from app.core.feature_flags import set_flag
 
 
-def test_ab_test_returns_b(client):
-    set_flag("demo-ab", True, 100, changed_by="test_user")
-    response = client.get("/ab-test", headers={"User-ID": "user1"})
+@pytest.mark.parametrize(
+    ("rollout_percent", "expected_variant"),
+    [
+        (100, "B"),
+        (0, "A"),
+    ],
+    ids=["full-rollout", "zero-rollout"],
+)
+def test_ab_test_returns_expected_variant(
+    client,
+    rollout_percent: int,
+    expected_variant: str,
+) -> None:
+    set_flag(
+        "demo-ab",
+        True,
+        rollout_percent,
+        changed_by="test_user",
+    )
+
+    response = client.get(
+        "/ab-test",
+        headers={"User-ID": "user1"},
+    )
+
     assert response.status_code == 200
-    assert response.json() == {"Variant": "B"}
+    assert response.json() == {"Variant": expected_variant}
 
 
-def test_ab_test_returns_a(client):
-    set_flag("demo-ab", True, 0, changed_by="test_user")
-    response = client.get("/ab-test", headers={"User-ID": "user1"})
-    assert response.status_code == 200
-    assert response.json() == {"Variant": "A"}
-
-
-def test_response_does_not_include_user_id(client):
+def test_ab_test_response_excludes_user_id(client) -> None:
     set_flag("demo-ab", True, 50, changed_by="test_user")
     response = client.get("/ab-test", headers={"User-ID": "user1"})
     assert response.status_code == 200
-    assert set(response.json().keys()) == {"Variant"}
+    assert response.json() == {"Variant": response.json()["Variant"]}
+    assert set(response.json()) == {"Variant"}
 
 
-def test_same_user_id_consistency(client):
+def test_same_user_receives_consistent_variant(client) -> None:
     set_flag("demo-ab", True, 50, changed_by="test_user")
-    user_id = "user1"
-    response1 = client.get("/ab-test", headers={"User-ID": user_id})
-    response2 = client.get("/ab-test", headers={"User-ID": user_id})
+    headers = {"User-ID": "user1"}
+    response1 = client.get("/ab-test", headers=headers)
+    response2 = client.get("/ab-test", headers=headers)
     assert response1.status_code == 200
     assert response2.status_code == 200
     assert response1.json() == response2.json()

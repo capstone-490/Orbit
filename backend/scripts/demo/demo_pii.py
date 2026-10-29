@@ -1,6 +1,6 @@
 from pprint import pprint
 
-from security.redactor import redact_data, redact_exception
+from app.core.security.redactor import redact_data, redact_exception
 
 # Synthetic client information
 client = {
