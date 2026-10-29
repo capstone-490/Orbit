@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:16-alpine
+    image: postgres:18.6-alpine3.24
     container_name: orbit_postgres
     environment:
       - POSTGRES_DB=orbit_db
@@ -9,7 +9,7 @@ services:
     ports:
       - "6105:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U orbit_user -d orbit_db"]
       interval: 10s
@@ -39,4 +39,4 @@ services:
     tty: true
 
 volumes:
-  postgres_data:
+  pgdata:
