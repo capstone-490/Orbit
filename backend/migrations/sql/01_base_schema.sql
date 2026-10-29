@@ -14,7 +14,6 @@ $$ LANGUAGE plpgsql;
 
 -- ============================================================================
 -- global platform feature flags
-DROP TABLE feature_flags;
 CREATE TABLE feature_flags (
     name VARCHAR(127) PRIMARY KEY,
     enabled BOOLEAN NOT NULL DEFAULT FALSE,
