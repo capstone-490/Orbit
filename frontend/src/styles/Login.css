@@ -73,6 +73,7 @@
 }
 
 .login-tab {
+  display: block;
   border: 0;
   padding: 9px 5px;
   border-radius: 5px;
@@ -80,6 +81,7 @@
   color: inherit;
   cursor: pointer;
   font: inherit;
+  text-decoration: none;
 }
 
 .login-tab-active {

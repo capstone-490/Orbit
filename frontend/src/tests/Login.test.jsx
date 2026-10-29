@@ -36,20 +36,20 @@ describe('Login', () => {
     expect(password).toHaveValue('secret')
   })
 
-  it('switches the selected workspace tab without navigating', () => {
+  it('navigates to the meeting booking placeholder', () => {
     renderLogin()
 
-    const advisorTab = screen.getByRole('tab', { name: 'Advisor Workspace' })
-    const meetingTab = screen.getByRole('tab', { name: 'Book A Meeting' })
+    fireEvent.click(screen.getByRole('link', { name: 'Book A Meeting' }))
 
-    expect(advisorTab).toHaveAttribute('aria-selected', 'true')
-    expect(meetingTab).toHaveAttribute('aria-selected', 'false')
+    expect(screen.getByTestId('location')).toHaveTextContent('/book-meeting')
+  })
 
-    fireEvent.click(meetingTab)
+  it('navigates to the account creation placeholder', () => {
+    renderLogin()
 
-    expect(advisorTab).toHaveAttribute('aria-selected', 'false')
-    expect(meetingTab).toHaveAttribute('aria-selected', 'true')
-    expect(screen.getByTestId('location')).toHaveTextContent('/')
+    fireEvent.click(screen.getByRole('link', { name: 'Create an account' }))
+
+    expect(screen.getByTestId('location')).toHaveTextContent('/create-account')
   })
 
   it('shows a loading state while the login request is pending', async () => {
