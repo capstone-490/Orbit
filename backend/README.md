@@ -101,21 +101,19 @@ docker compose run --rm backend pytest -v
 - Database credentials are in `docker-compose.yml` (Prob need to remove them in the future from it)
 - Python packages are installed through pip using information contained in requirements.txt
 
-### Client anonymization
+### Client data and AI masking
 
-Client creation stores deterministic synthetic values for names, contact details,
-addresses, occupations, and age. Real values are never persisted by the client
-creation flow. A UUID is generated before anonymization and stored as
-`anonymized_client_id`; every synthetic field is derived from that identifier, so
-fields for one client remain correlated without storing the original PII.
+Client creation stores the submitted name, contact details, address, occupation,
+and timeline in the database. The submitted date of birth is converted to `age`
+at creation time and is never stored. Security for stored client data will be
+provided through encryption and access control.
 
-The in-memory store is only a cache: deterministic fake values come from the HMAC,
-while the cache retains generated values for efficiency. Cache eviction therefore
-does not change values. Existing database rows are not masked by this feature.
+The `mask_for_ai` function in `security/anonymizer.py` creates deterministic
+synthetic names, contact details, addresses, and occupations before client data
+is sent to an AI model. It derives HMAC-SHA256 tokens from the client's stable
+database ID, not from PII, and leaves age and timeline unchanged. The masking
+store is only a cache, so cache eviction does not change generated values.
+
 The backend refuses to start unless `ORBIT_ANONYMIZATION_SECRET` is configured,
 non-blank, and at least 32 characters long. Use a stable, deployment-managed
-secret in development, tests, Docker Compose, and production; never use a shared
-development secret in production.
-
-The API accepts `date_of_birth` only to calculate age during client creation.
-Only `age` is persisted and returned.
+secret in `.env`, tests, Docker Compose, and production.
