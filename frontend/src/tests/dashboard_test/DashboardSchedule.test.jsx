@@ -1,31 +1,39 @@
 import { cleanup, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, test } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import '@testing-library/jest-dom/vitest'
 import DashboardSchedule from '../../components/dashboard/DashboardSchedule'
 
-afterEach(() => cleanup())
+beforeEach(() => {
+  vi.useFakeTimers()
+  vi.setSystemTime(new Date('2026-10-29T12:00:00'))
+})
+
+afterEach(() => {
+  cleanup()
+  vi.useRealTimers()
+})
 
 describe('DashboardSchedule Component', () => {
   const mockScheduleData = [
     {
       id: 1,
-      time: '2026-10-25T09:00:00',
+      time: '2026-10-30T09:00:00',
       duration: '45 mins',
       clientName: 'Alice Johnson',
       category: 'Financial Review',
       agenda: 'Quarterly asset assessment',
-      statusText: 'Confirmed',
-      actionButtonLabel: 'Join Call',
+      completionStatus: 'Scheduled',
+      locationOrPlatform: 'Google Meet',
     },
     {
       id: 2,
-      time: '2026-10-25T11:30:00',
+      time: '2026-10-30T11:30:00',
       duration: '30 mins',
       clientName: 'Bob Smith',
       category: 'Initial Consultation',
-      locationOrPlatform: 'Zoom Meeting',
+      locationOrPlatform: 'Conference Room B',
       agenda: 'New portfolio setup',
-      actionButtonLabel: 'View Details',
+      completionStatus: 'Scheduled',
     },
   ]
 
@@ -45,6 +53,7 @@ describe('DashboardSchedule Component', () => {
   test('renders meeting times, durations, and agendas', () => {
     render(<DashboardSchedule scheduleData={mockScheduleData} />)
 
+    expect(screen.getAllByText('Oct 30')).toHaveLength(2)
     expect(screen.getByText('9:00AM')).toBeInTheDocument()
     expect(screen.getByText('45 mins')).toBeInTheDocument()
     expect(screen.getByText(/Quarterly asset assessment/i)).toBeInTheDocument()
@@ -54,14 +63,15 @@ describe('DashboardSchedule Component', () => {
     expect(screen.getByText(/New portfolio setup/i)).toBeInTheDocument()
   })
 
-  test('renders status text or platform details when available', () => {
+  test('derives meeting status from completion state and displays the location', () => {
     render(<DashboardSchedule scheduleData={mockScheduleData} />)
 
-    expect(screen.getByText('Confirmed')).toBeInTheDocument()
-    expect(screen.getByText('Zoom Meeting')).toBeInTheDocument()
+    expect(screen.getAllByText('Scheduled')).toHaveLength(2)
+    expect(screen.getByText('Google Meet')).toBeInTheDocument()
+    expect(screen.getByText('Conference Room B')).toBeInTheDocument()
   })
 
-  test('renders action button labels correctly', () => {
+  test('derives action labels from the meeting platform', () => {
     render(<DashboardSchedule scheduleData={mockScheduleData} />)
 
     expect(screen.getByText('Join Call')).toBeInTheDocument()
@@ -79,5 +89,55 @@ describe('DashboardSchedule Component', () => {
     render(<DashboardSchedule scheduleData={[{ ...mockScheduleData[0], time: 'not-a-date' }]} />)
 
     expect(document.querySelector('.meeting-time .item-time')).toBeEmptyDOMElement()
+    expect(document.querySelector('.meeting-time .item-date')).toBeEmptyDOMElement()
+  })
+
+  test('flags meetings in the past as overdue', () => {
+    render(
+      <DashboardSchedule
+        scheduleData={[
+          { ...mockScheduleData[0], id: 3, time: '2026-10-29T11:00:00' },
+          { ...mockScheduleData[1], id: 4, time: '2026-10-29T14:00:00' },
+        ]}
+      />,
+    )
+
+    expect(screen.getByText('Overdue')).toBeInTheDocument()
+    expect(document.querySelector('.schedule-item.overdue')).toBeInTheDocument()
+    expect(document.querySelectorAll('.schedule-item.overdue')).toHaveLength(1)
+  })
+
+  test('does not flag completed meetings in the past as overdue', () => {
+    render(
+      <DashboardSchedule
+        scheduleData={[
+          {
+            ...mockScheduleData[0],
+            time: '2026-10-29T11:00:00',
+            completionStatus: 'Completed',
+          },
+        ]}
+      />,
+    )
+
+    expect(screen.getByText('Completed')).toBeInTheDocument()
+    expect(document.querySelector('.schedule-item.overdue')).not.toBeInTheDocument()
+  })
+
+  test('does not flag cancelled meetings in the past as overdue', () => {
+    render(
+      <DashboardSchedule
+        scheduleData={[
+          {
+            ...mockScheduleData[0],
+            time: '2026-10-29T11:00:00',
+            completionStatus: 'Cancelled',
+          },
+        ]}
+      />,
+    )
+
+    expect(screen.getByText('Cancelled')).toBeInTheDocument()
+    expect(document.querySelector('.schedule-item.overdue')).not.toBeInTheDocument()
   })
 })

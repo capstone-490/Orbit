@@ -335,11 +335,44 @@ def create_consultations_table():
                 duration VARCHAR(50),
                 category VARCHAR(100),
                 agenda TEXT,
-                status_text VARCHAR(100),
+                completion_status meeting_status NOT NULL DEFAULT 'Scheduled',
                 location_or_platform VARCHAR(150),
-                action_button_label VARCHAR(50),
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             )
+        """)
+        conn.execute("""
+            ALTER TABLE consultations
+                ADD COLUMN IF NOT EXISTS completion_status meeting_status
+                    NOT NULL DEFAULT 'Scheduled'
+        """)
+        conn.execute("""
+            DO $$
+            BEGIN
+                IF EXISTS (
+                    SELECT 1
+                    FROM information_schema.columns
+                    WHERE table_name = 'consultations'
+                      AND column_name = 'status_text'
+                      AND table_schema = current_schema()
+                ) THEN
+                    UPDATE consultations
+                    SET completion_status = CASE LOWER(BTRIM(status_text))
+                        WHEN 'completed' THEN 'Completed'::meeting_status
+                        WHEN 'cancelled' THEN 'Cancelled'::meeting_status
+                        WHEN 'canceled' THEN 'Cancelled'::meeting_status
+                        ELSE completion_status
+                    END
+                    WHERE LOWER(BTRIM(status_text)) IN (
+                        'completed', 'cancelled', 'canceled'
+                    );
+                END IF;
+            END
+            $$;
+        """)
+        conn.execute("""
+            ALTER TABLE consultations
+                DROP COLUMN IF EXISTS status_text,
+                DROP COLUMN IF EXISTS action_button_label
         """)
         conn.commit()
 
@@ -351,34 +384,14 @@ def create_tasks_table():
                 id SERIAL PRIMARY KEY,
                 advisor_id INT NOT NULL REFERENCES advisors(id) ON DELETE CASCADE,
                 client_id BIGINT REFERENCES clients(id) ON DELETE SET NULL,
+                FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE SET NULL,
                 task_title VARCHAR(255) NOT NULL,
                 due_date DATE NOT NULL,
-                tag VARCHAR(50),
                 completed BOOLEAN DEFAULT FALSE,
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             )
         """)
-        conn.execute("""
-            ALTER TABLE tasks
-            ADD COLUMN IF NOT EXISTS client_id BIGINT
-        """)
-        conn.execute("""
-            DO $$
-            BEGIN
-                IF NOT EXISTS (
-                    SELECT 1
-                    FROM pg_constraint
-                    WHERE conname = 'fk_tasks_client'
-                      AND conrelid = 'tasks'::regclass
-                ) THEN
-                    ALTER TABLE tasks
-                    ADD CONSTRAINT fk_tasks_client
-                    FOREIGN KEY (client_id) REFERENCES clients(id)
-                    ON DELETE SET NULL;
-                END IF;
-            END
-            $$;
-        """)
+        conn.execute("ALTER TABLE tasks DROP COLUMN IF EXISTS tag")
         conn.commit()
 
 

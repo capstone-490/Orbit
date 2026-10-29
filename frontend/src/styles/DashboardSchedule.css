@@ -15,8 +15,18 @@
   border-radius: 4px;
 }
 
+.schedule-item.overdue {
+  border-color: #dc3545;
+  background-color: #fff5f5;
+}
+
 .text-blue {
   color: #0052cc;
+}
+.item-date {
+  color: #6c757d;
+  font-size: 12px;
+  margin-bottom: 4px;
 }
 .item-time {
   font-weight: bold;
@@ -24,6 +34,7 @@
 }
 .item-duration {
   color: #98a1aa;
+  margin-bottom: 4px;
 }
 
 .meeting-time {
@@ -68,6 +79,15 @@
   color: #28a745;
   margin-left: auto;
   margin-top: 6px;
+}
+
+.item-status.overdue-status {
+  color: #dc3545;
+}
+.item-location {
+  color: #6c757d;
+  font-size: 12px;
+  margin-top: 4px;
 }
 .action-button {
   padding: 6px 12px;

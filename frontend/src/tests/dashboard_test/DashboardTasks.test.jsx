@@ -13,6 +13,7 @@ const renderDashboardTasks = (props) =>
 
 afterEach(() => {
   cleanup()
+  vi.useRealTimers()
   vi.unstubAllGlobals()
   vi.restoreAllMocks()
 })
@@ -50,6 +51,9 @@ describe('DashboardTasks Component', () => {
   ]
 
   test('renders tasks limited by slice constraint and displays titles, clients, and formatted dates', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-10-16T12:00:00'))
+
     renderDashboardTasks({ priorityTasks: mockTasks })
 
     // Verify first 3 tasks render
@@ -71,6 +75,34 @@ describe('DashboardTasks Component', () => {
     renderDashboardTasks({ priorityTasks: [{ ...mockTasks[0], clientName: null }] })
 
     expect(screen.getByText('No client assigned')).toBeInTheDocument()
+  })
+
+  test('flags past due incomplete tasks as overdue', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-10-16T12:00:00'))
+
+    renderDashboardTasks({
+      priorityTasks: [
+        { ...mockTasks[0], dueDate: '2026-10-15' },
+        { ...mockTasks[1], dueDate: '2026-10-17' },
+      ],
+    })
+
+    expect(screen.getByText('OVERDUE · OCT 15')).toBeInTheDocument()
+    expect(document.querySelector('.task-item.overdue')).toBeInTheDocument()
+    expect(document.querySelectorAll('.task-item.overdue')).toHaveLength(1)
+  })
+
+  test('does not flag completed past due tasks as overdue', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-10-16T12:00:00'))
+
+    renderDashboardTasks({
+      priorityTasks: [{ ...mockTasks[0], dueDate: '2026-10-15', completed: true }],
+    })
+
+    expect(screen.getByText('OCT 15')).toBeInTheDocument()
+    expect(document.querySelector('.task-item.overdue')).not.toBeInTheDocument()
   })
 
   test('updates task completion through the API and notifies the parent', async () => {

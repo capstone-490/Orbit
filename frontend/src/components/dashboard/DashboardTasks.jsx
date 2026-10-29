@@ -6,27 +6,40 @@ function DashboardTasks({ priorityTasks, onTaskUpdated }) {
   const [updatingTaskIds, setUpdatingTaskIds] = useState(() => new Set())
   const [updateError, setUpdateError] = useState('')
 
-  const getTagStyleClass = (dueDateStr) => {
-    const todayStr = '2026-10-16' // Current date (October 16, 2026)
-    const tomorrowStr = '2026-10-17' // Tomorrow's date
+  const getLocalDateKey = (date) => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
 
-    if (dueDateStr === todayStr) return 'badge-today'
-    if (dueDateStr === tomorrowStr) return 'badge-tomorrow'
-    return 'badge-future'
+    return `${year}-${month}-${day}`
   }
 
-  // 2. Helper function for badge text labels
+  const parseDueDate = (dueDate) => {
+    if (!dueDate || Number.isNaN(Date.parse(`${dueDate}T00:00:00`))) return null
+
+    return new Date(`${dueDate}T00:00:00`)
+  }
+
+  const isTaskOverdue = (item) => {
+    if (item.completed) return false
+
+    const dueDate = parseDueDate(item.dueDate)
+    return dueDate !== null && getLocalDateKey(dueDate) < getLocalDateKey(new Date())
+  }
+
   const formatDueDate = (dueDateStr) => {
-    const todayStr = '2026-10-16'
-    const tomorrowStr = '2026-10-17'
+    const date = parseDueDate(dueDateStr)
+    if (!date) return ''
 
-    if (dueDateStr === todayStr) return 'TODAY'
-    if (dueDateStr === tomorrowStr) return 'TOMORROW'
+    const today = new Date()
+    if (getLocalDateKey(date) === getLocalDateKey(today)) return 'TODAY'
 
-    const dateObj = new Date(`${dueDateStr}T00:00:00`)
-    return dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()
+    const tomorrow = new Date(today)
+    tomorrow.setDate(today.getDate() + 1)
+    if (getLocalDateKey(date) === getLocalDateKey(tomorrow)) return 'TOMORROW'
+
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()
   }
-
   // Handle checking/unchecking the task
   const handleCheckboxChange = async (taskId, completed) => {
     setUpdatingTaskIds((current) => new Set(current).add(taskId))
@@ -69,24 +82,28 @@ function DashboardTasks({ priorityTasks, onTaskUpdated }) {
       </div>
       <hr className="task-divider" />
       {updateError && <p role="alert">{updateError}</p>}
-      {priorityTasks.slice(0, 3).map((item) => (
-        <div key={item.id} className="task-item">
-          <input
-            type="checkbox"
-            className="task-checkbox"
-            checked={Boolean(item.completed)}
-            disabled={updatingTaskIds.has(item.id)}
-            onChange={(event) => handleCheckboxChange(item.id, event.target.checked)}
-          />
-          <div className="task-details">
-            <span className="task-title">{item.taskTitle}</span>
-            <span className="task-client">{item.clientName || 'No client assigned'}</span>
+      {priorityTasks.slice(0, 3).map((item) => {
+        const overdue = isTaskOverdue(item)
+
+        return (
+          <div key={item.id} className={`task-item${overdue ? ' overdue' : ''}`}>
+            <input
+              type="checkbox"
+              className="task-checkbox"
+              checked={Boolean(item.completed)}
+              disabled={updatingTaskIds.has(item.id)}
+              onChange={(event) => handleCheckboxChange(item.id, event.target.checked)}
+            />
+            <div className="task-details">
+              <span className="task-title">{item.taskTitle}</span>
+              <span className="task-client">{item.clientName || 'No client assigned'}</span>
+            </div>
+            <span className={`task-due-date${overdue ? ' overdue' : ''}`}>
+              {overdue ? `OVERDUE · ${formatDueDate(item.dueDate)}` : formatDueDate(item.dueDate)}
+            </span>
           </div>
-          <span className={`task-due-date ${getTagStyleClass(item.dueDate)}`}>
-            {formatDueDate(item.dueDate)}
-          </span>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }

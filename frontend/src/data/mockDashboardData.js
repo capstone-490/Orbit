@@ -27,14 +27,8 @@ export const mockScheduleData = [
     clientName: 'Sarah Smith',
     category: 'Financial Planning',
     agenda: 'Q4 Liquidity Strategy & irrevocable trust distribution timing',
-    statusText: 'AI Dossier Ready',
-    statusType: 'success',
-    locationOrPlatform: null,
-    actionButton: {
-      label: 'Join Google Meet',
-      type: 'primary',
-      icon: 'video',
-    },
+    completionStatus: 'Scheduled',
+    locationOrPlatform: 'Google Meet',
   },
   {
     id: 2,
@@ -43,14 +37,8 @@ export const mockScheduleData = [
     clientName: 'David Sterling',
     category: 'Tax Strategy',
     agenda: 'Tax-loss harvesting across taxable sleeves; CPA Robert Cole joining',
-    statusText: null,
-    statusType: null,
+    completionStatus: 'Scheduled',
     locationOrPlatform: 'Zoom Pro',
-    actionButton: {
-      label: 'Open',
-      type: 'outline',
-      icon: 'external-link',
-    },
   },
   {
     id: 3,
@@ -59,14 +47,8 @@ export const mockScheduleData = [
     clientName: 'Jonathan Wright',
     category: 'Audit Review',
     agenda: 'Institutional cash flow yield verification & liquidity reserve sync',
-    statusText: 'Pre-read delivered',
-    statusType: 'success',
+    completionStatus: 'Scheduled',
     locationOrPlatform: null,
-    actionButton: {
-      label: 'Dossier',
-      type: 'outline',
-      icon: 'folder',
-    },
   },
   {
     id: 4,
@@ -75,14 +57,8 @@ export const mockScheduleData = [
     clientName: 'Dr. Aris Thorne',
     category: 'Annual Review',
     agenda: '529 plan updates for grandchildren & revised beneficiary designations',
-    statusText: null,
-    statusType: null,
+    completionStatus: 'Scheduled',
     locationOrPlatform: 'Conference Room B',
-    actionButton: {
-      label: 'Agenda',
-      type: 'outline',
-      icon: 'file-text',
-    },
   },
 ]
 

@@ -21,7 +21,6 @@ def get_advisor_tasks(advisor_id: int):
             t.advisor_id AS "advisorId",
             t.task_title AS "taskTitle",
             t.due_date AS "dueDate",
-            t.tag,
             t.completed,
             t.created_at AS "createdAt",
             t.client_id AS "clientId",
@@ -51,7 +50,6 @@ def update_task_completion(task_id: int, body: TaskCompletionUpdate):
             advisor_id AS "advisorId",
             task_title AS "taskTitle",
             due_date AS "dueDate",
-            tag,
             completed,
             created_at AS "createdAt",
             client_id AS "clientId";
@@ -82,9 +80,8 @@ def get_advisor_schedule(advisor_id: int):
             cl.id AS "clientId",
             c.category,
             c.agenda,
-            c.status_text AS "statusText",
-            c.location_or_platform AS "locationOrPlatform",
-            c.action_button_label AS "actionButtonLabel"
+            c.completion_status AS "completionStatus",
+            c.location_or_platform AS "locationOrPlatform"
         FROM consultations c
         JOIN clients cl ON c.client_id = cl.id
         WHERE c.advisor_id = %s
@@ -119,7 +116,7 @@ def get_advisor_clients(advisor_id: int):
         ORDER BY name ASC;
     """
     try:
-        with get_connection() as conn, conn.cursor() as cur:
+        with get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
             cur.execute(query, (advisor_id,))
             return cur.fetchall()
     except PsycopgError as e:

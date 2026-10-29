@@ -3,6 +3,7 @@ from unittest.mock import MagicMock
 import pytest
 from fastapi.testclient import TestClient
 from psycopg import OperationalError
+from psycopg.rows import dict_row
 
 from app.main import app
 from app.routers import advisor
@@ -28,7 +29,6 @@ def test_list_advisor_tasks_returns_client_names(mock_db):
             "advisorId": 2,
             "taskTitle": "Call client",
             "dueDate": "2026-10-28",
-            "tag": "TODAY",
             "completed": False,
             "createdAt": "2026-10-28T10:00:00",
             "clientId": 10,
@@ -41,8 +41,10 @@ def test_list_advisor_tasks_returns_client_names(mock_db):
     assert response.status_code == 200
     assert response.json()[0]["clientName"] == "Sarah Smith"
     assert response.json()[0]["completed"] is False
+    assert "tag" not in response.json()[0]
     query, params = cursor.execute.call_args.args
     assert "LEFT JOIN clients" in query
+    assert "t.tag" not in query
     assert params == (2,)
 
 
@@ -57,9 +59,8 @@ def test_list_advisor_schedule_returns_dict_rows(mock_db):
             "clientId": 10,
             "category": "Review",
             "agenda": "Review account",
-            "statusText": "Confirmed",
+            "completionStatus": "Scheduled",
             "locationOrPlatform": "Zoom",
-            "actionButtonLabel": "Join",
         }
     ]
 
@@ -67,23 +68,41 @@ def test_list_advisor_schedule_returns_dict_rows(mock_db):
 
     assert response.status_code == 200
     assert response.json()[0]["time"] == "2026-10-28T14:00:00"
-    assert response.json()[0]["actionButtonLabel"] == "Join"
+    assert response.json()[0]["completionStatus"] == "Scheduled"
+    assert "statusText" not in response.json()[0]
+    assert "actionButtonLabel" not in response.json()[0]
     query, params = cursor.execute.call_args.args
     assert "JOIN clients" in query
+    assert "completion_status" in query
+    assert "status_text" not in query
+    assert "action_button_label" not in query
     assert params == (2,)
 
 
 def test_list_advisor_clients_returns_rows(mock_db):
-    _, cursor = mock_db
-    cursor.fetchall.return_value = [{"id": 10, "name": "Sarah Smith"}]
+    connection, cursor = mock_db
+    cursor.fetchall.return_value = [
+        {
+            "id": 10,
+            "name": "Sarah Smith",
+            "createdAt": "2026-10-28T17:57:27+00:00",
+        }
+    ]
 
     response = client.get("/advisors/2/clients")
 
     assert response.status_code == 200
-    assert response.json() == [{"id": 10, "name": "Sarah Smith"}]
+    assert response.json() == [
+        {
+            "id": 10,
+            "name": "Sarah Smith",
+            "createdAt": "2026-10-28T17:57:27+00:00",
+        }
+    ]
     query, params = cursor.execute.call_args.args
     assert "WHERE advisor_id = %s" in query
     assert params == (2,)
+    assert connection.cursor.call_args.kwargs == {"row_factory": dict_row}
 
 
 def test_update_task_completion_persists_and_returns_updated_task(mock_db):

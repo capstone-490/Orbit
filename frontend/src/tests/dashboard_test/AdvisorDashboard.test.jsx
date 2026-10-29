@@ -55,8 +55,8 @@ describe('AdvisorDashboard', () => {
               clientName: 'Sarah Smith',
               category: 'Review',
               agenda: 'Review account',
-              statusText: 'Confirmed',
-              actionButtonLabel: 'Join',
+              completionStatus: 'Scheduled',
+              locationOrPlatform: 'Google Meet',
             },
           ],
         })
@@ -76,7 +76,7 @@ describe('AdvisorDashboard', () => {
     )
 
     expect(await screen.findByText('Call client')).toBeInTheDocument()
-    expect(screen.getByText('Join')).toBeInTheDocument()
+    expect(screen.getByText('Join Call')).toBeInTheDocument()
     expect(screen.getByText('TOTAL CLIENTS')).toBeInTheDocument()
 
     await waitFor(() => {

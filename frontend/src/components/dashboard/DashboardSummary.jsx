@@ -1,5 +1,14 @@
 import '../../styles/DashboardSummary.css'
 
+const isTaskOverdue = (task, now) => {
+  if (!task.dueDate) return false
+
+  const dueDate = new Date(`${task.dueDate}T00:00:00`)
+  if (Number.isNaN(dueDate.getTime())) return false
+
+  return dueDate < new Date(now.getFullYear(), now.getMonth(), now.getDate())
+}
+
 const formatMeetingTime = (timestamp) => {
   if (!timestamp) return 'No upcoming meetings'
 
@@ -17,10 +26,28 @@ function DashboardSummary({ dashboardSummaryData, tasks, schedule, clients }) {
       ? formatMeetingTime(schedule[0].time)
       : 'No upcoming meetings'
     : dashboardSummaryData.nextMeeting
-  const pendingTaskCount = tasks?.length ?? dashboardSummaryData.pendingTasks
+  const pendingTaskCount =
+    tasks?.filter((task) => !task.completed).length ?? dashboardSummaryData.pendingTasks
   const overdueTaskCount = tasks
-    ? tasks.filter((task) => new Date(task.dueDate) < new Date() && !task.completed).length
+    ? tasks.filter((task) => !task.completed && isTaskOverdue(task, new Date())).length
     : dashboardSummaryData.overdueTasks
+
+  const now = new Date()
+  const clientNewCount =
+    clients?.filter((client) => {
+      const rawTimestamp = client.createdAt ?? client.created_at
+      if (!rawTimestamp) return false
+
+      const isoString =
+        typeof rawTimestamp === 'string' ? rawTimestamp.replace(' ', 'T') : rawTimestamp
+      const clientDate = new Date(isoString)
+
+      return (
+        !Number.isNaN(clientDate.getTime()) &&
+        clientDate.getFullYear() === now.getFullYear() &&
+        clientDate.getMonth() === now.getMonth()
+      )
+    }).length ?? 0
 
   return (
     <section className="dashboard-summary">
@@ -31,8 +58,8 @@ function DashboardSummary({ dashboardSummaryData, tasks, schedule, clients }) {
         </span>
         <span className="card-body">
           <span className="primary-value">{clientCount}</span>
-          <span className={`secondary-value ${clientCount > 0 ? 'alert' : ''}`}>
-            +{dashboardSummaryData.addedClient} this month
+          <span className={`secondary-value ${clientNewCount > 0 ? 'alert' : ''}`}>
+            +{clientNewCount} this month
           </span>
         </span>
       </span>

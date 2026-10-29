@@ -86,11 +86,6 @@ function AdvisorDashboard() {
 
   return (
     <main className="advisor-dashboard">
-      <DashboardHeader
-        advisorName={dashboardData.advisor.firstName}
-        meetingCount={dashboardData.dashboardSummary.meetingCount}
-        criticalActionCount={dashboardData.dashboardSummary.criticalActionCount}
-      />
       <DashboardSummary
         dashboardSummaryData={dashboardData.dashboardSummaryData}
         tasks={tasks}
