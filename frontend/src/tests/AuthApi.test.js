@@ -15,9 +15,9 @@ describe('loginAdvisor', () => {
       })),
     )
 
-    await expect(loginAdvisor({ email: 'advisor@example.com', password: 'secret' })).rejects.toThrow(
-      'Please verify your account.',
-    )
+    await expect(
+      loginAdvisor({ email: 'advisor@example.com', password: 'secret' }),
+    ).rejects.toThrow('Please verify your account.')
   })
 
   it('uses the default error when the failed response is not JSON', async () => {
@@ -31,9 +31,9 @@ describe('loginAdvisor', () => {
       })),
     )
 
-    await expect(loginAdvisor({ email: 'advisor@example.com', password: 'secret' })).rejects.toThrow(
-      'Unable to sign in. Check your email and password and try again.',
-    )
+    await expect(
+      loginAdvisor({ email: 'advisor@example.com', password: 'secret' }),
+    ).rejects.toThrow('Unable to sign in. Check your email and password and try again.')
   })
 
   it('uses the default error when the failed response has no message', async () => {
@@ -45,8 +45,8 @@ describe('loginAdvisor', () => {
       })),
     )
 
-    await expect(loginAdvisor({ email: 'advisor@example.com', password: 'secret' })).rejects.toThrow(
-      'Unable to sign in. Check your email and password and try again.',
-    )
+    await expect(
+      loginAdvisor({ email: 'advisor@example.com', password: 'secret' }),
+    ).rejects.toThrow('Unable to sign in. Check your email and password and try again.')
   })
 })
