@@ -4,8 +4,8 @@ from unittest.mock import MagicMock
 import pytest
 from fastapi.testclient import TestClient
 
+from app.api.routers import meetings
 from app.main import app
-from app.routers import meetings
 
 client = TestClient(app)
 

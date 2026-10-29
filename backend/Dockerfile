@@ -18,7 +18,6 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 COPY app /backend/app
 COPY migrations /backend/migrations
-COPY security /backend/security
 COPY manage.py /backend/manage.py
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-build

@@ -5,7 +5,7 @@ from pathlib import Path
 
 from app.db.db import get_connection
 
-CONFIG_PATH = Path(__file__).resolve().parent / "config" / "feature_flags.json"
+CONFIG_PATH = Path(__file__).resolve().parent.parent / "config" / "feature_flags.json"
 
 
 def load_feature_flags() -> None:
