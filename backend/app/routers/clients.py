@@ -1,17 +1,25 @@
 import re
 from datetime import date
 from typing import Literal
-from uuid import uuid4
 
 from fastapi import APIRouter, HTTPException
 from psycopg.errors import UniqueViolation
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from app.db.db import get_connection
-from security.anonymizer import ClientAnonymizer
 
 router = APIRouter(prefix="/clients", tags=["Clients"])
-client_anonymizer: ClientAnonymizer | None = None
+
+
+def calculate_age(birth_date: date | None, today: date | None = None) -> int | None:
+    if birth_date is None:
+        return None
+    current_date = today or date.today()
+    return (
+        current_date.year
+        - birth_date.year
+        - ((current_date.month, current_date.day) < (birth_date.month, birth_date.day))
+    )
 
 
 # Client data model and validation
@@ -58,13 +66,9 @@ class ClientCreate(BaseModel):
 # Create a new client
 @router.post("", status_code=201)
 def create_client(client: ClientCreate):
-    global client_anonymizer
-    if client_anonymizer is None:
-        client_anonymizer = ClientAnonymizer()
-    data = client_anonymizer.anonymize(
-        client.model_dump(mode="json"),
-        client_key=str(uuid4()),
-    )
+    data = client.model_dump(mode="json")
+    data["age"] = calculate_age(client.date_of_birth)
+    data.pop("date_of_birth", None)
 
     # Convert optional blank fields to SQL NULL
     for field in (
@@ -72,7 +76,6 @@ def create_client(client: ClientCreate):
         "age",
         "occupation",
         "timeline",
-        "anonymized_client_id",
     ):
         if data[field] == "":
             data[field] = None
@@ -83,12 +86,12 @@ def create_client(client: ClientCreate):
                 """
                 INSERT INTO clients (
                     name, email, phone_number, address,
-                    age, occupation, timeline, anonymized_client_id
+                    age, occupation, timeline
                 )
                 VALUES (
                     %(name)s, %(email)s, %(phone_number)s,
                     %(address)s, %(age)s, %(occupation)s,
-                    %(timeline)s, %(anonymized_client_id)s
+                    %(timeline)s
                 )
                 RETURNING id
                 """,
@@ -115,7 +118,7 @@ def list_clients():
         cur.execute(
             """
             SELECT id, name, email, phone_number,
-                   address, age, occupation, anonymized_client_id,
+                   address, age, occupation,
                    timeline, created_at
             FROM clients
             ORDER BY created_at DESC, id DESC

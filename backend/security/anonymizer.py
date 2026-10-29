@@ -6,7 +6,6 @@ import os
 import threading
 from collections import OrderedDict
 from collections.abc import Callable
-from datetime import date
 
 MIN_SECRET_LENGTH = 32
 
@@ -61,67 +60,56 @@ class TokenStore:
             return generated
 
 
-class ClientAnonymizer:
-    """Generate deterministic synthetic values correlated by client identity."""
+def mask_for_ai(client: dict, store: TokenStore | None = None) -> dict:
+    """Return a deterministic, non-PII representation for an AI request."""
+    client_id = client.get("id")
+    if client_id is None:
+        raise ValueError("client must include a stable id")
 
-    def __init__(self, store: TokenStore | None = None):
-        self._store = store or TokenStore()
+    token_store = store or TokenStore()
+    result = dict(client)
+    result["name"] = token_store.get_or_create(
+        "name",
+        str(client_id),
+        lambda token: f"Client {token[:12]}",
+    )
+    result["email"] = token_store.get_or_create(
+        "email",
+        str(client_id),
+        lambda token: f"client-{token}@example.com",
+    )
+    result["phone_number"] = token_store.get_or_create(
+        "phone_number",
+        str(client_id),
+        _fake_phone,
+    )
+    result["address"] = _optional_mask(
+        token_store,
+        "address",
+        client.get("address"),
+        str(client_id),
+        lambda token: f"Synthetic Address {token[:16]}",
+    )
+    result["occupation"] = _optional_mask(
+        token_store,
+        "occupation",
+        client.get("occupation"),
+        str(client_id),
+        lambda token: f"Synthetic Occupation {token[:12]}",
+    )
+    return result
 
-    def anonymize(self, client: dict, client_key: str) -> dict:
-        if not client_key or not client_key.strip():
-            raise ValueError("client_key must be a non-empty synthetic identifier")
 
-        result = dict(client)
-        result["age"] = None
-        result["name"] = self._store.get_or_create(
-            f"{client_key}:name", client_key, lambda token: f"Client {token[:12]}"
-        )
-        result["email"] = self._store.get_or_create(
-            f"{client_key}:email",
-            client_key,
-            lambda token: f"client-{token}@example.com",
-        )
-        result["phone_number"] = self._store.get_or_create(
-            f"{client_key}:phone_number",
-            client_key,
-            _fake_phone,
-        )
-        result["address"] = self._optional_value(
-            client_key,
-            "address",
-            client.get("address"),
-            lambda token: f"Synthetic Address {token[:16]}",
-        )
-        result["occupation"] = self._optional_value(
-            client_key,
-            "occupation",
-            client.get("occupation"),
-            lambda token: f"Synthetic Occupation {token[:12]}",
-        )
-        if client.get("date_of_birth"):
-            birth_date = client["date_of_birth"]
-            if isinstance(birth_date, str):
-                birth_date = date.fromisoformat(birth_date)
-            today = date.today()
-            result["age"] = (
-                today.year
-                - birth_date.year
-                - ((today.month, today.day) < (birth_date.month, birth_date.day))
-            )
-        result.pop("date_of_birth", None)
-        result["anonymized_client_id"] = client_key
-        return result
-
-    def _optional_value(
-        self,
-        client_key: str,
-        field: str,
-        value: str | None,
-        factory: Callable[[str], str],
-    ) -> str | None:
-        if value is None or not value.strip():
-            return None
-        return self._store.get_or_create(f"{client_key}:{field}", client_key, factory)
+def _optional_mask(
+    store: TokenStore,
+    field: str,
+    value: str | None,
+    client_id: str,
+    factory: Callable[[str], str],
+) -> str | None:
+    if value is None or not value.strip():
+        return None
+    return store.get_or_create(field, client_id, factory)
 
 
 def _fake_phone(token: str) -> str:
