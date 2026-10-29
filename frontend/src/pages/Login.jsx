@@ -1,7 +1,7 @@
 // Substantial AI assistance used; verified with frontend tests and production build.
 import { useState } from 'react'
 import { FiArrowRight, FiEye, FiEyeOff, FiLock, FiMail } from 'react-icons/fi'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import orbitLogo from '../assets/orbit-logo.png'
 import { loginAdvisor } from '../services/AuthApi'
 import '../styles/Login.css'
@@ -68,15 +68,9 @@ function Login() {
             >
               Advisor Workspace
             </button>
-            <button
-              type="button"
-              className={`login-tab ${workspaceType === 'meeting' ? 'login-tab-active' : ''}`}
-              role="tab"
-              aria-selected={workspaceType === 'meeting'}
-              onClick={() => setWorkspaceType('meeting')}
-            >
+            <Link to="/book-meeting" className="login-tab">
               Book A Meeting
-            </button>
+            </Link>
           </div>
 
           <form onSubmit={handleSubmit} noValidate>
@@ -150,7 +144,7 @@ function Login() {
           </form>
 
           <p className="create-account">
-            Don&apos;t have an account? <a href="/contact">Create an account</a>
+            Don&apos;t have an account? <Link to="/create-account">Create an account</Link>
           </p>
         </div>
       </section>
