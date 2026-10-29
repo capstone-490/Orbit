@@ -62,22 +62,6 @@ afterEach(() => {
 // ============================================
 
 describe('US-14: Client directory', () => {
-  it('displays synthetic values returned by the API instead of raw client data', async () => {
-    const syntheticClient = {
-      id: 1,
-      name: 'Client name',
-      email: 'client-name@example.com',
-      phone_number: '+1-555-200-0000',
-    }
-    mockInitialClients([syntheticClient])
-    render(<Clients />)
-
-    expect(await screen.findByText(syntheticClient.name)).toBeInTheDocument()
-    expect(screen.getByText(syntheticClient.email)).toBeInTheDocument()
-    expect(screen.queryByText('Alice Smith')).not.toBeInTheDocument()
-    expect(screen.queryByText('alice@example.com')).not.toBeInTheDocument()
-  })
-
   it('loads and displays client names and emails', async () => {
     mockInitialClients()
     render(<Clients />)

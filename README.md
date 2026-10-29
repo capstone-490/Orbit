@@ -31,9 +31,10 @@ Docker Compose:
 ORBIT_ANONYMIZATION_SECRET=replace-with-a-stable-32-character-secret
 ```
 
-Never use a shared development secret in production. Client date of birth is
-accepted only to calculate age during creation; only synthetic fields, age, and
-a non-PII anonymized client identifier are stored.
+Never use a shared development secret in production. Real client data is stored
+in the database for now. Client date of birth is accepted only to calculate age
+during creation and is not stored. The secret is used by the HMAC masking logic
+that protects client data before AI calls.
   
 ## Project board
 [Orbit Project Board](https://github.com/orgs/capstone-490/projects/3/views/2)
