@@ -269,7 +269,7 @@ def create_tasks_table():
                     client_id BIGINT NOT NULL,
                     status task_status NOT NULL DEFAULT 'Todo',
                     due_date TIMESTAMPTZ NOT NULL,
-                    last_contact_date TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    last_contact_date TIMESTAMPTZ,
                 
                 CONSTRAINT fk_tasks_client
                     FOREIGN KEY (client_id)

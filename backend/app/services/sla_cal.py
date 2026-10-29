@@ -1,4 +1,4 @@
-from datetime import datetime, time, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -10,14 +10,15 @@ class UrgencyState(Enum):
     UPCOMING = "UPCOMING"
     RESOLVED = "RESOLVED"
 
+FRIDAY_WEEKDAY = 4
 
 URGENCY_COLOR = {
-    UrgencyState.DUE_NOW: "red",
-    UrgencyState.UPCOMING: "yellow",
-    UrgencyState.RESOLVED: "green",
+    UrgencyState.DUE_NOW: "Red",
+    UrgencyState.UPCOMING: "Yellow",
+    UrgencyState.RESOLVED: "Green",
 }
 
-def get_timezone(location: str | None):
+def get_timezone(location: str):
     if not location:
          return ZoneInfo("UTC")
     try:
@@ -31,37 +32,45 @@ def force_utc(date_time: datetime):
         raise ValueError("Need datetime with TimeZone")
     return date_time.astimezone(timezone.utc)
 
+#Count deltatime between two dates excluding any weekend time
+def count_timedelta_between_dates(start_dt: datetime, end_dt: datetime, tz: ZoneInfo):
+    adjusted_start_dt = start_dt.astimezone(tz)
+    adjusted_end_dt = end_dt.astimezone(tz)
 
-def total_weekend_time(start: datetime, end: datetime, time_zone: ZoneInfo):
+    print(adjusted_start_dt)
+    print(adjusted_end_dt)
 
-    total = timedelta(0)
-    if(start < end):
-        start_day = start.astimezone(time_zone).date()
-        last_day = end.astimezone(time_zone).date()
-        start_weekday = start_day.weekday
-        last_weekday = last_day.weekday
-        if (start_weekday + (start_day-last_day).days) >= 5:
-            
-    return total
-
-def counted_time_remaining(now: datetime, due: datetime, tz: ZoneInfo) -> timedelta:
-    now, due = force_utc(now), force_utc(due)
-    if due <= now:
+    if(adjusted_start_dt > adjusted_end_dt):
         return timedelta(0)
-    return (due - now) - _weekend_overlap(now, due, tz)
 
+    #Remove weekend uncertainty from the end datetime
+    if(adjusted_end_dt.weekday() > FRIDAY_WEEKDAY):
+        added_days = timedelta(days = (3-(adjusted_end_dt.weekday()-FRIDAY_WEEKDAY)))
+        adjusted_end_dt = (adjusted_end_dt + added_days).replace(hour=0, minute=0, second=0, microsecond=0)
 
-def compute_urgency(
-    status: str,
-    due_date: datetime,
-    tz: ZoneInfo,
-    now: datetime | None = None,
-) -> UrgencyState:
+    #Remove weekend uncertainty from the start datetime
+    if(adjusted_start_dt.weekday() > FRIDAY_WEEKDAY):
+        added_days = timedelta(days = (3-(adjusted_start_dt.weekday()-FRIDAY_WEEKDAY)))
+        adjusted_start_dt = (adjusted_start_dt + added_days).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    current_date = adjusted_start_dt.date()
+    end_date = adjusted_end_dt.date()
+    weekend_days = 0
+    while current_date < end_date:
+        if current_date.weekday() >= 5:
+            weekend_days += 1
+        current_date += timedelta(days=1)
+
+    time_between_dates = (adjusted_end_dt - adjusted_start_dt) - timedelta(days = weekend_days)
+
+    return time_between_dates
+
+def compute_urgency(status: str, due_date: datetime, tz: ZoneInfo, now: datetime | None = None,) -> UrgencyState:
     if status == "Resolved":
         return UrgencyState.RESOLVED
     now = now or datetime.now(timezone.utc)
     if force_utc(due_date) <= force_utc(now):
         return UrgencyState.DUE_NOW
-    if counted_time_remaining(now, due_date, tz) < SLA_WINDOW:
+    if count_timedelta_between_dates(now, due_date, tz) <= SLA_WINDOW:
         return UrgencyState.DUE_NOW
     return UrgencyState.UPCOMING
