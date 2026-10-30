@@ -1,9 +1,22 @@
-import { cleanup, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, test } from 'vitest'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { afterEach, describe, expect, test, vi } from 'vitest'
 import '@testing-library/jest-dom/vitest'
+import { MemoryRouter } from 'react-router-dom'
 import DashboardTasks from '../../components/dashboard/DashboardTasks'
 
-afterEach(() => cleanup())
+const renderDashboardTasks = (props) =>
+  render(
+    <MemoryRouter>
+      <DashboardTasks {...props} />
+    </MemoryRouter>,
+  )
+
+afterEach(() => {
+  cleanup()
+  vi.useRealTimers()
+  vi.unstubAllGlobals()
+  vi.restoreAllMocks()
+})
 
 describe('DashboardTasks Component', () => {
   const mockTasks = [
@@ -38,7 +51,10 @@ describe('DashboardTasks Component', () => {
   ]
 
   test('renders tasks limited by slice constraint and displays titles, clients, and formatted dates', () => {
-    render(<DashboardTasks priorityTasks={mockTasks} />)
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-10-16T12:00:00'))
+
+    renderDashboardTasks({ priorityTasks: mockTasks })
 
     // Verify first 3 tasks render
     expect(screen.getByText('Follow up after Corporate Introduction')).toBeInTheDocument()
@@ -53,5 +69,87 @@ describe('DashboardTasks Component', () => {
 
     // Verify the 4th task is excluded due to slice(0, 3)
     expect(screen.queryByText('Extra Task Beyond Limit')).not.toBeInTheDocument()
+  })
+
+  test('shows a message when a task has no assigned client', () => {
+    renderDashboardTasks({ priorityTasks: [{ ...mockTasks[0], clientName: null }] })
+
+    expect(screen.getByText('No client assigned')).toBeInTheDocument()
+  })
+
+  test('flags past due incomplete tasks as overdue', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-10-16T12:00:00'))
+
+    renderDashboardTasks({
+      priorityTasks: [
+        { ...mockTasks[0], dueDate: '2026-10-15' },
+        { ...mockTasks[1], dueDate: '2026-10-17' },
+      ],
+    })
+
+    expect(screen.getByText('OVERDUE · OCT 15')).toBeInTheDocument()
+    expect(document.querySelector('.task-item.overdue')).toBeInTheDocument()
+    expect(document.querySelectorAll('.task-item.overdue')).toHaveLength(1)
+  })
+
+  test('does not flag completed past due tasks as overdue', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-10-16T12:00:00'))
+
+    renderDashboardTasks({
+      priorityTasks: [{ ...mockTasks[0], dueDate: '2026-10-15', completed: true }],
+    })
+
+    expect(screen.getByText('OCT 15')).toBeInTheDocument()
+    expect(document.querySelector('.task-item.overdue')).not.toBeInTheDocument()
+  })
+
+  test('updates task completion through the API and notifies the parent', async () => {
+    const updatedTask = { ...mockTasks[0], completed: true }
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => updatedTask,
+    })
+    const onTaskUpdated = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+
+    renderDashboardTasks({ priorityTasks: mockTasks, onTaskUpdated })
+    fireEvent.click(screen.getAllByRole('checkbox')[0])
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        'http://localhost:8001/advisors/tasks/1',
+        expect.objectContaining({
+          method: 'PATCH',
+          body: JSON.stringify({ completed: true }),
+        }),
+      )
+      expect(onTaskUpdated).toHaveBeenCalledWith(updatedTask)
+    })
+  })
+
+  test('shows an error and re-enables the checkbox if the update fails', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: false })
+    vi.stubGlobal('fetch', fetchMock)
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    renderDashboardTasks({ priorityTasks: mockTasks })
+    const checkbox = screen.getAllByRole('checkbox')[0]
+    fireEvent.click(checkbox)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Could not update task. Please try again.',
+    )
+    expect(checkbox).toBeEnabled()
+  })
+
+  test('links to the Tasks page', () => {
+    renderDashboardTasks({ priorityTasks: mockTasks })
+
+    expect(screen.getByRole('link', { name: 'View All (4) Tasks' })).toHaveAttribute(
+      'href',
+      '/tasks',
+    )
   })
 })
