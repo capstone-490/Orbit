@@ -61,7 +61,7 @@ const getActionLabel = (item) => {
 function DashboardSchedule({ scheduleData }) {
   return (
     <div className="dashboard-schedule">
-      <h2>Today's Schedule & Consultations</h2>
+      <h2>Schedule & Consultations</h2>
       {scheduleData.map((item, index) => {
         const overdue = isMeetingOverdue(item)
         const statusLabel = getMeetingStatusLabel(item, overdue)

@@ -9,6 +9,24 @@ const isTaskOverdue = (task, now) => {
   return dueDate < new Date(now.getFullYear(), now.getMonth(), now.getDate())
 }
 
+const parseMeetingTime = (meeting) => {
+  if (!meeting.time) return null
+
+  const safeString =
+    typeof meeting.time === 'string' ? meeting.time.replace(' ', 'T') : meeting.time
+  const meetingTime = new Date(safeString)
+
+  return Number.isNaN(meetingTime.getTime()) ? null : meetingTime
+}
+
+const isUpcomingMeeting = (meeting, now) => {
+  const status = meeting.completionStatus?.trim().toLowerCase()
+  if (status === 'completed' || status === 'cancelled') return false
+
+  const meetingTime = parseMeetingTime(meeting)
+  return meetingTime !== null && meetingTime >= now
+}
+
 const formatMeetingTime = (timestamp) => {
   if (!timestamp) return 'No upcoming meetings'
 
@@ -19,11 +37,15 @@ const formatMeetingTime = (timestamp) => {
 }
 
 function DashboardSummary({ dashboardSummaryData, tasks, schedule, clients }) {
+  const now = new Date()
   const clientCount = clients?.length ?? dashboardSummaryData.totalClient
-  const meetingCount = schedule?.length ?? dashboardSummaryData.nbMeetings
-  const nextMeeting = schedule
-    ? schedule.length > 0
-      ? formatMeetingTime(schedule[0].time)
+  const upcomingMeetings = schedule
+    ?.filter((meeting) => isUpcomingMeeting(meeting, now))
+    .sort((first, second) => parseMeetingTime(first) - parseMeetingTime(second))
+  const meetingCount = upcomingMeetings?.length ?? dashboardSummaryData.nbMeetings
+  const nextMeeting = upcomingMeetings
+    ? upcomingMeetings.length > 0
+      ? formatMeetingTime(upcomingMeetings[0].time)
       : 'No upcoming meetings'
     : dashboardSummaryData.nextMeeting
   const pendingTaskCount =
@@ -32,7 +54,6 @@ function DashboardSummary({ dashboardSummaryData, tasks, schedule, clients }) {
     ? tasks.filter((task) => !task.completed && isTaskOverdue(task, new Date())).length
     : dashboardSummaryData.overdueTasks
 
-  const now = new Date()
   const clientNewCount =
     clients?.filter((client) => {
       const rawTimestamp = client.createdAt ?? client.created_at

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import '../styles/AdvisorDashboard.css'
 import DashboardSchedule from '../components/dashboard/DashboardSchedule'
 import DashboardSummary from '../components/dashboard/DashboardSummary'
 import DashboardTasks from '../components/dashboard/DashboardTasks'

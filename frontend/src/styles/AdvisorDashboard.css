@@ -1,0 +1,23 @@
+.dashboard-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 1rem;
+  box-sizing: border-box;
+  margin: 20px;
+}
+
+.dashboard-card {
+  min-width: 0;
+  padding: 20px;
+  background-color: #ffffff;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-sizing: border-box;
+}
+
+@media (max-width: 760px) {
+  .dashboard-overview {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

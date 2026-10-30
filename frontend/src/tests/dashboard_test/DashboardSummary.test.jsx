@@ -49,6 +49,29 @@ describe('DashboardSummary Component', () => {
     expect(screen.getByText('2')).toBeInTheDocument()
   })
 
+  test('excludes overdue meetings from the upcoming meeting count', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-10-30T12:00:00'))
+
+    render(
+      <DashboardSummary
+        dashboardSummaryData={mockSummaryData}
+        schedule={[
+          { time: '2026-10-30T11:00:00', completionStatus: 'Scheduled' },
+          { time: '2026-10-30T16:00:00', completionStatus: 'Scheduled' },
+          { time: '2026-10-30T13:00:00', completionStatus: 'Scheduled' },
+          { time: '2026-10-30T14:00:00', completionStatus: 'Completed' },
+          { time: '2026-10-30T15:00:00', completionStatus: 'Cancelled' },
+        ]}
+      />,
+    )
+
+    expect(screen.getByText('2')).toBeInTheDocument()
+    expect(screen.getByText(/Next:/)).toHaveTextContent(
+      new Date('2026-10-30T13:00:00').toLocaleString(),
+    )
+  })
+
   test('counts tasks overdue by date without marking tasks due today overdue', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-10-29T13:15:00'))
