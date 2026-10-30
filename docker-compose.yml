@@ -27,6 +27,8 @@ services:
     environment:
       - DEBUG=True
       - SECRET_KEY=dev-secret-key-change-in-production
+      - ORBIT_AUTH_SECRET=dev-secret-key-change-in-production
+      - ORBIT_COOKIE_SECURE=false
       - DB_NAME=orbit_db
       - DB_USER=orbit_user
       - DB_PASSWORD=orbit_password

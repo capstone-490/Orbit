@@ -5,9 +5,13 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.auth import create_access_token
 from app.routers import meetings
 
-client = TestClient(app)
+client = TestClient(
+    app,
+    headers={"Authorization": f"Bearer {create_access_token(1)}"},
+)
 
 
 def CreateMeeting(advisor_id, client_id, meeting_date, completion_status):
@@ -46,6 +50,13 @@ def test_list_meetings_empty(mock_db):
 
     assert "SELECT id, client_id, advisor_id, meeting_date, completion_status" in query
     assert params["advisor_id"] == 1
+
+
+def test_cannot_read_another_advisors_meetings(mock_db):
+    response = client.get("/meetings/2")
+
+    assert response.status_code == 403
+    mock_db.execute.assert_not_called()
 
 
 def test_list_meetings_with_data(mock_db):

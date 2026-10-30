@@ -2,13 +2,18 @@ import re
 from datetime import date
 from typing import Literal
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from psycopg.errors import UniqueViolation
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from app.db.db import get_connection
+from app.auth import get_current_advisor
 
-router = APIRouter(prefix="/clients", tags=["Clients"])
+router = APIRouter(
+    prefix="/clients",
+    tags=["Clients"],
+    dependencies=[Depends(get_current_advisor)],
+)
 
 
 # Client data model and validation
@@ -54,8 +59,12 @@ class ClientCreate(BaseModel):
 
 # Create a new client
 @router.post("", status_code=201)
-def create_client(client: ClientCreate):
+def create_client(
+    client: ClientCreate,
+    advisor: dict[str, int] = Depends(get_current_advisor),
+):
     data = client.model_dump(mode="json")
+    data["advisor_id"] = advisor["id"]
 
     # Convert optional blank fields to SQL NULL
     for field in (
@@ -73,12 +82,12 @@ def create_client(client: ClientCreate):
                 """
                 INSERT INTO clients (
                     name, email, phone_number, address,
-                    date_of_birth, occupation, timeline
+                    date_of_birth, occupation, timeline, advisor_id
                 )
                 VALUES (
                     %(name)s, %(email)s, %(phone_number)s,
                     %(address)s, %(date_of_birth)s,
-                    %(occupation)s, %(timeline)s
+                    %(occupation)s, %(timeline)s, %(advisor_id)s
                 )
                 RETURNING id
                 """,
@@ -100,7 +109,7 @@ def create_client(client: ClientCreate):
 
 # Retrieve all existing clients
 @router.get("")
-def list_clients():
+def list_clients(advisor: dict[str, int] = Depends(get_current_advisor)):
     with get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             """
@@ -108,8 +117,10 @@ def list_clients():
                    address, date_of_birth, occupation,
                    timeline, created_at
             FROM clients
+                 WHERE advisor_id = %(advisor_id)s
             ORDER BY created_at DESC, id DESC
-            """
+                 """,
+                 {"advisor_id": advisor["id"]},
         )
 
         columns = [column.name for column in cur.description]

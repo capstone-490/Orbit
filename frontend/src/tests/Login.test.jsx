@@ -148,7 +148,7 @@ describe('Login', () => {
       'fetch',
       vi.fn(async () => ({
         ok: true,
-        json: async () => ({ token: 'test-token' }),
+        json: async () => ({ advisor: { id: 1, email: 'advisor@example.com' } }),
       })),
     )
     renderLogin()
@@ -160,6 +160,5 @@ describe('Login', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Sign In' }))
 
     await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent('/dashboard'))
-    expect(localStorage.getItem('orbit_auth_token')).toBe('test-token')
   })
 })

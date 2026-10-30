@@ -4,6 +4,7 @@ from fastapi import Depends, FastAPI, Header, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.feature_flags import get_variant
+from app.routers.sessions import router as sessions_router
 from app.routers.clients import router as clients_router
 from app.routers.meetings import router as meetings_router
 
@@ -15,11 +16,12 @@ app.add_middleware(
         "http://localhost:5173",
         "http://127.0.0.1:5173",
     ],
-    allow_credentials=False,
+    allow_credentials=True,
     allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
+app.include_router(sessions_router)
 app.include_router(clients_router)
 app.include_router(meetings_router)
 
