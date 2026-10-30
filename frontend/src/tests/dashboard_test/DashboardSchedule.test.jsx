@@ -41,7 +41,7 @@ describe('DashboardSchedule Component', () => {
     render(<DashboardSchedule scheduleData={mockScheduleData} />)
 
     // Check heading
-    expect(screen.getByText("Today's Schedule & Consultations")).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Schedule & Consultations' })).toBeInTheDocument()
 
     // Check client names and categories
     expect(screen.getByText('Alice Johnson')).toBeInTheDocument()
@@ -81,7 +81,7 @@ describe('DashboardSchedule Component', () => {
   test('renders an empty schedule without meeting items', () => {
     render(<DashboardSchedule scheduleData={[]} />)
 
-    expect(screen.getByText("Today's Schedule & Consultations")).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Schedule & Consultations' })).toBeInTheDocument()
     expect(document.querySelectorAll('.schedule-item')).toHaveLength(0)
   })
 
