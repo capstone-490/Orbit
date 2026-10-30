@@ -32,6 +32,8 @@ services:
       - DB_PASSWORD=orbit_password
       - DB_HOST=db
       - DB_PORT=5432
+      # Required. Set this in .env; never use a development value in production.
+      - ORBIT_ANONYMIZATION_SECRET=${ORBIT_ANONYMIZATION_SECRET:?Set ORBIT_ANONYMIZATION_SECRET in .env}
     depends_on:
       db:
         condition: service_healthy

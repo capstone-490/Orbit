@@ -1,4 +1,4 @@
-from datetime import UTC
+from datetime import UTC, date
 from unittest.mock import MagicMock
 
 import pytest
@@ -17,7 +17,7 @@ COLUMNS = [
     "email",
     "phone_number",
     "address",
-    "date_of_birth",
+    "age",
     "occupation",
     "timeline",
     "created_at",
@@ -46,6 +46,7 @@ def test_create_client_success(mock_db):
             "name": "Alice Smith",
             "email": "alice@example.com",
             "phone_number": "514-555-1234",
+            "date_of_birth": "1988-04-12",
         },
     )
 
@@ -62,6 +63,10 @@ def test_create_client_success(mock_db):
     assert params["name"] == "Alice Smith"
     assert params["email"] == "alice@example.com"
     assert params["phone_number"] == "514-555-1234"
+    assert params["age"] == date.today().year - 1988 - (
+        (date.today().month, date.today().day) < (4, 12)
+    )
+    assert "date_of_birth" not in params
 
 
 @pytest.mark.parametrize("missing_field", ["name", "email", "phone_number"])
@@ -133,7 +138,7 @@ def test_create_client_optional_fields(mock_db):
     _, params = mock_db.execute.call_args.args
 
     assert params["address"] is None
-    assert params["date_of_birth"] is None
+    assert params["age"] is None
     assert params["occupation"] is None
     assert params["timeline"] is None
 

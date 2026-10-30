@@ -313,7 +313,7 @@ function Clients() {
                 </label>
 
                 <label>
-                  Date of Birth
+                  Date of Birth (used to calculate age)
                   <input
                     type="date"
                     name="date_of_birth"

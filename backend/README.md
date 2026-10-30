@@ -100,3 +100,20 @@ docker compose run --rm backend pytest -v
 - Hot-reloading is enabled via volume mounting
 - Database credentials are in `docker-compose.yml` (Prob need to remove them in the future from it)
 - Python packages are installed through pip using information contained in requirements.txt
+
+### Client data and AI masking
+
+Client creation stores the submitted name, contact details, address, occupation,
+and timeline in the database. The submitted date of birth is converted to `age`
+at creation time and is never stored. Security for stored client data will be
+provided through encryption and access control.
+
+The `mask_for_ai` function in `security/anonymizer.py` creates deterministic
+synthetic names, contact details, addresses, and occupations before client data
+is sent to an AI model. It derives HMAC-SHA256 tokens from the client's stable
+database ID, not from PII, and leaves age and timeline unchanged. The masking
+store is only a cache, so cache eviction does not change generated values.
+
+The backend refuses to start unless `ORBIT_ANONYMIZATION_SECRET` is configured,
+non-blank, and at least 32 characters long. Use a stable, deployment-managed
+secret in `.env`, tests, Docker Compose, and production.

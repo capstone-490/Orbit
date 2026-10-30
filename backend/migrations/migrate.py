@@ -118,7 +118,7 @@ def create_clients_table():
                     phone_number VARCHAR(32) NOT NULL UNIQUE,
                     email TEXT NOT NULL UNIQUE,
                     address TEXT,
-                    date_of_birth DATE,
+                    age INTEGER CHECK (age >= 0 AND age <= 130),
                     occupation TEXT,
                     timeline timeline,
                     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -130,6 +130,10 @@ def create_clients_table():
                         REFERENCES advisors(id)
                         ON DELETE CASCADE
                 )""")
+        conn.execute(
+            "ALTER TABLE clients ADD COLUMN IF NOT EXISTS age INTEGER "
+            "CHECK (age >= 0 AND age <= 130)"
+        )
         conn.commit()
 
 

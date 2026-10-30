@@ -11,6 +11,17 @@ from app.db.db import get_connection
 router = APIRouter(prefix="/clients", tags=["Clients"])
 
 
+def calculate_age(birth_date: date | None, today: date | None = None) -> int | None:
+    if birth_date is None:
+        return None
+    current_date = today or date.today()
+    return (
+        current_date.year
+        - birth_date.year
+        - ((current_date.month, current_date.day) < (birth_date.month, birth_date.day))
+    )
+
+
 # Client data model and validation
 class ClientCreate(BaseModel):
     name: str = Field(min_length=1)
@@ -56,11 +67,13 @@ class ClientCreate(BaseModel):
 @router.post("", status_code=201)
 def create_client(client: ClientCreate):
     data = client.model_dump(mode="json")
+    data["age"] = calculate_age(client.date_of_birth)
+    data.pop("date_of_birth", None)
 
     # Convert optional blank fields to SQL NULL
     for field in (
         "address",
-        "date_of_birth",
+        "age",
         "occupation",
         "timeline",
     ):
@@ -73,12 +86,12 @@ def create_client(client: ClientCreate):
                 """
                 INSERT INTO clients (
                     name, email, phone_number, address,
-                    date_of_birth, occupation, timeline
+                    age, occupation, timeline
                 )
                 VALUES (
                     %(name)s, %(email)s, %(phone_number)s,
-                    %(address)s, %(date_of_birth)s,
-                    %(occupation)s, %(timeline)s
+                    %(address)s, %(age)s, %(occupation)s,
+                    %(timeline)s
                 )
                 RETURNING id
                 """,
@@ -105,7 +118,7 @@ def list_clients():
         cur.execute(
             """
             SELECT id, name, email, phone_number,
-                   address, date_of_birth, occupation,
+                   address, age, occupation,
                    timeline, created_at
             FROM clients
             ORDER BY created_at DESC, id DESC
