@@ -1,3 +1,4 @@
+# Substantial AI assistance used; verified with backend tests and live auth smoke test.
 from datetime import UTC
 from unittest.mock import MagicMock
 

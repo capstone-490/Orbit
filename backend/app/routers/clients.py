@@ -1,3 +1,4 @@
+# Substantial AI assistance used; verified with backend tests and live auth smoke test.
 import re
 from datetime import date
 from typing import Literal

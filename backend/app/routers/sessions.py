@@ -1,3 +1,4 @@
+# Substantial AI assistance used; verified with backend tests and live auth smoke test.
 import os
 
 from fastapi import APIRouter, Depends, HTTPException, Response

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# No substantial AI-generated code
+# Substantial AI assistance used; verified with backend tests and live auth smoke test.
 from fastapi import Depends, FastAPI, Header, Query
 from fastapi.middleware.cors import CORSMiddleware
 

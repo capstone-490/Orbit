@@ -1,4 +1,4 @@
-# No substantial AI-generated code
+# Substantial AI assistance used; verified with backend tests and live auth smoke test.
 import os
 
 os.environ.setdefault("DB_NAME", "orbit_test")

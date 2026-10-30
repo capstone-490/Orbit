@@ -1,3 +1,4 @@
+# Substantial AI assistance used; verified with backend tests and live auth smoke test.
 from unittest.mock import MagicMock
 
 from fastapi.testclient import TestClient

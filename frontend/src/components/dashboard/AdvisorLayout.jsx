@@ -1,3 +1,4 @@
+// Substantial AI assistance used; verified with frontend tests and production build.
 import { useEffect, useState } from 'react'
 import { Navigate, Outlet } from 'react-router-dom'
 import { mockAdvisor } from '../../data/mockDashboardData'
