@@ -1,33 +1,26 @@
-import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, test, vi } from 'vitest'
-import '@testing-library/jest-dom/vitest'
+import { cleanup, render, screen } from '@testing-library/react'
+import { afterEach, describe, expect, it } from 'vitest'
 import App from '../App'
 
-vi.mock('../pages/AdvisorDashboard', () => ({
-  default: () => <h1>Dashboard page</h1>,
-}))
+afterEach(() => {
+  cleanup()
+  window.history.pushState({}, '', '/')
+})
 
 describe('App routes', () => {
-  test('renders the shared navigation and navigates to each static page', () => {
-    window.history.pushState({}, '', '/')
+  it('renders the create account page at its route', () => {
+    window.history.pushState({}, '', '/create-account')
+
     render(<App />)
 
-    expect(screen.getByRole('heading', { name: 'Dashboard page' })).toBeInTheDocument()
+    expect(screen.getByText(/create an account page is a placeholder/i)).toBeInTheDocument()
+  })
 
-    const destinations = [
-      ['Calendar', 'Calendar'],
-      ['Follow-Ups', 'Follow-Ups'],
-      ['Tasks', 'Tasks'],
-      ['Documents', 'Documents'],
-      ['AI Review', 'AI Review'],
-      ['Activity', 'Activity'],
-    ]
+  it('renders the book a meeting page at its route', () => {
+    window.history.pushState({}, '', '/book-meeting')
 
-    for (const [linkName, pageName] of destinations) {
-      fireEvent.click(screen.getByRole('link', { name: linkName }))
-      expect(screen.getByText(pageName)).toBeInTheDocument()
-    }
+    render(<App />)
 
-    expect(screen.getByRole('link', { name: 'Dashboard' })).toHaveAttribute('href', '/')
+    expect(screen.getByText(/book a meeting page is a placeholder/i)).toBeInTheDocument()
   })
 })

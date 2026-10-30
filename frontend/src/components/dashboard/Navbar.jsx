@@ -1,3 +1,4 @@
+// Substantial AI assistance used; verified with frontend tests and production build.
 import { FiBell, FiUser } from 'react-icons/fi'
 import { NavLink } from 'react-router-dom'
 import orbitLogo from '../../assets/orbit-logo.png'
@@ -14,7 +15,7 @@ function Navbar({ user }) {
       </div>
 
       <div className="navbar-links">
-        <NavLink to="/">Dashboard</NavLink>
+        <NavLink to="/dashboard">Dashboard</NavLink>
         <NavLink to="/clients">Clients</NavLink>
         <NavLink to="/calendar">Calendar</NavLink>
         <NavLink to="/follow-ups">Follow-Ups</NavLink>
