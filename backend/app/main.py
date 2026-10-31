@@ -1,23 +1,28 @@
 #!/usr/bin/env python3
 # No substantial AI-generated code
+import os 
 from contextlib import asynccontextmanager
-
 from fastapi import Depends, FastAPI, Header, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.feature_flags import get_variant
+from app.logging_config import configure_logging, get_logger
+from app.middleware.request_logging import RequestLoggingMiddleware
 from app.routers.clients import router as clients_router
 from app.routers.meetings import router as meetings_router
 from security.anonymizer import TokenStore
 
+configure_logging()
+logger = get_logger("app")
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     TokenStore._load_secret()
     yield
 
-
 app = FastAPI(lifespan=lifespan)
+
+app.add_middleware(RequestLoggingMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -28,10 +33,18 @@ app.add_middleware(
     allow_credentials=False,
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type"],
+    expose_headers=["x-request-id"],
 )
 
 app.include_router(clients_router)
 app.include_router(meetings_router)
+
+
+if os.getenv("ENABLE_DEBUG_ROUTES", "").lower() in {"1", "true", "yes"}:
+    from app.routers.debug import router as debug_router
+
+    app.include_router(debug_router)
+    logger.warning("Debug routes enabled; do not use in production")
 
 
 def get_user_id(user_id: str | None = Header(default=None)) -> str:
