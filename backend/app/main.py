@@ -1,5 +1,8 @@
+#!/usr/bin/env python3
+# Below 50%
 import os
 from contextlib import asynccontextmanager
+
 from fastapi import Depends, FastAPI, Header, Query
 from fastapi.middleware.cors import CORSMiddleware
 
