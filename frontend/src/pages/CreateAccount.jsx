@@ -97,11 +97,7 @@ function CreateAccount() {
               <h2>Account created successfully!</h2>
               <p>Your advisor account is ready. You can now sign in.</p>
 
-              <button
-                type="button"
-                className="login-submit"
-                onClick={() => navigate('/login')}
-              >
+              <button type="button" className="login-submit" onClick={() => navigate('/login')}>
                 Go to Sign In
                 <FiArrowRight aria-hidden="true" />
               </button>
@@ -170,15 +166,11 @@ function CreateAccount() {
                       {showPassword ? <FiEye /> : <FiEyeOff />}
                     </button>
                   </div>
-                  <p className="registration-hint">
-                    Use between 12 and 128 characters.
-                  </p>
+                  <p className="registration-hint">Use between 12 and 128 characters.</p>
                 </div>
 
                 <div className="login-field">
-                  <label htmlFor="registration-confirm-password">
-                    Confirm Password
-                  </label>
+                  <label htmlFor="registration-confirm-password">Confirm Password</label>
                   <div className="login-input-wrap">
                     <FiLock aria-hidden="true" />
                     <input
@@ -213,11 +205,7 @@ function CreateAccount() {
                   </p>
                 )}
 
-                <button
-                  type="submit"
-                  className="login-submit"
-                  disabled={isLoading}
-                >
+                <button type="submit" className="login-submit" disabled={isLoading}>
                   {isLoading ? 'Creating account...' : 'Create Account'}
                   {!isLoading && <FiArrowRight aria-hidden="true" />}
                 </button>

@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, HTTPException
 from psycopg.errors import UniqueViolation
 from pydantic import BaseModel, EmailStr, Field, field_validator
@@ -37,18 +36,17 @@ def register_advisor(advisor: AdvisorRegistration):
     password_hash = hash_password(advisor.password)
 
     try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
+        with get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
                     INSERT INTO advisors (username, email, password_hash)
                     VALUES (%s, %s, %s)
                     RETURNING id, username, email
                     """,
-                    (advisor.username, email, password_hash),
-                )
+                (advisor.username, email, password_hash),
+            )
 
-                result = cur.fetchone()
+            result = cur.fetchone()
 
         if result is None:
             raise HTTPException(

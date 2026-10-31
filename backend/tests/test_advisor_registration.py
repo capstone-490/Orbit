@@ -1,4 +1,3 @@
-
 from unittest.mock import MagicMock, patch
 
 from fastapi.testclient import TestClient
@@ -53,9 +52,7 @@ def test_successful_registration(mock_get_connection):
     assert inserted_values[0] == "Test Advisor"
     assert inserted_values[1] == "advisor@example.com"
     assert inserted_values[2] != VALID_ADVISOR["password"]
-    assert verify_password(
-        VALID_ADVISOR["password"], inserted_values[2]
-    )
+    assert verify_password(VALID_ADVISOR["password"], inserted_values[2])
 
 
 def test_invalid_email():
@@ -109,6 +106,4 @@ def test_duplicate_email(mock_get_connection):
     response = client.post("/auth/register", json=VALID_ADVISOR)
 
     assert response.status_code == 409
-    assert response.json()["detail"] == (
-        "An account with this email already exists."
-    )
+    assert response.json()["detail"] == ("An account with this email already exists.")

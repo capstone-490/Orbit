@@ -1,7 +1,6 @@
-
-import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import CreateAccount from '../pages/CreateAccount'
 import { registerAdvisor } from '../services/AuthApi'
 
@@ -49,9 +48,7 @@ describe('CreateAccount', () => {
   it('renders the registration form', () => {
     renderRegistration()
 
-    expect(
-      screen.getByRole('heading', { name: /create your account/i }),
-    ).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /create your account/i })).toBeInTheDocument()
     expect(screen.getByLabelText(/^username$/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/^email$/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument()
@@ -77,9 +74,7 @@ describe('CreateAccount', () => {
       })
     })
 
-    expect(
-      await screen.findByText(/account created successfully/i),
-    ).toBeInTheDocument()
+    expect(await screen.findByText(/account created successfully/i)).toBeInTheDocument()
   })
 
   it('rejects mismatched passwords', () => {
@@ -87,24 +82,18 @@ describe('CreateAccount', () => {
     fillForm({ confirmPassword: 'DifferentPassword123' })
     submitForm()
 
-    expect(screen.getByRole('alert')).toHaveTextContent(
-      /passwords do not match/i,
-    )
+    expect(screen.getByRole('alert')).toHaveTextContent(/passwords do not match/i)
     expect(registerAdvisor).not.toHaveBeenCalled()
   })
 
   it('displays a duplicate email error', async () => {
-    registerAdvisor.mockRejectedValue(
-      new Error('An account with this email already exists.'),
-    )
+    registerAdvisor.mockRejectedValue(new Error('An account with this email already exists.'))
 
     renderRegistration()
     fillForm()
     submitForm()
 
-    expect(
-      await screen.findByRole('alert'),
-    ).toHaveTextContent(/already exists/i)
+    expect(await screen.findByRole('alert')).toHaveTextContent(/already exists/i)
   })
 
   it('toggles password visibility', () => {
@@ -126,8 +115,6 @@ describe('CreateAccount', () => {
     fillForm()
     submitForm()
 
-    expect(
-      await screen.findByRole('button', { name: /creating account/i }),
-    ).toBeDisabled()
+    expect(await screen.findByRole('button', { name: /creating account/i })).toBeDisabled()
   })
 })
