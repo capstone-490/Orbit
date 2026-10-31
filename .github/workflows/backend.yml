@@ -67,6 +67,7 @@ jobs:
           DB_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           DB_HOST: 127.0.0.1
           DB_PORT: 5432
+          ORBIT_ANONYMIZATION_SECRET: ci-only-anonymization-secret-for-tests
         run: |
           uv run --locked --no-build alembic upgrade head
           uv run --locked --no-build pytest --cov=. --cov-report=xml:coverage.xml --cov-report=term-missing
@@ -79,5 +80,3 @@ jobs:
           name: backend-coverage
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
-
-   

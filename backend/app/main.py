@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-# Substantial AI assistance used; verified with backend tests and live auth smoke test.
+# No substantial AI-generated code
+from contextlib import asynccontextmanager
+
 from fastapi import Depends, FastAPI, Header, Query
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -7,8 +9,16 @@ from app.feature_flags import get_variant
 from app.routers.sessions import router as sessions_router
 from app.routers.clients import router as clients_router
 from app.routers.meetings import router as meetings_router
+from security.anonymizer import TokenStore
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    TokenStore._load_secret()
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
