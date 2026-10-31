@@ -41,7 +41,7 @@ def test_true_none_ZoneInfo_get_timezone():
 def test_no_timezone_datetime_force_utc():
     dt = datetime(2026, 1, 1, 12, 0, 0)
 
-    with pytest.raises(ValueError, match="Need datetime with TimeZone"):
+    with pytest.raises(ValueError, match="Datetime must be timezone-aware"):
         force_utc(dt)
 
 def test_timezone_with_timezone_force_utc():

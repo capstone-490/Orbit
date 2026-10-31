@@ -27,10 +27,16 @@ def get_timezone(location: str):
         raise ValueError(f"Unknown timezone: {location}")
 
 
-def force_utc(date_time: datetime):
-    if date_time.tzinfo is None:
-        raise ValueError("Need datetime with TimeZone")
+def force_utc(date_time: datetime) -> datetime:
+    if date_time.tzinfo is None or date_time.utcoffset() is None:
+        raise ValueError("Datetime must be timezone-aware")
+
     return date_time.astimezone(timezone.utc)
+
+def force_timezone_on_DB_return(date_time: datetime,tz: ZoneInfo):
+    if date_time.tzinfo is None or date_time.utcoffset() is None:
+        raise ValueError("Database returned a naive datetime")
+    return date_time.astimezone(tz)
 
 #Count deltatime between two dates excluding any weekend time
 def count_timedelta_between_dates(start_dt: datetime, end_dt: datetime, tz: ZoneInfo):

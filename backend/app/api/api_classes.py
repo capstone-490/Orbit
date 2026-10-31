@@ -1,16 +1,14 @@
 from enum import Enum
 from datetime import datetime
-
+from pydantic import BaseModel
 
 from app.services.sla_cal import (
     UrgencyState
 )
 
-#In-Progress doesn't work on variable name, need to double check
-# code later
 class TaskStatus(Enum):
     Todo = "Todo"
-    InProgress = "InProgres"
+    InProgress = "In-Progress"
     Resolved = "Resolved"
 
 
@@ -31,5 +29,5 @@ class TaskResponse(BaseModel):
     task_status: TaskStatus        
     due_date: datetime
     last_contact_date: datetime | None
-    urgency_state = UrgencyState
+    urgency_state: UrgencyState
     urgency_color: str
