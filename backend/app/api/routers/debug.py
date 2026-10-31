@@ -2,8 +2,10 @@
 Simulates a realistic bug: a handler that puts the raw request body into an
 exception message. The logging pipeline must still redact it.
 """
+
 # 50% or more AI-generated
 import logging
+from typing import Annotated
 
 from fastapi import APIRouter, Body
 
@@ -13,7 +15,7 @@ router = APIRouter(prefix="/debug", tags=["debug"])
 
 
 @router.post("/clients")
-def create_client_demo(payload: dict = Body(...)):
+def create_client_demo(payload: Annotated[dict, Body()]):
     logger.info("Received client payload: %s", payload)
     if "name" not in payload:
         raise ValueError(f"Malformed client payload, missing 'name': {payload}")
