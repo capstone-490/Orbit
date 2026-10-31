@@ -1,5 +1,5 @@
 // Substantial AI assistance used; verified with frontend tests and production build.
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001'
 
 export async function loginAdvisor({ email, password }) {
   const response = await fetch(`${API_BASE_URL}/auth/login`, {
@@ -22,6 +22,33 @@ export async function loginAdvisor({ email, password }) {
       }
     } catch {
       // Use the standard message when the API does not return JSON.
+    }
+
+    throw new Error(message)
+  }
+
+  return response.json()
+}
+export async function registerAdvisor({ username, email, password }) {
+  const response = await fetch(`${API_BASE_URL}/auth/register`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ username, email, password }),
+  })
+
+  if (!response.ok) {
+    let message = 'Unable to create your account. Please try again.'
+
+    try {
+      const data = await response.json()
+
+      if (typeof data.detail === 'string') {
+        message = data.detail
+      }
+    } catch {
+      // Keep the default error message.
     }
 
     throw new Error(message)
