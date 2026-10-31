@@ -5,8 +5,8 @@ from fastapi.testclient import TestClient
 from psycopg import OperationalError
 from psycopg.rows import dict_row
 
+from app.api.routers import advisors
 from app.main import app
-from app.routers import advisor
 
 client = TestClient(app)
 
@@ -17,7 +17,7 @@ def mock_db(monkeypatch):
     cursor = MagicMock()
     connection.__enter__.return_value = connection
     connection.cursor.return_value.__enter__.return_value = cursor
-    monkeypatch.setattr(advisor, "get_connection", lambda: connection)
+    monkeypatch.setattr(advisors, "get_connection", lambda: connection)
     return connection, cursor
 
 
