@@ -49,9 +49,9 @@ print("PII found in logs:", leaks or "none")
 print(
     "Request id on every app line:",
     all(
-        json.loads(l).get("request_id") == response.headers["x-request-id"]
-        for l in captured.getvalue().splitlines()
-        if json.loads(l)["logger"].startswith("app")
+        json.loads(line).get("request_id") == response.headers["x-request-id"]
+        for line in captured.getvalue().splitlines()
+        if json.loads(line)["logger"].startswith("app")
     ),
 )
 sys.exit(1 if leaks else 0)

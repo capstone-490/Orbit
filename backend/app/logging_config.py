@@ -114,7 +114,7 @@ class RedactingJsonFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         try:
             message = record.getMessage()
-        except Exception:  # bad %-format args must never crash logging
+        except (TypeError, ValueError):  # bad %-format args must never crash logging
             message = f"{record.msg} {record.args}"
 
         entry: dict[str, Any] = {
