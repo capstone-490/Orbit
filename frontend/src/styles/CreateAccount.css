@@ -1,0 +1,33 @@
+.registration-hint {
+  margin: 7px 0 0;
+  color: #778198;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.registration-success {
+  padding: 20px 4px;
+  text-align: center;
+}
+
+.registration-success h2 {
+  margin: 0 0 12px;
+  color: #20283a;
+  font-size: 19px;
+}
+
+.registration-success p {
+  color: #5d6676;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.registration-success .login-submit {
+  margin-top: 24px;
+}
+
+@media (max-width: 520px) {
+  .registration-success {
+    padding: 12px 0;
+  }
+}
