@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-# No substantial AI-generated code
+
 import os 
 from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI, Header, Query
@@ -62,7 +61,7 @@ def health():
     return {"status": "ok"}
 
 
-# Temporary endpoint for testing A/B feature flags. Add flag check to feature endpoint when needed.
+# Temporary endpoint for testing A/B feature flags.
 @app.get("/ab-test")
 def ab_test(user_id: str = Depends(get_user_id)):
     variant = get_variant("demo-ab", user_id)

@@ -1,5 +1,4 @@
 """Demo-only route for the logging story. Mounted only when ENABLE_DEBUG_ROUTES=true.
-
 Simulates a realistic bug: a handler that puts the raw request body into an
 exception message. The logging pipeline must still redact it.
 """
