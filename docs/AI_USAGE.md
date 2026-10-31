@@ -42,3 +42,33 @@ This document specifies how AI tools, assistants, and generative models are util
   - The workspace toggle was updated to use supported `tablist` and `tab` ARIA
     roles, and its test was updated to query the tabs by their accessible role.
   - The navigation test was updated to reflect the new dashboard route.
+
+
+## Structured JSON Logging with PII Redaction
+
+- Feature: structured JSON logging for the backend, with automatic PII
+  redaction, a UUID `x-request-id` per request, request logging (method, path,
+  status code, duration), and safe 500 error handling.
+- Source files: `backend/app/logging_config.py`,
+  `backend/app/middleware/request_logging.py`, `backend/app/routers/debug.py`,
+  `backend/test/observability/test_structured_logging.py`, and
+  `backend/demo/demo_logging.py`.
+- AI assistance: substantial assistance was used to implement the logger,
+  middleware, tests and demo, integrated with the existing
+  `security/redactor.py`.
+- Verification evidence:
+  - `python -m pytest test/ -v`: 85 tests passed (26 new, 59 existing).
+  - Mutation check: disabling redaction makes 11 logging tests fail, showing
+    the tests detect PII leaks.
+  - Live run with Uvicorn and curl: a request with a fake email and SIN
+    returned a 500 with an `x-request-id`, and the matching log lines showed
+    `[REDACTED]` with no PII in stdout or stderr.
+- Corrections made to AI output:
+  - The logging middleware was first added after CORS, which made 500
+    responses lose their CORS headers; it was moved before CORS so the
+    frontend can read the error and request id.
+  - Error stack traces were too long to read (about 25 library frames); they
+    were shortened to our own code with a `location` field, and
+    `LOG_FULL_STACK` was added to show the full stack when needed.
+  - The test filter was adjusted so log lines from the test client (httpx,
+    asyncio) did not cause false failures.
