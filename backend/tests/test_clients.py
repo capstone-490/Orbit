@@ -5,9 +5,9 @@ import pytest
 from fastapi.testclient import TestClient
 from psycopg.errors import UniqueViolation
 
-from app.main import app
 from app.api.routers import clients
 from app.api.routers.clients import ClientCreate
+from app.main import app
 
 client = TestClient(app)
 
