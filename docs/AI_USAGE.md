@@ -42,3 +42,34 @@ This document specifies how AI tools, assistants, and generative models are util
   - The workspace toggle was updated to use supported `tablist` and `tab` ARIA
     roles, and its test was updated to query the tabs by their accessible role.
   - The navigation test was updated to reflect the new dashboard route.
+
+## Advisor Authentication
+
+- Feature: advisor credential validation, signed expiring sessions in an
+  HttpOnly cookie, session introspection and logout, protected advisor routes,
+  and advisor-scoped client and meeting access.
+- Source files: `backend/app/auth.py`, `backend/app/main.py`,
+  `backend/app/routers/sessions.py`, `backend/app/routers/clients.py`,
+  `backend/app/routers/meetings.py`,
+  `frontend/src/components/dashboard/AdvisorLayout.jsx`,
+  `frontend/src/components/dashboard/Navbar.jsx`,
+  `frontend/src/pages/Login.jsx`, `frontend/src/pages/Clients.jsx`, and
+  `frontend/src/services/AuthApi.js`.
+- Test files: `backend/tests/test_auth.py`, `backend/test/test_clients.py`,
+  `backend/test/test_meetings.py`, `frontend/src/tests/App.test.jsx`,
+  `frontend/src/tests/Clients.test.jsx`, and
+  `frontend/src/tests/Login.test.jsx`.
+- AI assistance: substantial assistance was used to implement and verify the
+  backend and frontend authentication flow.
+- Verification evidence:
+  - Focused backend auth, client, and meeting tests: 26 passed.
+  - Frontend test suite: 37 passed.
+  - Vite production build completed successfully.
+  - Live database/API smoke test passed for login, session introspection, and a
+    protected client request using a temporary advisor record that was deleted
+    after the test.
+- Corrections made to AI output:
+  - Browser token storage was replaced with an HttpOnly session cookie.
+  - The route-guard test was made asynchronous to await session validation.
+  - Direct dependency verification passes explicit header/cookie values rather
+    than relying on FastAPI parameter defaults.

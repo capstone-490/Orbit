@@ -1,10 +1,21 @@
 // Substantial AI assistance used; verified with frontend tests and production build.
-import { FiBell, FiUser } from 'react-icons/fi'
-import { NavLink } from 'react-router-dom'
+import { FiBell, FiLogOut, FiUser } from 'react-icons/fi'
+import { NavLink, useNavigate } from 'react-router-dom'
 import orbitLogo from '../../assets/orbit-logo.png'
+import { logoutAdvisor } from '../../services/AuthApi'
 import '../../styles/Navbar.css'
 
 function Navbar({ user }) {
+  const navigate = useNavigate()
+
+  async function handleSignOut() {
+    try {
+      await logoutAdvisor()
+    } finally {
+      navigate('/login', { replace: true })
+    }
+  }
+
   return (
     <nav className="navbar">
       <div className="navbar-brand">
@@ -31,6 +42,9 @@ function Navbar({ user }) {
         <span className="profile-avatar">
           <FiUser size={18} />
         </span>
+        <button type="button" aria-label="Sign out" onClick={handleSignOut}>
+          <FiLogOut aria-hidden="true" />
+        </button>
       </div>
     </nav>
   )

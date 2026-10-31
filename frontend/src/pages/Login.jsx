@@ -23,9 +23,7 @@ function Login() {
 
     try {
       const result = await loginAdvisor({ email, password })
-      if (result?.token) {
-        localStorage.setItem('orbit_auth_token', result.token)
-      }
+      if (!result?.advisor) throw new Error('Unable to sign in. Please try again.')
       navigate('/dashboard')
     } catch (loginError) {
       setError(

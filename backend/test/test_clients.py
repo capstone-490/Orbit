@@ -6,10 +6,14 @@ from fastapi.testclient import TestClient
 from psycopg.errors import UniqueViolation
 
 from app.main import app
+from app.auth import create_access_token
 from app.routers import clients
 from app.routers.clients import ClientCreate
 
-client = TestClient(app)
+client = TestClient(
+    app,
+    headers={"Authorization": f"Bearer {create_access_token(1)}"},
+)
 
 COLUMNS = [
     "id",
