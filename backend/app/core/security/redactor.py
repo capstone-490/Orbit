@@ -3,7 +3,7 @@ from __future__ import annotations
 import traceback
 from typing import Any
 
-from patterns import PII_PATTERN
+from app.core.security.patterns import PII_PATTERN
 
 REDACTED = "[REDACTED]"
 
