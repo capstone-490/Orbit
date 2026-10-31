@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# No substantial AI-generated code
+# Below 50%
 import os
 from contextlib import asynccontextmanager
 
