@@ -1,5 +1,4 @@
-
-import os 
+import os
 from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI, Header, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,10 +13,12 @@ from security.anonymizer import TokenStore
 configure_logging()
 logger = get_logger("app")
 
+
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     TokenStore._load_secret()
     yield
+
 
 app = FastAPI(lifespan=lifespan)
 

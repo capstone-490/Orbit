@@ -59,6 +59,7 @@ def client():
 
 # ---- Story testing plan ---------------------------------------------------
 
+
 def test_exception_with_email_is_redacted_and_has_request_id(client, logs):
     response = client.get("/boom")
     entries, raw = logs()
@@ -95,9 +96,12 @@ def test_demo_post_with_sin_returns_500_and_redacts_everything(client, logs):
 
 # ---- Acceptance criteria --------------------------------------------------
 
+
 def test_every_line_is_json_with_required_fields(client, logs):
     client.get("/ok")
-    all_entries, raw = logs(app_only=False)  # json.loads already proved every line is JSON
+    all_entries, raw = logs(
+        app_only=False
+    )  # json.loads already proved every line is JSON
     assert len(all_entries) == len(raw.strip().splitlines())
     for entry in all_entries:
         for field in ("timestamp", "level", "logger", "message", "service"):
@@ -105,7 +109,14 @@ def test_every_line_is_json_with_required_fields(client, logs):
     entries = [e for e in all_entries if e["logger"].startswith("app")]
     assert entries
     for entry in entries:
-        for field in ("timestamp", "level", "logger", "message", "service", "request_id"):
+        for field in (
+            "timestamp",
+            "level",
+            "logger",
+            "message",
+            "service",
+            "request_id",
+        ):
             assert field in entry
 
 
@@ -130,7 +141,10 @@ def test_handler_logs_inherit_request_id(client, logs):
     assert handler_entry["request_id"] == response.headers["x-request-id"]
 
 
-@pytest.mark.parametrize("path,status,level", [("/ok", 200, "INFO"), ("/not-found", 404, "WARN"), ("/boom", 500, "ERROR")])
+@pytest.mark.parametrize(
+    "path,status,level",
+    [("/ok", 200, "INFO"), ("/not-found", 404, "WARN"), ("/boom", 500, "ERROR")],
+)
 def test_level_follows_status_code(client, logs, path, status, level):
     client.get(path)
     entries, _ = logs()
@@ -157,9 +171,16 @@ def test_invalid_incoming_request_id_is_replaced(client, logs):
 
 @pytest.mark.parametrize(
     "env_value,debug_shown,info_shown,warn_shown",
-    [("DEBUG", True, True, True), ("INFO", False, True, True), ("WARN", False, False, True), ("ERROR", False, False, False)],
+    [
+        ("DEBUG", True, True, True),
+        ("INFO", False, True, True),
+        ("WARN", False, False, True),
+        ("ERROR", False, False, False),
+    ],
 )
-def test_log_level_comes_from_environment(monkeypatch, capsys, env_value, debug_shown, info_shown, warn_shown):
+def test_log_level_comes_from_environment(
+    monkeypatch, capsys, env_value, debug_shown, info_shown, warn_shown
+):
     monkeypatch.setenv("LOG_LEVEL", env_value)
     configure_logging(log_file="")
     log = logging.getLogger("app.level-test")
@@ -192,11 +213,14 @@ def test_log_file_receives_redacted_json(tmp_path, capsys):
 
 # ---- Error logs cannot bypass redaction ------------------------------------
 
+
 def test_logger_exception_outside_requests_is_redacted(logs):
     try:
         raise ValueError(f"SIN {FAKE_SIN} rejected")
     except ValueError:
-        logging.getLogger("app.worker").exception("Background job failed for %s", FAKE_EMAIL)
+        logging.getLogger("app.worker").exception(
+            "Background job failed for %s", FAKE_EMAIL
+        )
     entries, raw = logs()
     assert FAKE_SIN not in raw and FAKE_EMAIL not in raw
     assert entries[0]["message"] == "Background job failed for [REDACTED]"
@@ -218,7 +242,10 @@ def test_chained_exception_cause_is_redacted(logs):
 def test_extra_fields_and_keys_are_redacted(logs):
     logging.getLogger("app.test").warning(
         "Client update",
-        extra={"client": {"email": FAKE_EMAIL, "notes": [f"call {FAKE_PHONE}"]}, FAKE_SIN: "as key"},
+        extra={
+            "client": {"email": FAKE_EMAIL, "notes": [f"call {FAKE_PHONE}"]},
+            FAKE_SIN: "as key",
+        },
     )
     entries, raw = logs()
     assert FAKE_EMAIL not in raw and FAKE_PHONE not in raw and FAKE_SIN not in raw
@@ -230,7 +257,9 @@ def test_non_json_objects_are_stringified_then_redacted(logs):
         def __str__(self):
             return f"Client<{FAKE_EMAIL}>"
 
-    logging.getLogger("app.test").info("Saved", extra={"obj": Client(), "ids": {uuid.uuid4()}})
+    logging.getLogger("app.test").info(
+        "Saved", extra={"obj": Client(), "ids": {uuid.uuid4()}}
+    )
     _, raw = logs()
     assert FAKE_EMAIL not in raw
     assert "Client<[REDACTED]>" in raw
@@ -244,7 +273,9 @@ def test_exception_passed_as_log_argument_is_redacted(logs):
 
 
 def test_uvicorn_error_logger_goes_through_redaction(logs):
-    logging.getLogger("uvicorn.error").error("Exception in ASGI application for %s", FAKE_EMAIL)
+    logging.getLogger("uvicorn.error").error(
+        "Exception in ASGI application for %s", FAKE_EMAIL
+    )
     entries, raw = logs(app_only=False)
     assert FAKE_EMAIL not in raw
     assert entries[0]["logger"] == "uvicorn.error"
@@ -255,17 +286,21 @@ def test_error_stack_is_short_and_points_to_our_code(client, logs):
     entries, _ = logs()
     error = next(e for e in entries if "error" in e)["error"]
 
-    assert "site-packages" not in error["stack"]  
+    assert "site-packages" not in error["stack"]
     assert "library frames hidden" in error["stack"]
     assert error["location"].endswith("in create_client_demo")
     assert "debug.py" in error["location"]
-    assert error["stack"].count("\n") < 10  
+    assert error["stack"].count("\n") < 10
     assert FAKE_EMAIL not in json.dumps(error)
 
 
-def test_full_stack_switch_keeps_library_frames_and_still_redacts(monkeypatch, capsys, client):
+def test_full_stack_switch_keeps_library_frames_and_still_redacts(
+    monkeypatch, capsys, client
+):
     monkeypatch.setenv("LOG_FULL_STACK", "true")
-    configure_logging(level="INFO", log_file="")  # reads LOG_FULL_STACK from the environment
+    configure_logging(
+        level="INFO", log_file=""
+    )  # reads LOG_FULL_STACK from the environment
 
     client.post("/debug/clients", json={"email": FAKE_EMAIL, "sin": FAKE_SIN})
     out = capsys.readouterr().out
@@ -294,9 +329,10 @@ def test_chained_exception_keeps_both_errors_in_short_stack(logs):
     assert FAKE_PHONE not in raw
 
 
-
 def test_non_pii_content_is_preserved(logs):
-    logging.getLogger("app.test").info("Client status: Active", extra={"client_id": 42, "active": True})
+    logging.getLogger("app.test").info(
+        "Client status: Active", extra={"client_id": 42, "active": True}
+    )
     entries, _ = logs()
     assert entries[0]["message"] == "Client status: Active"
     assert entries[0]["client_id"] == 42 and entries[0]["active"] is True

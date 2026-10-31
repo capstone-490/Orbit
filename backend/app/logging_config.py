@@ -113,7 +113,7 @@ class RedactingJsonFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         try:
             message = record.getMessage()
-        except Exception:  # bad %-format args must never crash logging
+        except (TypeError, ValueError):  # bad %-format args must never crash logging
             message = f"{record.msg} {record.args}"
 
         entry: dict[str, Any] = {
@@ -131,7 +131,11 @@ class RedactingJsonFormatter(logging.Formatter):
             entry["request_id"] = request_id
 
         for key, value in vars(record).items():
-            if key not in _STANDARD_ATTRS and key != "request_id" and not key.startswith("_"):
+            if (
+                key not in _STANDARD_ATTRS
+                and key != "request_id"
+                and not key.startswith("_")
+            ):
                 entry[key] = value
 
         # Error traces: short stack (our code only) + exact location, all redacted.
@@ -165,7 +169,9 @@ def _resolve_level(value: str | None) -> int:
     if name == "WARN":
         name = "WARNING"
     if name not in _VALID_LEVELS:
-        raise ValueError(f"Invalid LOG_LEVEL {value!r}; use DEBUG, INFO, WARN, ERROR or CRITICAL")
+        raise ValueError(
+            f"Invalid LOG_LEVEL {value!r}; use DEBUG, INFO, WARN, ERROR or CRITICAL"
+        )
     return getattr(logging, name)
 
 

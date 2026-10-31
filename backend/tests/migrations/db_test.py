@@ -38,7 +38,6 @@ def schema():
 # Wipe all data after every test
 @pytest.fixture(autouse=True)
 def clean_tables():
-
     yield
     with get_connection() as conn:
         conn.execute(f"TRUNCATE {', '.join(TABLES)} RESTART IDENTITY CASCADE")
