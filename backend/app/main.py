@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # No substantial AI-generated code
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, Header, Query
@@ -10,6 +11,11 @@ from app.api.routers.clients import router as clients_router
 from app.api.routers.meetings import router as meetings_router
 from app.core.feature_flags import get_variant
 from app.core.security.anonymizer import TokenStore
+from app.logging_config import configure_logging, get_logger
+from app.middleware.request_logging import RequestLoggingMiddleware
+
+configure_logging()
+logger = get_logger("app")
 
 
 @asynccontextmanager
@@ -20,6 +26,8 @@ async def lifespan(_app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+app.add_middleware(RequestLoggingMiddleware)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -27,8 +35,9 @@ app.add_middleware(
         "http://127.0.0.1:5173",
     ],
     allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
+    expose_headers=["x-request-id"],
 )
 
 app.include_router(clients_router)
@@ -36,6 +45,13 @@ app.include_router(advisor_router)
 app.include_router(meetings_router)
 app.include_router(advisor_router)
 app.include_router(meetings_router)
+
+
+if os.getenv("ENABLE_DEBUG_ROUTES", "").lower() in {"1", "true", "yes"}:
+    from app.routers.debug import router as debug_router
+
+    app.include_router(debug_router)
+    logger.warning("Debug routes enabled; do not use in production")
 
 
 def get_user_id(user_id: str | None = Header(default=None)) -> str:
