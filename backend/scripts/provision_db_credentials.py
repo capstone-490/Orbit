@@ -6,9 +6,11 @@ from app.db.db import get_admin_connection
 ALLOWED_ROLES = {"orbit_app", "orbit_test"}
 
 
-def provision_credentials() -> None:
-    username = settings.DB_USER
-    password = settings.DB_PASSWORD
+def provision_credentials(
+    username: str | None = None, password: str | None = None
+) -> None:
+    username = username or settings.DB_USER
+    password = password or settings.DB_PASSWORD
 
     if username not in ALLOWED_ROLES:
         raise ValueError(f"Unexpected application database role: {username}")
