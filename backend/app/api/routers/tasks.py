@@ -1,15 +1,16 @@
 from fastapi import APIRouter, HTTPException
-from app.db.db import get_connection
+from psycopg import Error as PsycopgError
+
 from app.api.classes.task import TaskCreate, TaskResponse
-
-
+from app.db.db import get_connection
 from app.services.sla_cal import (
-    compute_urgency,
-    get_timezone,
     URGENCY_COLOR,
+    compute_urgency,
+    force_timezone_on_DB_return,
     force_utc,
-    force_timezone_on_DB_return
+    get_timezone,
 )
+
 
 router = APIRouter()
 
@@ -55,10 +56,11 @@ def get_tasks(client_id: int, user_timezone: str = "UTC"):
             detail=str(e)
         )
 
-    except Exception:
+    except PsycopgError as e:
         raise HTTPException(
             status_code=500,
-            detail="Unable to retrieve tasks"
+            #detail="Unable to retrieve tasks"
+            detail=str(e)
         )
 
 
@@ -118,10 +120,11 @@ def create_task(task: TaskCreate, user_timezone: str = "UTC"):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    except Exception:
+    except PsycopgError as e:
         raise HTTPException(
             status_code=500,
-            detail="Unable to retrieve tasks"
+            #detail="Unable to retrieve tasks"
+            detail=str(e)
         )
 
 def build_task_response(row, timezone_zi, now = None):

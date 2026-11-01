@@ -1,19 +1,16 @@
 # Below 50% AI-generated
-import pytest
+from datetime import datetime, timedelta, timezone, UTC
 from unittest.mock import MagicMock, patch
-from datetime import datetime, timezone, timedelta
+
+import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app.api.routers.tasks import router, build_task_response
-
-import pytest
+from app.api.routers.tasks import build_task_response, router
 
 from app.services.sla_cal import (
     UrgencyState,
-    URGENCY_COLOR,
-    compute_urgency,
-)
+    compute_urgency)
 
 
 app = FastAPI()
@@ -30,8 +27,8 @@ def mock_task_row():
         "Contact customer regarding renewal",
         10,
         "Todo",
-        datetime(2026, 11, 5, 12, 0, tzinfo=timezone.utc),
-        datetime(2026, 10, 25, 12, 0, tzinfo=timezone.utc)
+        datetime(2026, 11, 5, 12, 0, tzinfo=UTC),
+        datetime(2026, 10, 25, 12, 0, tzinfo=UTC)
     )
 
 
@@ -40,6 +37,7 @@ def mock_db():
     with patch("app.api.routers.tasks.get_connection") as mock_conn:
 
         connection = MagicMock()
+        
         mock_conn.return_value.__enter__.return_value = connection
 
         yield connection
@@ -280,24 +278,13 @@ def test_get_tasks_filters_by_client_id(
 
     assert sql_params == (10,)
 
-@pytest.fixture
-def mock_db():
-
-    with patch("app.api.routers.tasks.get_connection") as mock_conn:
-
-        connection = MagicMock()
-
-        mock_conn.return_value.__enter__.return_value = connection
-
-        yield connection
-
 
 @pytest.fixture
 def fixed_now():
 
     return datetime(
         2026, 11, 2, 12, 0,
-        tzinfo=timezone.utc
+        tzinfo=UTC
     )
 
 def create_task_row(
@@ -357,7 +344,7 @@ def test_get_tasks_calls_sla_calculator(
 
 def test_get_task_due_now_red(mock_db):
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     due_date = now + timedelta(hours=12)
 
@@ -383,7 +370,7 @@ def test_get_task_due_now_red(mock_db):
 
 def test_get_task_upcoming_yellow(mock_db):
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     due_date = now + timedelta(hours=48)
 
@@ -413,7 +400,7 @@ def test_get_task_upcoming_yellow(mock_db):
 
 def test_get_task_past_due_red(mock_db):
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     due_date = now - timedelta(hours=2)
 
@@ -439,7 +426,7 @@ def test_get_task_past_due_red(mock_db):
 
 def test_get_resolved_task_green(mock_db):
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     due_date = now - timedelta(days=5)
 
@@ -467,7 +454,7 @@ def test_get_resolved_task_green(mock_db):
 
 def test_task_due_exactly_now_is_red(mock_db):
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     row = create_task_row(now)
 
@@ -488,7 +475,7 @@ def test_task_due_exactly_now_is_red(mock_db):
 
 def test_task_due_in_23_hours_is_red(mock_db):
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     row = create_task_row(
         now + timedelta(hours=23)
@@ -512,7 +499,7 @@ def test_get_task_timezone_conversion(mock_db):
 
     due_date = datetime(
         2026, 11, 2, 12, 0,
-        tzinfo=timezone.utc
+        tzinfo=UTC
     )
 
     row = create_task_row(due_date)
@@ -563,7 +550,7 @@ def test_create_task_returns_computed_urgency(
     mock_db
 ):
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     due_date = now + timedelta(hours=10)
 
@@ -598,7 +585,7 @@ def test_create_resolved_task_returns_green(
     mock_db
 ):
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     due_date = now - timedelta(days=2)
 
