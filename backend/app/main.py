@@ -10,7 +10,6 @@ from app.api.routers.clients import router as clients_router
 from app.api.routers.meetings import router as meetings_router
 from app.core.feature_flags import get_variant
 from app.core.security.anonymizer import TokenStore
-from security.anonymizer import TokenStore
 
 
 @asynccontextmanager
