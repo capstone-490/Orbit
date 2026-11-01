@@ -129,6 +129,7 @@ def test_request_log_has_path_status_and_request_id(client, logs):
     assert access["method"] == "GET"
     assert access["path"] == "/ok"  # no query string
     assert access["status_code"] == 200
+    assert access["response_failed"] is False
     assert access["level"] == "INFO"
     assert isinstance(access["duration_ms"], float)
     assert access["request_id"] == response.headers["x-request-id"]
@@ -350,6 +351,12 @@ def test_error_after_response_started_is_logged_and_reraised(logs):
     assert error_entry["error"]["type"] == "RuntimeError"
     assert FAKE_EMAIL not in raw
 
+    # The client already received a 200, but the log records the failure.
+    access = next(e for e in entries if e["message"] == "Request completed")
+    assert access["status_code"] == 500
+    assert access["response_failed"] is True
+    assert access["level"] == "ERROR"
+
 
 def test_bad_format_args_do_not_crash_formatter():
     record = logging.LogRecord(
@@ -357,6 +364,26 @@ def test_bad_format_args_do_not_crash_formatter():
     )
     entry = json.loads(RedactingJsonFormatter().format(record))
     assert "two args" in entry["message"]
+
+
+def test_error_message_and_location_are_redacted(logs):
+    def save_client_with_typo():
+        # e.g. a user typed their email into the wrong field
+        raise ValueError(f"Invalid phone number: {FAKE_EMAIL} (SIN {FAKE_SIN})")
+
+    try:
+        save_client_with_typo()
+    except ValueError:
+        logging.getLogger("app.test").exception("Could not save client")
+
+    entries, raw = logs()
+    error = entries[0]["error"]
+    assert error["message"] == "Invalid phone number: [REDACTED] (SIN [REDACTED])"
+    assert "save_client_with_typo" in error["location"]
+    for field in ("message", "location", "stack"):
+        assert FAKE_EMAIL not in error[field]
+        assert FAKE_SIN not in error[field]
+    assert FAKE_EMAIL not in raw and FAKE_SIN not in raw
 
 
 def test_non_pii_content_is_preserved(logs):
