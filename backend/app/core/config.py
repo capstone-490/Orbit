@@ -6,7 +6,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 INSECURE_DEFAULT_SECRET = "local-and-ci-test-only-secret-key"
 INSECURE_DEFAULT_ANONYMIZATION_SECRET = "Supercalifragilisticexpialidocious"
+<<<<<<< HEAD
 from pathlib import Path
+=======
+>>>>>>> 87fe284 (add makefile to make testing locally easier, break up compose for prod and local deployment, partly dockerize frontend, prep move to new schema)
 
 
 class Settings(BaseSettings):
