@@ -1,7 +1,39 @@
-# Prerequisites
+# Orbit — Developer Workflow Guide
 
-- Docker
-- uv
+## Project Structure
+
+```text
+.
+├── Makefile                    # Cross-platform task runner
+├── compose.yaml                # Base application topology (production)
+├── compose.dev.yaml            # Local development overrides
+├── compose.test.yaml           # Isolated, ephemeral test topology
+├── compose.monitoring.yaml     # Optional Prometheus monitoring
+├── prometheus.yml              # Prometheus scrape configuration
+├── .env                        # Local environment variables (not committed)
+├── .env.example                # Environment variable template
+│
+├── backend/                    # Python 3.14 + FastAPI + SQLAlchemy + Alembic + uv
+│   ├── app/                    # Application source (api, core, db, domain)
+│   ├── migrations/             # Alembic migrations
+│   ├── scripts/                # DB provisioning, feature flags and seeders
+│   └── tests/                  # Pytest suites
+│
+└── frontend/                   # Node 22 + pnpm + Vite + Vitest + Biome
+```
+
+### Docker Compose Architecture
+
+Compose files are layered rather than independent. Development and monitoring inherit the base configuration.
+
+| File | Responsibility |
+|---|---|
+| `compose.yaml` | Base configuration: PostgreSQL, migrations and backend |
+| `compose.dev.yaml` | Development overrides: hot reload, bind mounts, frontend and host ports |
+| `compose.test.yaml` | Isolated test environment with in-memory PostgreSQL |
+| `compose.monitoring.yaml` | Optional Prometheus monitoring |
+
+---
 
 ## Installing Docker Desktop
 
@@ -20,105 +52,285 @@ docker compose version
 
 **IMPORTANT:** Before running any Docker commands, make sure Docker Desktop is running.
 
-## Docker Configuration
+## 1. Setup Environment Variables
 
-- **Backend Service**: Backend running on port 8001 with Python version 3.14-slim
-- **Database**: PostgreSQL 16 container on port 6105
-- **Volume Mounts**: Code directory for live reload during development
+### For Docker Development (`make dev`)
 
-## Local Development
-
-### First Time Setup
+Create a `.env` file in the **project root** before starting the development stack:
 
 ```bash
-# Build and start containers (first time will download images and build)
-docker-compose up -d --build
-
-# If it throws no such file or directory for python:3.14-slim run the command below before
-```bash
-docker pull python:3.14-slim
-docker-compose up -d --build
-
-#Currently it will not be available as no python code is running so the backend will exit with code 2 (remove this when code is present and its running)
-After setup, the API will be available at `http://localhost:8001`
-
-
-### Daily Development
-
-#### Starting the Application
-```bash
-# Start all services (currently only PostgreSQL)
-docker-compose up
-
-# Or run in background (detached mode)
-docker-compose up -d
-
-# Stop services (or press Ctrl+C if running in foreground)
-docker-compose down
+cp .env.example .env
 ```
 
-## Common Commands
+**.env Important distinctions:**
 
-All commands should be run through Docker:
+- `POSTGRES_USER` and `POSTGRES_PASSWORD` initialize the PostgreSQL container.
+- `DB_USER` and `DB_PASSWORD` configure the application database connection.
+- `DB_HOST=db` is used for connections between containers.
+- `DB_HOST=127.0.0.1` is used when running the backend directly on your host.
 
-### View Logs
+The application database credentials are provisioned separately by `scripts.provision_db_credentials`.
 
-```bash
-# Follow logs in real-time
-docker-compose logs -f backend
+### Automated Tests
 
-# View last 50 lines
-docker-compose logs --tail=50 backend
-```
-
-### Restart Services
+You do not need a `.env` file to run:
 
 ```bash
-# Restart just the backend service (after dependency changes)
-docker-compose restart backend
-
-# Rebuild after changing requirements.txt
-docker-compose up -d --build backend
+make test
+make test-be
+make test-fe
+make test-fe-int
 ```
 
-### Stop the Backend
+The test Compose configuration injects test credentials and uses an in-memory PostgreSQL instance.
+Test data and database state are discarded when the test stack is torn down.
+
+---
+
+## 2. Makefile Workflows (Recommended)
+
+The root `Makefile` is cross-platform (automatically uses `/bin/sh` on Linux/macOS/WSL2 and `powershell.exe` on native Windows).
+
+### Development
+
+| Command | Description |
+|---|---|
+| `make dev` | Builds and starts PostgreSQL, migrations, DB provisioning, seeders, FastAPI and Vite |
+| `make down` | Stops development containers and removes orphans (preserves database volume) |
+| `make monitoring` | Starts development with Prometheus |
+| `make monitoring-down` | Stops development and Prometheus |
+
+### Production
+
+| Command | Description |
+|---|---|
+| `make prod` | Builds and starts the production application stack in the background |
+| `make prod-down` | Stops production containers without deleting persistent volumes |
+
+### Testing
+
+| Command | Description |
+|---|---|
+| `make test` | Runs backend and frontend tests in one shared lifecycle |
+| `make test-be` | Runs backend pytest suite |
+| `make test-be-cov` | Runs backend tests with coverage |
+| `make test-fe` | Runs isolated frontend unit tests |
+| `make test-fe-cov` | Runs frontend tests with coverage |
+| `make test-fe-int` | Runs frontend integration tests against a live backend and seeded database |
+
+### Database and Cleanup
+
+| Command | Description |
+|---|---|
+| `make migration msg="add_audit_table"` | Generates an Alembic revision |
+| `make clean` | Removes development/test containers, volumes and backend caches |
+
+**WARNING:** `make clean` deletes development and test volumes, including local PostgreSQL data. Do not run it if you need to preserve your development database.
+
+### Passing Custom Arguments to Tests via `ARGS`
 
 ```bash
-docker-compose down
+# Run a specific backend test file
+make test-be ARGS="tests/security/test_pii_redaction.py -vv"
+
+# Run backend tests matching a keyword
+make test-be ARGS="-k test_clients"
+
+# Run backend tests with coverage
+make test-be-cov ARGS="-k test_clients"
+
+# Run a specific frontend test file
+make test-fe ARGS="src/components/ClientList.test.tsx"
+
+# Run frontend tests with coverage
+make test-fe-cov ARGS="src/components/ClientList.test.tsx"
+
+# Run the complete test suite
+make test
 ```
 
-### To Run the Tests
+---
+
+## 3. Docker Compose Workflows
+
+### Local Development
 
 ```bash
-docker compose run --rm backend pytest -v
+# Start full dev stack with hot-reload
+docker compose -f compose.yml -f compose.dev.yml up --build
+
+# Start only the database in the background (useful when running backend/frontend on host)
+docker compose -f compose.yml -f compose.dev.yml up db -d
+
+# Start the development stack with monitoring, Prometheus: http://localhost:9090
+docker compose -f compose.yml -f compose.dev.yml -f compose.monitoring.yml up --build
+
+# Stop stacks (keep database volume)
+docker compose -f compose.yml -f compose.dev.yml down --remove-orphans
+docker compose -f compose.yml -f compose.dev.yml -f compose.monitoring.yml down --remove-orphans
 ```
 
-## Development Notes
+### Ephemeral Containerized Testing
 
-- The backend runs on port **8001**
-- PostgreSQL database on port **6105** (to avoid conflicts with local PostgreSQL)
-- Hot-reloading is enabled via volume mounting
-- Database credentials are in `docker-compose.yml` (Prob need to remove them in the future from it)
-- Python packages are installed through pip using information contained in requirements.txt
+```bash
+# Run backend tests (auto-starts RAM db + migrations + seeders)
+docker compose -f compose.test.yml run --rm --build backend-test pytest
 
-## Advisor Authentication
+# Run isolated frontend unit tests
+docker compose -f compose.test.yml run --rm --build --no-deps frontend-test pnpm vitest run
 
-Advisor login uses the existing `advisors` table. Store passwords as PBKDF2-SHA256 hashes generated by `app.auth.hash_password`; plaintext passwords are not accepted. The API sets an HttpOnly, SameSite=Lax session cookie that expires after one hour. Protected client and meeting endpoints require that session and restrict results to its advisor.
+# Run frontend integration tests against a live backend:
+docker compose -f compose.test.yaml up -d --build backend
+docker compose -f compose.test.yaml run --rm frontend-test pnpm vitest run
 
-Set `ORBIT_AUTH_SECRET` to a random secret of at least 32 bytes before running the backend. Compose supplies a development-only value; replace it in deployed environments and set `ORBIT_COOKIE_SECURE=true` when serving over HTTPS. Existing advisor records need a compatible password hash provisioned before those accounts can log in.
-### Client data and AI masking
+# Always tear down the test stack & volumes afterward
+docker compose -f compose.test.yml down -v --remove-orphans
 
-Client creation stores the submitted name, contact details, address, occupation,
-and timeline in the database. The submitted date of birth is converted to `age`
-at creation time and is never stored. Security for stored client data will be
-provided through encryption and access control.
+docker-compose logs -f backend-test
+```
 
-The `mask_for_ai` function in `security/anonymizer.py` creates deterministic
-synthetic names, contact details, addresses, and occupations before client data
-is sent to an AI model. It derives HMAC-SHA256 tokens from the client's stable
-database ID, not from PII, and leaves age and timeline unchanged. The masking
-store is only a cache, so cache eviction does not change generated values.
+---
 
-The backend refuses to start unless `ORBIT_ANONYMIZATION_SECRET` is configured,
-non-blank, and at least 32 characters long. Use a stable, deployment-managed
-secret in `.env`, tests, Docker Compose, and production.
+## 4. Manual Host Workflows (Running Directly with `uv` & `pnpm`)
+
+You can run the backend and frontend directly on your host machine for IDE debugging or rapid iteration.
+
+### Backend (`backend/`)
+
+#### 1. Prerequisites & Environment Variables
+
+:exclamation: Ensure PostgreSQL is running and reachable on `127.0.0.1:5432` (for example, via `docker compose -f compose.yml -f compose.dev.yml up db -d`).
+
+Export the required env variables in your shell or create a `.env` file inside backend:
+
+```bash
+export ENVIRONMENT=local
+export DEBUG=true
+
+export DB_HOST=127.0.0.1
+export DB_PORT=5432
+export DB_NAME=orbit_db
+export DB_USER=orbit_app
+export DB_PASSWORD=your-local-db-password
+
+export SECRET_KEY=local-only-insecure-secret
+export ORBIT_ANONYMIZATION_SECRET=your-local-anonymization-secret
+
+export ENABLE_DEBUG_ROUTES=false
+export METRICS_ENABLED=1
+```
+
+#### 2. Install Dependencies (`uv`)
+
+```bash
+cd backend
+uv sync --frozen --no-build
+```
+
+#### 3. Database Migrations & Seeding
+
+```bash
+cd backend
+
+# Apply all SQL migrations / seed data
+uv run --locked --no-build alembic -c alembic.ini upgrade head
+
+# Provision database credentials if required
+uv run --locked --no-build python -m scripts.provision_db_credentials
+
+# Load feature flags
+uv run --locked --no-build python -m scripts.load_feature_flags
+
+# Seed baseline data (idempotent)
+uv run --locked --no-build python -m scripts.seed_db
+
+# Create a new SQL migration revision; edit manually after in migrations/sql
+uv run --locked --no-build alembic -c alembic.ini revision -m "add_new_table"
+```
+
+#### 4. Run Backend Tests (`pytest`)
+
+> **Note:** `tests/conftest.py` automatically seeds the database on session start and wraps every test in a SQLAlchemy `SAVEPOINT` transaction that rolls back after each test.
+
+```bash
+cd backend
+
+# Run all tests
+uv run --locked --no-build pytest
+
+# Run with coverage (matches CI)
+uv run --locked --no-build pytest --cov=. --cov-report=xml:coverage.xml --cov-report=term-missing
+
+# Run a specific test directory or file
+uv run --locked --no-build pytest tests/security/
+```
+
+#### 5. Backend Lint, Format & Typecheck (`ruff` & `mypy`)
+
+```bash
+cd backend
+
+# Check linting and formatting (matches CI)
+uv run --locked --no-build ruff check .
+uv run --locked --no-build ruff format --check .
+
+# Auto-fix lint issues and format code
+uv run --locked --no-build ruff check --fix .
+uv run --locked --no-build ruff format .
+
+# Run static type checking
+uv run --locked --no-build mypy .
+```
+
+---
+
+### Frontend (`frontend/`)
+
+#### 1. Install Dependencies (`pnpm`)
+
+```bash
+cd frontend
+corepack enable
+pnpm install --frozen-lockfile
+```
+
+#### 2. Start Local Dev Server
+
+```bash
+cd frontend
+VITE_API_URL=http://localhost:8001 pnpm dev
+```
+
+#### 3. Frontend Lint & Format (`biome`)
+
+```bash
+cd frontend
+
+# Check linting, formatting, and types (read-only)
+pnpm lint
+pnpm check
+pnpm biome format ./src
+
+# Auto-apply fixes and formatting
+pnpm biome lint --write ./src
+pnpm biome check --write ./src
+pnpm biome format --write ./src
+```
+
+#### 4. Frontend Tests (`vitest`)
+
+```bash
+cd frontend
+
+# Run unit tests once
+pnpm vitest run
+
+# Run tests in interactive watch mode during development
+pnpm vitest
+
+# Run unit tests with coverage report (matches CI)
+pnpm vitest run --coverage
+
+# Build production bundle
+pnpm build
+```

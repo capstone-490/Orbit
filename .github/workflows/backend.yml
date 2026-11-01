@@ -59,18 +59,26 @@ jobs:
       - name: Static Type Check (Mypy)
         run: uv run --locked --no-build mypy .
 
-      - name: Run Migrations & Pytest Coverage
+      - name: Run Migrations
         env:
-          DATABASE_URL: postgresql+psycopg://orbit_user:${{ secrets.POSTGRES_PASSWORD }}@127.0.0.1:5432/orbit_test_db
-          DB_NAME: orbit_test_db
+          DB_NAME: orbit_db
           DB_USER: orbit_user
           DB_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           DB_HOST: 127.0.0.1
           DB_PORT: 5432
           ORBIT_ANONYMIZATION_SECRET: ci-only-anonymization-secret-for-tests
-        run: |
-          # uv run --locked --no-build alembic upgrade head
-          uv run --locked --no-build pytest --cov=. --cov-report=xml:coverage.xml --cov-report=term-missing
+        run: uv run --locked --no-build alembic upgrade head
+
+      - name: Run Pytest Coverage
+        env:
+          DATABASE_URL: postgresql+psycopg://orbit_user:${{ secrets.POSTGRES_PASSWORD }}@127.0.0.1:5432/orbit_db
+          DB_NAME: orbit_db
+          DB_USER: orbit_user
+          DB_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          DB_HOST: 127.0.0.1
+          DB_PORT: "5432"
+          ORBIT_ANONYMIZATION_SECRET: ci-only-anonymization-secret-for-tests
+        run: uv run --locked --no-build pytest --cov=. --cov-report=xml:coverage.xml --cov-report=term-missing
 
       - name: Upload Backend Coverage to Codecov
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1

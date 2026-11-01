@@ -1,27 +1,52 @@
-# Substantial AI assistance used; verified with backend tests and live auth smoke test.
-import os
-
-os.environ.setdefault("ORBIT_AUTH_SECRET", "test-secret-with-at-least-32-bytes")
-os.environ.setdefault("DB_NAME", "orbit_test_db")
-os.environ.setdefault("DB_USER", "orbit_user")
-os.environ.setdefault("DB_PASSWORD", "orbit_password")
-os.environ.setdefault("DB_HOST", "localhost")
-os.environ.setdefault("DB_PORT", "6105")
-os.environ.setdefault(
-    "ORBIT_ANONYMIZATION_SECRET",
-    "test-only-anonymization-secret-with-32-chars",
-)
-
-
+# No substantial AI-generated code
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
 
-from app.auth import create_access_token
+from app.core.config import settings
+from app.db.deps import get_db
 from app.main import app
 
 
-@pytest.fixture
-def client():
-    headers = {"Authorization": f"Bearer {create_access_token(1)}"}
-    with TestClient(app, headers=headers) as test_client:
-        yield test_client
+@pytest.fixture(scope="session")
+def db_engine():
+    """Single engine connection to the already-migrated & seeded test DB."""
+
+    engine = create_engine(
+        settings.sqlalchemy_database_uri,
+        pool_pre_ping=True,
+    )
+
+    yield engine
+    engine.dispose()
+
+
+@pytest.fixture(scope="function")
+def db_session(db_engine):
+    connection = db_engine.connect()
+    transaction = connection.begin()
+    session = Session(bind=connection, join_transaction_mode="create_savepoint")
+
+    try:
+        yield session
+    finally:
+        session.close()
+        transaction.rollback()
+        connection.close()
+
+
+@pytest.fixture(scope="function")
+def client(db_session):
+    """FastAPI TestClient wired to the isolated per-test database session."""
+
+    def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+
+    try:
+        with TestClient(app) as test_client:
+            yield test_client
+    finally:
+        app.dependency_overrides.clear()

@@ -16,9 +16,15 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # Escape '%' as '%%' so ConfigParser doesn't crash on URL-encoded passwords
+# config.set_main_option(
+#     "sqlalchemy.url",
+#     settings.sqlalchemy_database_uri.replace("%", "%%"),
+# )
+migration_url = settings.admin_database_uri
+
 config.set_main_option(
     "sqlalchemy.url",
-    settings.sqlalchemy_database_uri.replace("%", "%%"),
+    migration_url.replace("%", "%%"),
 )
 
 # populate this with SQLAlchemy Base.metadata if using ORM models.
@@ -27,7 +33,7 @@ target_metadata = None
 
 def run_migrations_offline() -> None:
     context.configure(
-        url=settings.sqlalchemy_database_uri,
+        url=migration_url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -39,7 +45,7 @@ def run_migrations_offline() -> None:
 
 def run_migrations_online() -> None:
     connectable = create_engine(
-        settings.sqlalchemy_database_uri,
+        migration_url,
         poolclass=pool.NullPool,
     )
 
@@ -51,6 +57,7 @@ def run_migrations_online() -> None:
 
         with context.begin_transaction():
             context.run_migrations()
+    connectable.dispose()
 
 
 if context.is_offline_mode():

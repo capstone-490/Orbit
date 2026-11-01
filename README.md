@@ -1,7 +1,7 @@
 <h1 align="center">Orbit</h1>
 
-
 ## CI Information
+
 **GitHub Actions** is used for continuous integration.
 
 [View GitHub Actions workflows](https://github.com/capstone-490/Orbit/actions)
@@ -10,37 +10,31 @@
 <!--This will be filled in with links to your demo videos for each release.-->
   
 ## Project summary
+
 Orbit is an AI-powered client and workflow management platform built for financial advisors that focuses on centralizing daily administrative tasks and client management activities to reduce the burden of managing multiple clients. Specialized AI agents support advisors by handling tasks such as drafting messages, summarizing meetings, suggesting tasks, and identifying follow-up actions. Orbit includes a coordination mechanism that detects conflicting, duplicate and stale updates before any changes are committed, while advisors have final approval over important actions.
 
 ## Developer getting started guide
 
-<!-- What would a new developer need to do to get the system up and running? -->
+## Install
+
+- uv
+- make
+- pnpm
+- docker
+- See frontend|backend/README.md
 
 ## Tech Stack
 
 - **Frontend:** React.js
 - **Backend:** Python with FastAPI
-
-## Anonymization configuration
-
-The backend requires `ORBIT_ANONYMIZATION_SECRET` at startup. Set a stable,
-deployment-managed value of at least 32 characters in `.env` before starting
-Docker Compose:
-
-```dotenv
-ORBIT_ANONYMIZATION_SECRET=replace-with-a-stable-32-character-secret
-```
-
-Never use a shared development secret in production. Real client data is stored
-in the database for now. Client date of birth is accepted only to calculate age
-during creation and is not stored. The secret is used by the HMAC masking logic
-that protects client data before AI calls.
   
 ## Project board
+
 [Orbit Project Board](https://github.com/orgs/capstone-490/projects/3/views/2)
 
 
 ## Wiki table of contents
+
 - [Home](https://github.com/capstone-490/Orbit/wiki)
 - [Meeting Minutes](https://github.com/capstone-490/Orbit/wiki/01.-Meeting-Minutes)
 - [Risks](https://github.com/capstone-490/Orbit/wiki/02.-Risks)

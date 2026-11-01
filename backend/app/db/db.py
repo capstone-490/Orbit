@@ -1,16 +1,25 @@
-import os
-
 import psycopg
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
-DB_CONFIG = {
-    "host": os.environ.get("DB_HOST"),
-    "port": os.environ.get("DB_PORT"),
-    "dbname": os.environ["DB_NAME"],
-    "user": os.environ["DB_USER"],
-    "password": os.environ["DB_PASSWORD"],
-    "connect_timeout": 5,
-}
+from app.core.config import settings
+
+# SQLAlchemy engine for FastAPI runtime & tests (connects as orbit_app)
+engine = create_engine(
+    settings.sqlalchemy_database_uri,
+    pool_pre_ping=True,
+    pool_size=settings.DB_POOL_SIZE,
+    max_overflow=settings.DB_MAX_OVERFLOW,
+)
+
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 def get_connection():
-    return psycopg.connect(**DB_CONFIG)
+    """Application connection, subject to PostgreSQL RLS."""
+    return psycopg.connect(settings.psycopg_database_uri)
+
+
+def get_admin_connection():
+    """Privileged connection for migrations and test infrastructure."""
+    return psycopg.connect(settings.admin_psycopg_database_uri)

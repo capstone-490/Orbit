@@ -5,6 +5,7 @@ from pydantic import PostgresDsn, computed_field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 INSECURE_DEFAULT_SECRET = "local-and-ci-test-only-secret-key"
+INSECURE_DEFAULT_ANONYMIZATION_SECRET = "Supercalifragilisticexpialidocious"
 
 
 class Settings(BaseSettings):
@@ -18,41 +19,88 @@ class Settings(BaseSettings):
     ENVIRONMENT: Literal["local", "dev", "test", "staging", "production"] = "local"
     DEBUG: bool = False
     SECRET_KEY: str = INSECURE_DEFAULT_SECRET
+    ORBIT_ANONYMIZATION_SECRET: str = INSECURE_DEFAULT_ANONYMIZATION_SECRET
+    VITE_API_URL: str = "http://localhost:8001"
 
-    DB_HOST: str
+    DB_HOST: str = "127.0.0.1"
     DB_PORT: int = 5432
     DB_USER: str
     DB_PASSWORD: str
     DB_NAME: str
     DB_DRIVER: str = "postgresql+psycopg"
 
+    # Database administrator credentials
+    POSTGRES_USER: str = "postgres"
+    POSTGRES_PASSWORD: str
+
     # Connection Pool Tuning
     DB_POOL_SIZE: int = 10
     DB_MAX_OVERFLOW: int = 20
 
     @model_validator(mode="after")
-    def EnforceProductionSecret(self) -> Settings:
+    def enforce_production_secrets(self) -> Settings:
+        if self.ENVIRONMENT in ("staging", "production") and (
+            self.SECRET_KEY == INSECURE_DEFAULT_SECRET
+            or self.ORBIT_ANONYMIZATION_SECRET == INSECURE_DEFAULT_ANONYMIZATION_SECRET
+            or self.VITE_API_URL == "http://localhost:8001"
+        ):
+            raise ValueError("Environment variables must be set in staging/production")
+
         if (
             self.ENVIRONMENT in ("staging", "production")
-            and self.SECRET_KEY == INSECURE_DEFAULT_SECRET
+            and self.POSTGRES_PASSWORD == ""
         ):
-            raise ValueError(
-                "SECRET_KEY must be set in staging/production environments"
-            )
+            raise ValueError("POSTGRES_PASSWORD must be configured")
+
         return self
 
-    @computed_field  # type: ignore[prop-decorator]
-    @property
-    def sqlalchemy_database_uri(self) -> str:
+    def _build_database_uri(
+        self,
+        username: str,
+        password: str,
+        driver: str,
+    ) -> str:
         return str(
             PostgresDsn.build(
-                scheme=self.DB_DRIVER,
-                username=self.DB_USER,
-                password=self.DB_PASSWORD,
+                scheme=driver,
+                username=username,
+                password=password,
                 host=self.DB_HOST,
                 port=self.DB_PORT,
                 path=self.DB_NAME,
             )
+        )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def sqlalchemy_database_uri(self) -> str:
+        return (
+            f"{self.DB_DRIVER}://"
+            f"{self.DB_USER}:{self.DB_PASSWORD}"
+            f"@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+        )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def admin_database_uri(self) -> str:
+        return (
+            f"{self.DB_DRIVER}://"
+            f"{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
+            f"@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+        )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def psycopg_database_uri(self) -> str:
+        """Application psycopg connection URL (orbit_app)."""
+        return self._build_database_uri(self.DB_USER, self.DB_PASSWORD, "postgresql")
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def admin_psycopg_database_uri(self) -> str:
+        """Privileged psycopg connection URL (postgres)."""
+        return self._build_database_uri(
+            self.POSTGRES_USER, self.POSTGRES_PASSWORD, "postgresql"
         )
 
 

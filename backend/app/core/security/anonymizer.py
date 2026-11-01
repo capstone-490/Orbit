@@ -23,17 +23,18 @@ class TokenStore:
 
     @staticmethod
     def _load_secret() -> bytes:
-        configured = os.getenv("ORBIT_ANONYMIZATION_SECRET")
-        if configured is None or not configured.strip():
+        secret = os.getenv("ORBIT_ANONYMIZATION_SECRET")
+
+        if secret is None or not secret.strip():
             raise RuntimeError(
-                "ORBIT_ANONYMIZATION_SECRET must be configured and non-empty"
+                "ORBIT_ANONYMIZATION_SECRET must be secret and non-empty"
             )
-        if len(configured) < MIN_SECRET_LENGTH:
+        if len(secret) < MIN_SECRET_LENGTH:
             raise RuntimeError(
                 f"ORBIT_ANONYMIZATION_SECRET must be at least {MIN_SECRET_LENGTH} "
                 "characters long"
             )
-        return configured.encode("utf-8")
+        return secret.encode("utf-8")
 
     def get_or_create(
         self,
