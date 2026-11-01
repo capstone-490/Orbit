@@ -1,0 +1,72 @@
+x-backend-bind: &backend-bind
+  type: bind
+  source: ./backend
+  target: /app
+  bind:
+    selinux: z
+
+services:
+  db:
+    ports:
+      - "127.0.0.1:5432:5432"
+  
+  backend:
+    build:
+      target: dev
+    command: ["fastapi", "dev", "app/main.py", "--host", "0.0.0.0", "--port", "8001"]
+    environment:
+      ENVIRONMENT: dev
+      DEBUG: "true"
+    ports:
+      - "127.0.0.1:8001:8001"
+    volumes:
+      - *backend-bind
+  
+  migration:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: dev
+    env_file:
+      - .env
+    environment:
+      DB_HOST: db
+    volumes:
+      - *backend-bind
+    depends_on:
+      db:
+        condition: service_healthy
+    command:
+      - sh
+      - -c
+      - >-
+        alembic -c /app/alembic.ini upgrade head &&
+        python -m scripts.provision_db_credentials &&
+        python -m scripts.load_feature_flags &&
+        python -m scripts.seed_db
+    restart: "no"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: base
+    working_dir: /workspace
+    command: ["sh", "-c", "pnpm install && pnpm dev --host 0.0.0.0"]
+    ports:
+      - "127.0.0.1:5173:5173"
+    volumes:
+      - type: bind
+        source: ./frontend
+        target: /workspace
+        bind:
+          # only one container mounts ./frontend, so 'Z' or 'z' both work
+          selinux: z
+      - frontend_node_modules:/workspace/node_modules
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:8001}
+    networks:
+      - backend_net
+
+volumes:
+  frontend_node_modules:

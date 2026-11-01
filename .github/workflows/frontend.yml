@@ -26,8 +26,7 @@ jobs:
       - name: Set up pnpm & Node
         uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
         with:
-          version: 12
-          runtime: node@22
+          runtime: node@26
           working-directory: frontend
           cache: true
           install: false

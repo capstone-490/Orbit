@@ -1,7 +1,6 @@
 # Below 50% AI-generated
 
 import hashlib
-import json
 import logging
 from contextlib import closing
 
@@ -70,10 +69,7 @@ def set_flag(
                     "INSERT INTO feature_flags (name, enabled, rollout_percent, description) VALUES (%s, %s, %s, %s) ON CONFLICT (name) DO NOTHING RETURNING enabled, rollout_percent, description",
                     (flag_name, enabled, rollout_percent, description),
                 ).fetchone()
-                if inserted is not None:
-                    old_values = None
-                    final_description = inserted[2]
-                else:
+                if inserted is None:
                     result = conn.execute(
                         "SELECT enabled, rollout_percent, description FROM feature_flags WHERE name = %s FOR UPDATE",
                         (flag_name,),
@@ -82,33 +78,10 @@ def set_flag(
                         raise RuntimeError(
                             f"Feature flag {flag_name!r} disapeared during update"
                         )
-                    old_enabled, old_rollout_percent, old_description = result
-                    old_values = {
-                        "enabled": old_enabled,
-                        "rollout_percent": old_rollout_percent,
-                        "description": old_description,
-                    }
-                    final_description = (
-                        description if description is not None else old_description
-                    )
                     conn.execute(
                         "UPDATE feature_flags SET enabled = %s, rollout_percent = %s, description = COALESCE(%s, description), updated_at = NOW() WHERE name = %s",
                         (enabled, rollout_percent, description, flag_name),
                     )
-                new_values = {
-                    "enabled": enabled,
-                    "rollout_percent": rollout_percent,
-                    "description": final_description,
-                }
-                conn.execute(
-                    "INSERT INTO audit_log (flag_name, changed_by, old_value, new_value) VALUES (%s, %s, %s::jsonb, %s::jsonb)",
-                    (
-                        flag_name,
-                        changed_by,
-                        json.dumps(old_values) if old_values is not None else None,
-                        json.dumps(new_values),
-                    ),
-                )
                 conn.commit()
             except Exception:
                 conn.rollback()
