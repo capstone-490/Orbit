@@ -1,17 +1,14 @@
 # Below 50% AI-generated
-from datetime import datetime, timedelta, timezone, UTC
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from psycopg import Error as PsycopgError
 
 from app.api.routers.tasks import build_task_response, router
-
-from app.services.sla_cal import (
-    UrgencyState,
-    compute_urgency)
-
+from app.services.sla_cal import UrgencyState, compute_urgency
 
 app = FastAPI()
 app.include_router(router)
@@ -28,16 +25,15 @@ def mock_task_row():
         10,
         "Todo",
         datetime(2026, 11, 5, 12, 0, tzinfo=UTC),
-        datetime(2026, 10, 25, 12, 0, tzinfo=UTC)
+        datetime(2026, 10, 25, 12, 0, tzinfo=UTC),
     )
 
 
 @pytest.fixture
 def mock_db():
     with patch("app.api.routers.tasks.get_connection") as mock_conn:
-
         connection = MagicMock()
-        
+
         mock_conn.return_value.__enter__.return_value = connection
 
         yield connection
@@ -45,16 +41,10 @@ def mock_db():
 
 def test_get_tasks_success(mock_db, mock_task_row):
 
-    mock_db.execute.return_value.fetchall.return_value = [
-        mock_task_row
-    ]
+    mock_db.execute.return_value.fetchall.return_value = [mock_task_row]
 
     response = client.get(
-        "/api/v1/data/tasks",
-        params={
-            "client_id": 10,
-            "user_timezone": "UTC"
-        }
+        "/api/v1/data/tasks", params={"client_id": 10, "user_timezone": "UTC"}
     )
 
     assert response.status_code == 200
@@ -72,10 +62,7 @@ def test_get_tasks_empty(mock_db):
 
     mock_db.execute.return_value.fetchall.return_value = []
 
-    response = client.get(
-        "/api/v1/data/tasks",
-        params={"client_id": 10}
-    )
+    response = client.get("/api/v1/data/tasks", params={"client_id": 10})
 
     assert response.status_code == 200
     assert response.json() == []
@@ -85,10 +72,7 @@ def test_get_tasks_invalid_timezone(mock_db):
 
     response = client.get(
         "/api/v1/data/tasks",
-        params={
-            "client_id": 10,
-            "user_timezone": "Invalid/Timezone"
-        }
+        params={"client_id": 10, "user_timezone": "Invalid/Timezone"},
     )
 
     assert response.status_code == 400
@@ -96,15 +80,12 @@ def test_get_tasks_invalid_timezone(mock_db):
 
 def test_get_tasks_database_error(mock_db):
 
-    mock_db.execute.side_effect = Exception("Database error")
+    mock_db.execute.side_effect = PsycopgError("Database error")
 
-    response = client.get(
-        "/api/v1/data/tasks",
-        params={"client_id": 10}
-    )
+    response = client.get("/api/v1/data/tasks", params={"client_id": 10})
 
     assert response.status_code == 500
-    assert response.json()["detail"] == "Unable to retrieve tasks"
+    assert response.json()["detail"] == "Database error"
 
 
 @pytest.fixture
@@ -116,22 +97,16 @@ def valid_task_payload():
         "client_id": 10,
         "task_status": "Todo",
         "due_date": "2026-11-05T12:00:00+00:00",
-        "last_contact_date": "2026-10-25T12:00:00+00:00"
+        "last_contact_date": "2026-10-25T12:00:00+00:00",
     }
 
 
-def test_create_task_success(
-    mock_db,
-    mock_task_row,
-    valid_task_payload
-):
+def test_create_task_success(mock_db, mock_task_row, valid_task_payload):
 
     mock_db.execute.return_value.fetchone.return_value = mock_task_row
 
     response = client.post(
-        "/api/v1/data/tasks",
-        params={"user_timezone": "UTC"},
-        json=valid_task_payload
+        "/api/v1/data/tasks", params={"user_timezone": "UTC"}, json=valid_task_payload
     )
 
     assert response.status_code == 201
@@ -145,19 +120,14 @@ def test_create_task_success(
 
 
 def test_create_task_without_last_contact_date(
-    mock_db,
-    mock_task_row,
-    valid_task_payload
+    mock_db, mock_task_row, valid_task_payload
 ):
 
     valid_task_payload["last_contact_date"] = None
 
     mock_db.execute.return_value.fetchone.return_value = mock_task_row
 
-    response = client.post(
-        "/api/v1/data/tasks",
-        json=valid_task_payload
-    )
+    response = client.post("/api/v1/data/tasks", json=valid_task_payload)
 
     assert response.status_code == 201
 
@@ -166,70 +136,48 @@ def test_create_task_without_last_contact_date(
     assert sql_params[5] is None
 
 
-def test_create_task_invalid_timezone(
-    mock_db,
-    valid_task_payload
-):
+def test_create_task_invalid_timezone(mock_db, valid_task_payload):
 
     response = client.post(
         "/api/v1/data/tasks",
         params={"user_timezone": "Invalid/Timezone"},
-        json=valid_task_payload
+        json=valid_task_payload,
     )
 
     assert response.status_code == 400
 
 
-def test_create_task_invalid_datetime(
-    mock_db,
-    valid_task_payload
-):
+def test_create_task_invalid_datetime(mock_db, valid_task_payload):
 
     valid_task_payload["due_date"] = "2026-11-05T12:00:00"
 
-    response = client.post(
-        "/api/v1/data/tasks",
-        json=valid_task_payload
-    )
+    response = client.post("/api/v1/data/tasks", json=valid_task_payload)
 
     assert response.status_code == 400
 
 
-def test_create_task_database_error(
-    mock_db,
-    valid_task_payload
-):
+def test_create_task_database_error(mock_db, valid_task_payload):
 
-    mock_db.execute.side_effect = Exception("Database error")
+    mock_db.execute.side_effect = PsycopgError("Database error")
 
-    response = client.post(
-        "/api/v1/data/tasks",
-        json=valid_task_payload
-    )
+    response = client.post("/api/v1/data/tasks", json=valid_task_payload)
 
     assert response.status_code == 500
-    assert response.json()["detail"] == "Unable to retrieve tasks"
+    assert response.json()["detail"] == "Database error"
 
 
 def test_create_task_missing_required_fields():
 
-    response = client.post(
-        "/api/v1/data/tasks",
-        json={
-            "title": "Incomplete task"
-        }
-    )
+    response = client.post("/api/v1/data/tasks", json={"title": "Incomplete task"})
 
     assert response.status_code == 422
+
 
 def test_build_task_response(mock_task_row):
 
     from zoneinfo import ZoneInfo
 
-    result = build_task_response(
-        mock_task_row,
-        ZoneInfo("UTC")
-    )
+    result = build_task_response(mock_task_row, ZoneInfo("UTC"))
 
     assert result.id == 1
     assert result.title == "Follow up with customer"
@@ -250,27 +198,16 @@ def test_build_task_response_null_last_contact(mock_task_row):
     row = list(mock_task_row)
     row[6] = None
 
-    result = build_task_response(
-        tuple(row),
-        ZoneInfo("UTC")
-    )
+    result = build_task_response(tuple(row), ZoneInfo("UTC"))
 
     assert result.last_contact_date is None
 
 
-def test_get_tasks_filters_by_client_id(
-    mock_db,
-    mock_task_row
-):
+def test_get_tasks_filters_by_client_id(mock_db, mock_task_row):
 
-    mock_db.execute.return_value.fetchall.return_value = [
-        mock_task_row
-    ]
+    mock_db.execute.return_value.fetchall.return_value = [mock_task_row]
 
-    response = client.get(
-        "/api/v1/data/tasks",
-        params={"client_id": 10}
-    )
+    response = client.get("/api/v1/data/tasks", params={"client_id": 10})
 
     assert response.status_code == 200
 
@@ -282,16 +219,10 @@ def test_get_tasks_filters_by_client_id(
 @pytest.fixture
 def fixed_now():
 
-    return datetime(
-        2026, 11, 2, 12, 0,
-        tzinfo=UTC
-    )
+    return datetime(2026, 11, 2, 12, 0, tzinfo=UTC)
 
-def create_task_row(
-    due_date,
-    status="Todo",
-    last_contact_date=None
-):
+
+def create_task_row(due_date, status="Todo", last_contact_date=None):
 
     return (
         1,
@@ -300,16 +231,12 @@ def create_task_row(
         10,
         status,
         due_date,
-        last_contact_date
+        last_contact_date,
     )
 
 
 @patch("app.api.routers.tasks.compute_urgency")
-def test_get_tasks_calls_sla_calculator(
-    mock_compute,
-    mock_db,
-    fixed_now
-):
+def test_get_tasks_calls_sla_calculator(mock_compute, mock_db, fixed_now):
 
     mock_compute.side_effect = compute_urgency
 
@@ -320,16 +247,10 @@ def test_get_tasks_calls_sla_calculator(
     mock_db.execute.return_value.fetchall.return_value = [row]
 
     with patch(
-        "app.api.routers.tasks.compute_urgency",
-        wraps=compute_urgency
+        "app.api.routers.tasks.compute_urgency", wraps=compute_urgency
     ) as sla_spy:
-
         response = client.get(
-            "/api/v1/data/tasks",
-            params={
-                "client_id": 10,
-                "user_timezone": "UTC"
-            }
+            "/api/v1/data/tasks", params={"client_id": 10, "user_timezone": "UTC"}
         )
 
         assert response.status_code == 200
@@ -353,11 +274,7 @@ def test_get_task_due_now_red(mock_db):
     mock_db.execute.return_value.fetchall.return_value = [row]
 
     response = client.get(
-        "/api/v1/data/tasks",
-        params={
-            "client_id": 10,
-            "user_timezone": "UTC"
-        }
+        "/api/v1/data/tasks", params={"client_id": 10, "user_timezone": "UTC"}
     )
 
     assert response.status_code == 200
@@ -374,20 +291,15 @@ def test_get_task_upcoming_yellow(mock_db):
 
     due_date = now + timedelta(hours=48)
 
-    if (now.weekday() > 4):
+    if now.weekday() > 4:
         due_date = now + timedelta(hours=96)
-    
 
     row = create_task_row(due_date)
 
     mock_db.execute.return_value.fetchall.return_value = [row]
 
     response = client.get(
-        "/api/v1/data/tasks",
-        params={
-            "client_id": 10,
-            "user_timezone": "UTC"
-        }
+        "/api/v1/data/tasks", params={"client_id": 10, "user_timezone": "UTC"}
     )
 
     assert response.status_code == 200
@@ -409,11 +321,7 @@ def test_get_task_past_due_red(mock_db):
     mock_db.execute.return_value.fetchall.return_value = [row]
 
     response = client.get(
-        "/api/v1/data/tasks",
-        params={
-            "client_id": 10,
-            "user_timezone": "UTC"
-        }
+        "/api/v1/data/tasks", params={"client_id": 10, "user_timezone": "UTC"}
     )
 
     assert response.status_code == 200
@@ -430,19 +338,12 @@ def test_get_resolved_task_green(mock_db):
 
     due_date = now - timedelta(days=5)
 
-    row = create_task_row(
-        due_date=due_date,
-        status="Resolved"
-    )
+    row = create_task_row(due_date=due_date, status="Resolved")
 
     mock_db.execute.return_value.fetchall.return_value = [row]
 
     response = client.get(
-        "/api/v1/data/tasks",
-        params={
-            "client_id": 10,
-            "user_timezone": "UTC"
-        }
+        "/api/v1/data/tasks", params={"client_id": 10, "user_timezone": "UTC"}
     )
 
     assert response.status_code == 200
@@ -452,6 +353,7 @@ def test_get_resolved_task_green(mock_db):
     assert task["urgency_state"] == "RESOLVED"
     assert task["urgency_color"] == "Green"
 
+
 def test_task_due_exactly_now_is_red(mock_db):
 
     now = datetime.now(UTC)
@@ -460,10 +362,7 @@ def test_task_due_exactly_now_is_red(mock_db):
 
     mock_db.execute.return_value.fetchall.return_value = [row]
 
-    response = client.get(
-        "/api/v1/data/tasks",
-        params={"client_id": 10}
-    )
+    response = client.get("/api/v1/data/tasks", params={"client_id": 10})
 
     assert response.status_code == 200
 
@@ -477,16 +376,11 @@ def test_task_due_in_23_hours_is_red(mock_db):
 
     now = datetime.now(UTC)
 
-    row = create_task_row(
-        now + timedelta(hours=23)
-    )
+    row = create_task_row(now + timedelta(hours=23))
 
     mock_db.execute.return_value.fetchall.return_value = [row]
 
-    response = client.get(
-        "/api/v1/data/tasks",
-        params={"client_id": 10}
-    )
+    response = client.get("/api/v1/data/tasks", params={"client_id": 10})
 
     task = response.json()[0]
 
@@ -494,13 +388,9 @@ def test_task_due_in_23_hours_is_red(mock_db):
     assert task["urgency_color"] == "Red"
 
 
-
 def test_get_task_timezone_conversion(mock_db):
 
-    due_date = datetime(
-        2026, 11, 2, 12, 0,
-        tzinfo=UTC
-    )
+    due_date = datetime(2026, 11, 2, 12, 0, tzinfo=UTC)
 
     row = create_task_row(due_date)
 
@@ -508,47 +398,34 @@ def test_get_task_timezone_conversion(mock_db):
 
     response = client.get(
         "/api/v1/data/tasks",
-        params={
-            "client_id": 10,
-            "user_timezone": "America/New_York"
-        }
+        params={"client_id": 10, "user_timezone": "America/New_York"},
     )
 
     assert response.status_code == 200
 
     task = response.json()[0]
 
-    returned_due_date = datetime.fromisoformat(
-        task["due_date"]
-    )
+    returned_due_date = datetime.fromisoformat(task["due_date"])
 
     assert returned_due_date.hour == 7
 
-    assert returned_due_date.utcoffset() == timedelta(
-        hours=-5
-    )
+    assert returned_due_date.utcoffset() == timedelta(hours=-5)
 
 
 def test_get_task_invalid_timezone_returns_400(mock_db):
 
     response = client.get(
         "/api/v1/data/tasks",
-        params={
-            "client_id": 10,
-            "user_timezone": "Invalid/Timezone"
-        }
+        params={"client_id": 10, "user_timezone": "Invalid/Timezone"},
     )
 
     assert response.status_code == 400
 
 
-
 # API + SLA integration tests
 
 
-def test_create_task_returns_computed_urgency(
-    mock_db
-):
+def test_create_task_returns_computed_urgency(mock_db):
 
     now = datetime.now(UTC)
 
@@ -564,13 +441,11 @@ def test_create_task_returns_computed_urgency(
         "client_id": 10,
         "task_status": "Todo",
         "due_date": due_date.isoformat(),
-        "last_contact_date": None
+        "last_contact_date": None,
     }
 
     response = client.post(
-        "/api/v1/data/tasks",
-        params={"user_timezone": "UTC"},
-        json=payload
+        "/api/v1/data/tasks", params={"user_timezone": "UTC"}, json=payload
     )
 
     assert response.status_code == 201
@@ -581,18 +456,13 @@ def test_create_task_returns_computed_urgency(
     assert task["urgency_color"] == "Red"
 
 
-def test_create_resolved_task_returns_green(
-    mock_db
-):
+def test_create_resolved_task_returns_green(mock_db):
 
     now = datetime.now(UTC)
 
     due_date = now - timedelta(days=2)
 
-    row = create_task_row(
-        due_date=due_date,
-        status="Resolved"
-    )
+    row = create_task_row(due_date=due_date, status="Resolved")
 
     mock_db.execute.return_value.fetchone.return_value = row
 
@@ -601,13 +471,10 @@ def test_create_resolved_task_returns_green(
         "description": "Customer issue resolved",
         "client_id": 10,
         "task_status": "Resolved",
-        "due_date": due_date.isoformat()
+        "due_date": due_date.isoformat(),
     }
 
-    response = client.post(
-        "/api/v1/data/tasks",
-        json=payload
-    )
+    response = client.post("/api/v1/data/tasks", json=payload)
 
     assert response.status_code == 201
 

@@ -398,6 +398,7 @@ def create_tasks_table():
         conn.execute("ALTER TABLE tasks DROP COLUMN IF EXISTS tag")
         conn.commit()
 
+
 def create_task_status_enum():
     with get_connection() as conn:
         conn.execute("""
@@ -409,6 +410,7 @@ def create_task_status_enum():
                         END
                         $$;""")
         conn.commit()
+
 
 def create_tasks_advisor_table():
     with get_connection() as conn:
