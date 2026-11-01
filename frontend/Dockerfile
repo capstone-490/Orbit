@@ -4,7 +4,7 @@ FROM node:26-alpine AS base
 ENV PNPM_HOME="/pnpm" \
     PATH="/pnpm:$PATH"
 
-RUN npm install --global pnpm@12.16.1
+RUN npm install --ignore-scripts --global pnpm@12.16.1
 
 WORKDIR /workspace
 
@@ -37,5 +37,8 @@ RUN pnpm build
 
 FROM nginx:1.27-alpine AS runtime
 COPY --from=builder /workspace/dist /usr/share/nginx/html
+
+USER nginx
+
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
