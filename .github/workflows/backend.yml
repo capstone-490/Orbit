@@ -8,9 +8,15 @@ on:
         required: false
       SONAR_TOKEN:
         required: false
+      POSTGRES_USER:
+        required: true
       POSTGRES_PASSWORD:
         required: true
+      APP_DB_USER:
+        required: true
       APP_DB_PASSWORD:
+        required: true
+      TEST_DB_USER:
         required: true
       TEST_DB_PASSWORD:
         required: true
