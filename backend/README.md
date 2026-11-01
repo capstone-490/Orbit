@@ -210,7 +210,7 @@ export DB_PASSWORD=your-local-db-password
 
 export SECRET_KEY=local-only-insecure-secret
 export ORBIT_ANONYMIZATION_SECRET=your-local-anonymization-secret
-
+export ORBIT_AUTH_SECRET=...
 export ENABLE_DEBUG_ROUTES=false
 export METRICS_ENABLED=1
 ```
