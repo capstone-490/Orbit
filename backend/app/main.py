@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Below 50%
+# Below 50% AI-generated
 import os
 from contextlib import asynccontextmanager
 
@@ -43,12 +43,10 @@ app.add_middleware(
 app.include_router(clients_router)
 app.include_router(advisor_router)
 app.include_router(meetings_router)
-app.include_router(advisor_router)
-app.include_router(meetings_router)
 
 
 if os.getenv("ENABLE_DEBUG_ROUTES", "").lower() in {"1", "true", "yes"}:
-    from app.routers.debug import router as debug_router
+    from app.api.routers.debug import router as debug_router
 
     app.include_router(debug_router)
     logger.warning("Debug routes enabled; do not use in production")
