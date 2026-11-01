@@ -1,6 +1,6 @@
 # Below 50% AI-generated
 import pytest
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, UTC
 from zoneinfo import ZoneInfo
 
 from app.services.sla_cal import (
@@ -52,13 +52,13 @@ def test_timezone_with_timezone_force_utc():
 
     result = force_utc(dt)
 
-    assert result == datetime(2026, 1, 1, 17, 0, 0, tzinfo=timezone.utc)
-    assert result.tzinfo == timezone.utc
+    assert result == datetime(2026, 1, 1, 17, 0, 0, tzinfo=UTC)
+    assert result.tzinfo == UTC
 
 def test_two_weekday_date_count_timedelta_between_dates():
     tz = ZoneInfo("UTC")
-    start = datetime(2026, 1, 5, 9, 0, tzinfo=timezone.utc)
-    end = datetime(2026, 1, 15, 9, 0, tzinfo=timezone.utc)
+    start = datetime(2026, 1, 5, 9, 0, tzinfo=UTC)
+    end = datetime(2026, 1, 15, 9, 0, tzinfo=UTC)
 
     result = count_timedelta_between_dates(start, end, tz)
 
@@ -67,8 +67,8 @@ def test_two_weekday_date_count_timedelta_between_dates():
 
 def test_one_weekday_one_weekend_date_count_timedelta_between_date():
     tz = ZoneInfo("UTC")
-    start = datetime(2026, 1, 9, 9, 0, tzinfo=timezone.utc)   # Friday
-    end = datetime(2026, 1, 11, 9, 0, tzinfo=timezone.utc)    # Sunday
+    start = datetime(2026, 1, 9, 9, 0, tzinfo=UTC)   # Friday
+    end = datetime(2026, 1, 11, 9, 0, tzinfo=UTC)    # Sunday
 
     result = count_timedelta_between_dates(start, end, tz)
 
@@ -78,8 +78,8 @@ def test_one_weekday_one_weekend_date_count_timedelta_between_date():
 
 def test_two_weekends_date_count_timedelta_between_date():
     tz = ZoneInfo("UTC")
-    start = datetime(2026, 1, 10, 9, 0, tzinfo=timezone.utc)
-    end = datetime(2026, 1, 24, 9, 0, tzinfo=timezone.utc)
+    start = datetime(2026, 1, 10, 9, 0, tzinfo=UTC)
+    end = datetime(2026, 1, 24, 9, 0, tzinfo=UTC)
 
     result = count_timedelta_between_dates(start, end, tz)
 
@@ -87,8 +87,8 @@ def test_two_weekends_date_count_timedelta_between_date():
 
 def test_leap_year_date_count_timedelta_between_date():
     tz = ZoneInfo("UTC")
-    start = datetime(2028, 2, 1, 9, 0, tzinfo=timezone.utc)
-    end = datetime(2028, 3, 1, 9, 0, tzinfo=timezone.utc)
+    start = datetime(2028, 2, 1, 9, 0, tzinfo=UTC)
+    end = datetime(2028, 3, 1, 9, 0, tzinfo=UTC)
 
     result = count_timedelta_between_dates(start, end, tz)
 
@@ -110,7 +110,7 @@ def test_different_timezones_count_timedelta_between_date():
 def test_daylight_saving_time_count_timedelta_between_date():
     tz = ZoneInfo("UTC")
     start = datetime(2026, 3, 8, 9, 0, tzinfo=ZoneInfo("America/New_York"))
-    end = datetime(2026, 3, 12, 10, 0, tzinfo=timezone.utc)
+    end = datetime(2026, 3, 12, 10, 0, tzinfo=UTC)
 
     result = count_timedelta_between_dates(start, end, tz)
 
@@ -119,8 +119,8 @@ def test_daylight_saving_time_count_timedelta_between_date():
 
 def test_end_date_before_start_count_timedelta_between_date():
     tz = ZoneInfo("UTC")
-    start = datetime(2026, 1, 7, 12, 0, tzinfo=timezone.utc)
-    end = datetime(2026, 1, 5, 12, 0, tzinfo=timezone.utc)
+    start = datetime(2026, 1, 7, 12, 0, tzinfo=UTC)
+    end = datetime(2026, 1, 5, 12, 0, tzinfo=UTC)
 
     result = count_timedelta_between_dates(start, end, tz)
 
@@ -128,8 +128,8 @@ def test_end_date_before_start_count_timedelta_between_date():
 
 def test_resolved_compute_urgency():
     tz = ZoneInfo("UTC")
-    now = datetime(2026, 1, 5, 12, 0, tzinfo=timezone.utc)
-    due_date = datetime(2026, 1, 5, 10, 0, tzinfo=timezone.utc)
+    now = datetime(2026, 1, 5, 12, 0, tzinfo=UTC)
+    due_date = datetime(2026, 1, 5, 10, 0, tzinfo=UTC)
 
     result = compute_urgency("Resolved", due_date, tz, now)
 
@@ -138,8 +138,8 @@ def test_resolved_compute_urgency():
 
 def test_end_date_before_start_compute_urgency():
     tz = ZoneInfo("UTC")
-    now = datetime(2026, 1, 5, 12, 0, tzinfo=timezone.utc)
-    due_date = datetime(2026, 1, 5, 11, 0, tzinfo=timezone.utc)
+    now = datetime(2026, 1, 5, 12, 0, tzinfo=UTC)
+    due_date = datetime(2026, 1, 5, 11, 0, tzinfo=UTC)
 
     result = compute_urgency("Open", due_date, tz, now)
 
@@ -148,7 +148,7 @@ def test_end_date_before_start_compute_urgency():
 
 def test_null_now_argument_compute_urgency():
     tz = ZoneInfo("UTC")
-    due_date = datetime(2020, 1, 1, 0, 0, tzinfo=timezone.utc)
+    due_date = datetime(2020, 1, 1, 0, 0, tzinfo=UTC)
 
     result = compute_urgency("Open", due_date, tz, None)
 
@@ -157,8 +157,8 @@ def test_null_now_argument_compute_urgency():
 
 def test_time_more_than_24h_compute_urgency():
     tz = ZoneInfo("UTC")
-    now = datetime(2026, 1, 5, 9, 0, tzinfo=timezone.utc)
-    due_date = datetime(2026, 1, 7, 10, 0, tzinfo=timezone.utc)
+    now = datetime(2026, 1, 5, 9, 0, tzinfo=UTC)
+    due_date = datetime(2026, 1, 7, 10, 0, tzinfo=UTC)
 
     result = compute_urgency("Open", due_date, tz, now)
 
@@ -168,7 +168,7 @@ def test_time_more_than_24h_compute_urgency():
 
 def test_time_equal_24h_compute_urgency():
     tz = ZoneInfo("UTC")
-    now = datetime(2026, 1, 5, 9, 0, tzinfo=timezone.utc)
+    now = datetime(2026, 1, 5, 9, 0, tzinfo=UTC)
     due_date = now + SLA_WINDOW
 
     result = compute_urgency("Open", due_date, tz, now)
@@ -178,7 +178,7 @@ def test_time_equal_24h_compute_urgency():
 
 def test_time_less_than_24h_compute_urgency():
     tz = ZoneInfo("UTC")
-    now = datetime(2026, 1, 5, 9, 0, tzinfo=timezone.utc)
+    now = datetime(2026, 1, 5, 9, 0, tzinfo=UTC)
     due_date = now + timedelta(hours=12)
 
     result = compute_urgency("Open", due_date, tz, now)

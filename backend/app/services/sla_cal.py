@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, UTC
 from enum import Enum
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -74,7 +74,7 @@ def count_timedelta_between_dates(start_dt: datetime, end_dt: datetime, tz: Zone
 def compute_urgency(status: str, due_date: datetime, tz: ZoneInfo, now: datetime | None = None,) -> UrgencyState:
     if status == "Resolved":
         return UrgencyState.RESOLVED
-    now = now or datetime.now(timezone.utc)
+    now = now or datetime.now(datetime.UTC)
     if force_utc(due_date) <= force_utc(now):
         return UrgencyState.DUE_NOW
     if count_timedelta_between_dates(now, due_date, tz) <= SLA_WINDOW:
