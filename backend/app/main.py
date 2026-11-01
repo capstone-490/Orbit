@@ -3,8 +3,9 @@
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI, Header, Query
+from fastapi import Depends, FastAPI, Header, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
 from app.api.routers.advisors import router as advisor_router
 from app.api.routers.clients import router as clients_router
@@ -13,6 +14,8 @@ from app.core.feature_flags import get_variant
 from app.core.security.anonymizer import TokenStore
 from app.logging_config import configure_logging, get_logger
 from app.middleware.request_logging import RequestLoggingMiddleware
+from app.middleware import MetricsMiddleware
+
 
 configure_logging()
 logger = get_logger("app")
@@ -39,6 +42,9 @@ app.add_middleware(
     allow_headers=["Content-Type"],
     expose_headers=["x-request-id"],
 )
+
+if os.getenv("METRICS_ENABLED", "1") == "1":
+    app.add_middleware(MetricsMiddleware)
 
 app.include_router(clients_router)
 app.include_router(advisor_router)
@@ -69,19 +75,30 @@ def health():
 
 # Temporary endpoint for testing A/B feature flags.
 @app.get("/ab-test")
-def ab_test(user_id: str = Depends(get_user_id)):
+def ab_test(request: Request, user_id: str = Depends(get_user_id)):
     variant = get_variant("demo-ab", user_id)
+    request.state.ab_variant = variant
     return {"Variant": variant}
 
 
 @app.get("/flag")
 def read_flag(
+    request: Request,
     name: str = Query(..., min_length=1, max_length=100),
     user_id: str = Depends(get_user_id),
 ):
     variant = get_variant(name, user_id)
+    request.state.ab_variant = variant
     return {
         "name": name,
         "variant": variant,
         "use_new_feature": variant == "B",
     }
+
+
+@app.get("/metrics", include_in_schema=False)
+def metrics():
+    return Response(
+        generate_latest(),
+        media_type=CONTENT_TYPE_LATEST,
+    )
