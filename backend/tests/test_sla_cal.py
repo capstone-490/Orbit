@@ -1,15 +1,16 @@
 # Below 50% AI-generated
-import pytest
-from datetime import datetime, timedelta, timezone, UTC
+from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
+
+import pytest
 
 from app.services.sla_cal import (
     SLA_WINDOW,
     UrgencyState,
-    get_timezone,
-    force_utc,
-    count_timedelta_between_dates,
     compute_urgency,
+    count_timedelta_between_dates,
+    force_utc,
+    get_timezone,
 )
 
 
@@ -38,15 +39,22 @@ def test_true_none_ZoneInfo_get_timezone():
     assert isinstance(tz, ZoneInfo)
     assert tz.key == "UTC"
 
+
 def test_no_timezone_datetime_force_utc():
     dt = datetime(2026, 1, 1, 12, 0, 0)
 
     with pytest.raises(ValueError, match="Datetime must be timezone-aware"):
         force_utc(dt)
 
+
 def test_timezone_with_timezone_force_utc():
     dt = datetime(
-        2026, 1, 1, 12, 0, 0,
+        2026,
+        1,
+        1,
+        12,
+        0,
+        0,
         tzinfo=ZoneInfo("America/New_York"),
     )
 
@@ -54,6 +62,7 @@ def test_timezone_with_timezone_force_utc():
 
     assert result == datetime(2026, 1, 1, 17, 0, 0, tzinfo=UTC)
     assert result.tzinfo == UTC
+
 
 def test_two_weekday_date_count_timedelta_between_dates():
     tz = ZoneInfo("UTC")
@@ -67,8 +76,8 @@ def test_two_weekday_date_count_timedelta_between_dates():
 
 def test_one_weekday_one_weekend_date_count_timedelta_between_date():
     tz = ZoneInfo("UTC")
-    start = datetime(2026, 1, 9, 9, 0, tzinfo=UTC)   # Friday
-    end = datetime(2026, 1, 11, 9, 0, tzinfo=UTC)    # Sunday
+    start = datetime(2026, 1, 9, 9, 0, tzinfo=UTC)  # Friday
+    end = datetime(2026, 1, 11, 9, 0, tzinfo=UTC)  # Sunday
 
     result = count_timedelta_between_dates(start, end, tz)
 
@@ -85,6 +94,7 @@ def test_two_weekends_date_count_timedelta_between_date():
 
     assert result == timedelta(days=10)
 
+
 def test_leap_year_date_count_timedelta_between_date():
     tz = ZoneInfo("UTC")
     start = datetime(2028, 2, 1, 9, 0, tzinfo=UTC)
@@ -94,7 +104,8 @@ def test_leap_year_date_count_timedelta_between_date():
 
     assert result == timedelta(days=21)
 
-#Changing to New York should move both from Saturday to Fridays with
+
+# Changing to New York should move both from Saturday to Fridays with
 # starting having a later hour than ending
 def test_different_timezones_count_timedelta_between_date():
     tz = ZoneInfo("America/New_York")
@@ -105,8 +116,9 @@ def test_different_timezones_count_timedelta_between_date():
 
     assert result == timedelta(days=9, hours=22)
 
-#DST is always on Sundays, as our count_timedelta_between_date remove time
-#used by Saturday and Sunday, it means that DST has no effect on our system
+
+# DST is always on Sundays, as our count_timedelta_between_date remove time
+# used by Saturday and Sunday, it means that DST has no effect on our system
 def test_daylight_saving_time_count_timedelta_between_date():
     tz = ZoneInfo("UTC")
     start = datetime(2026, 3, 8, 9, 0, tzinfo=ZoneInfo("America/New_York"))
@@ -125,6 +137,7 @@ def test_end_date_before_start_count_timedelta_between_date():
     result = count_timedelta_between_dates(start, end, tz)
 
     assert result == timedelta(0)
+
 
 def test_resolved_compute_urgency():
     tz = ZoneInfo("UTC")

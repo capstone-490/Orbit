@@ -11,21 +11,18 @@ from app.services.sla_cal import (
     get_timezone,
 )
 
-
 router = APIRouter()
 
-@router.get(
-    "/api/v1/data/tasks",
-    response_model=list[TaskResponse]
-)
+
+@router.get("/api/v1/data/tasks", response_model=list[TaskResponse])
 def get_tasks(client_id: int, user_timezone: str = "UTC"):
 
     try:
         timezone_zi = get_timezone(user_timezone)
 
         with get_connection() as conn:
-
-            rows = conn.execute("""
+            rows = conn.execute(
+                """
                 SELECT
                     id,
                     title,
@@ -37,13 +34,13 @@ def get_tasks(client_id: int, user_timezone: str = "UTC"):
                 FROM tasks_advisor
                 WHERE client_id = %s
                 ORDER BY due_date ASC
-            """, (client_id,)).fetchall()
-
+            """,
+                (client_id,),
+            ).fetchall()
 
         tasks = []
 
         for row in rows:
-
             task = build_task_response(row, timezone_zi)
 
             tasks.append(task)
@@ -51,24 +48,13 @@ def get_tasks(client_id: int, user_timezone: str = "UTC"):
         return tasks
 
     except ValueError as e:
-        raise HTTPException(
-            status_code=400,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=400, detail=str(e))
 
     except PsycopgError as e:
-        raise HTTPException(
-            status_code=500,
-            #detail="Unable to retrieve tasks"
-            detail=str(e)
-        )
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post(
-    "/api/v1/data/tasks",
-    response_model=TaskResponse,
-    status_code=201
-)
+@router.post("/api/v1/data/tasks", response_model=TaskResponse, status_code=201)
 def create_task(task: TaskCreate, user_timezone: str = "UTC"):
 
     try:
@@ -77,14 +63,14 @@ def create_task(task: TaskCreate, user_timezone: str = "UTC"):
 
         last_contact_date = None
 
-        if (task.last_contact_date is not None):
+        if task.last_contact_date is not None:
             last_contact_date = force_utc(task.last_contact_date)
 
         timezone_zi = get_timezone(user_timezone)
 
         with get_connection() as conn:
-
-            row = conn.execute("""
+            row = conn.execute(
+                """
                 INSERT INTO tasks_advisor (
                     title,
                     description,
@@ -103,14 +89,16 @@ def create_task(task: TaskCreate, user_timezone: str = "UTC"):
                     task_status,
                     due_date,
                     last_contact_date
-            """, (
-                task.title,
-                task.description,
-                task.client_id,
-                task.task_status.value,
-                due_date,
-                last_contact_date
-            )).fetchone()
+            """,
+                (
+                    task.title,
+                    task.description,
+                    task.client_id,
+                    task.task_status.value,
+                    due_date,
+                    last_contact_date,
+                ),
+            ).fetchone()
 
         return build_task_response(row, timezone_zi)
 
@@ -123,23 +111,19 @@ def create_task(task: TaskCreate, user_timezone: str = "UTC"):
     except PsycopgError as e:
         raise HTTPException(
             status_code=500,
-            #detail="Unable to retrieve tasks"
-            detail=str(e)
+            # detail="Unable to retrieve tasks"
+            detail=str(e),
         )
 
-def build_task_response(row, timezone_zi, now = None):
 
-    urgency = compute_urgency(
-        status=row[4],
-        due_date=row[5],
-        tz=timezone_zi,
-        now = now
-    )
+def build_task_response(row, timezone_zi, now=None):
+
+    urgency = compute_urgency(status=row[4], due_date=row[5], tz=timezone_zi, now=now)
 
     last_contact_date_user_zi = None
 
-    if(row[6] is not None):
-        last_contact_date_user_zi= force_timezone_on_DB_return(row[6], timezone_zi)
+    if row[6] is not None:
+        last_contact_date_user_zi = force_timezone_on_DB_return(row[6], timezone_zi)
 
     return TaskResponse(
         id=row[0],
@@ -150,5 +134,5 @@ def build_task_response(row, timezone_zi, now = None):
         due_date=force_timezone_on_DB_return(row[5], timezone_zi),
         last_contact_date=last_contact_date_user_zi,
         urgency_state=urgency,
-        urgency_color=URGENCY_COLOR[urgency]
+        urgency_color=URGENCY_COLOR[urgency],
     )
