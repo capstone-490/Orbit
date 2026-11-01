@@ -20,7 +20,7 @@ FROM base AS prod-builder
 COPY pyproject.toml uv.lock .python-version ./
 
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --no-install-project
+    uv sync --frozen --no-dev --no-install-project --no-build
 
 COPY app ./app
 COPY migrations ./migrations
@@ -29,7 +29,7 @@ COPY config ./config
 COPY scripts ./scripts
 
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --no-install-project
+    uv sync --frozen --no-dev --no-install-project --no-build
 
 # -----------------------------------------------------------------------------
 # dev target
@@ -37,7 +37,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 FROM prod-builder AS dev
 
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --dev --no-install-project
+    uv sync --frozen --dev --no-install-project --no-build
 
 ENV PYTEST_ADDOPTS="-o cache_dir=/tmp/.pytest_cache" \
     MYPY_CACHE_DIR="/tmp/.mypy_cache" \
