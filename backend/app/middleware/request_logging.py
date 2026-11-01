@@ -3,7 +3,7 @@ For every HTTP request this middleware:
   1. reuses a valid incoming ``x-request-id`` UUID, or generates a new uuid4;
   2. stores it in a context variable, so every log line during the request has it;
   3. adds ``x-request-id`` to the response headers;
-  4. logs one line when the request finishes: method, path, status code, duration;
+  4. logs one line when the request finishes: method, path, status code,response_failed and duration;
   5. catches any unhandled exception, logs it (redacted) and returns a generic 500.
 
 Query strings, headers and bodies are deliberately NOT logged; they are where
@@ -52,6 +52,7 @@ class RequestLoggingMiddleware:
 
         status_code = 500
         response_started = False
+        response_failed = False
         start = time.perf_counter()
 
         async def send_with_request_id(message) -> None:
@@ -70,6 +71,8 @@ class RequestLoggingMiddleware:
         try:
             await self.app(scope, receive, send_with_request_id)
         except Exception:
+            # Record the failure even if a 200 was already sent to the client.
+            response_failed = True
             status_code = 500
             logger.exception(
                 "Unhandled exception while processing request",
@@ -109,6 +112,7 @@ class RequestLoggingMiddleware:
                     "method": scope["method"],
                     "path": scope["path"],  # no query string on purpose
                     "status_code": status_code,
+                    "response_failed": response_failed,
                     "duration_ms": duration_ms,
                 },
             )
