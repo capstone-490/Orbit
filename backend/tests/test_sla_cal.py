@@ -1,4 +1,4 @@
-
+# Below 50% AI-generated
 import pytest
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
