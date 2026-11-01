@@ -9,12 +9,13 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-function renderLogin() {
-  function LocationProbe() {
-    const location = useLocation()
-    return <span data-testid="location">{location.pathname}</span>
-  }
+function LocationProbe() {
+  const location = useLocation()
 
+  return <span data-testid="location">{location.pathname}</span>
+}
+
+function renderLogin() {
   return render(
     <MemoryRouter>
       <Login />
