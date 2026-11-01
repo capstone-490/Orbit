@@ -7,9 +7,9 @@ import pytest
 from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 
+from app.api.routers.debug import router as debug_router
 from app.logging_config import configure_logging
 from app.middleware.request_logging import RequestLoggingMiddleware
-from app.routers.debug import router as debug_router
 
 FAKE_EMAIL = "jane.doe@example.com"
 FAKE_SIN = "046-454-286"
