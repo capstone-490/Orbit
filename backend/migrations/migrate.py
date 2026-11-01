@@ -328,6 +328,77 @@ def remove_unused_client_fields():
         conn.commit()
 
 
+def create_consultations_table():
+    with get_connection() as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS consultations (
+                id SERIAL PRIMARY KEY,
+                client_id INT NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+                advisor_id INT NOT NULL REFERENCES advisors(id) ON DELETE CASCADE,
+                meeting_time TIMESTAMPTZ NOT NULL,
+                duration VARCHAR(50),
+                category VARCHAR(100),
+                agenda TEXT,
+                completion_status meeting_status NOT NULL DEFAULT 'Scheduled',
+                location_or_platform VARCHAR(150),
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+        """)
+        conn.execute("""
+            ALTER TABLE consultations
+                ADD COLUMN IF NOT EXISTS completion_status meeting_status
+                    NOT NULL DEFAULT 'Scheduled'
+        """)
+        conn.execute("""
+            DO $$
+            BEGIN
+                IF EXISTS (
+                    SELECT 1
+                    FROM information_schema.columns
+                    WHERE table_name = 'consultations'
+                      AND column_name = 'status_text'
+                      AND table_schema = current_schema()
+                ) THEN
+                    UPDATE consultations
+                    SET completion_status = CASE LOWER(BTRIM(status_text))
+                        WHEN 'completed' THEN 'Completed'::meeting_status
+                        WHEN 'cancelled' THEN 'Cancelled'::meeting_status
+                        WHEN 'canceled' THEN 'Cancelled'::meeting_status
+                        ELSE completion_status
+                    END
+                    WHERE LOWER(BTRIM(status_text)) IN (
+                        'completed', 'cancelled', 'canceled'
+                    );
+                END IF;
+            END
+            $$;
+        """)
+        conn.execute("""
+            ALTER TABLE consultations
+                DROP COLUMN IF EXISTS status_text,
+                DROP COLUMN IF EXISTS action_button_label
+        """)
+        conn.commit()
+
+
+def create_tasks_table():
+    with get_connection() as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS tasks (
+                id SERIAL PRIMARY KEY,
+                advisor_id INT NOT NULL REFERENCES advisors(id) ON DELETE CASCADE,
+                client_id BIGINT REFERENCES clients(id) ON DELETE SET NULL,
+                FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE SET NULL,
+                task_title VARCHAR(255) NOT NULL,
+                due_date DATE NOT NULL,
+                completed BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+        """)
+        conn.execute("ALTER TABLE tasks DROP COLUMN IF EXISTS tag")
+        conn.commit()
+
+
 def migrate():
     # Enums
     create_risk_tolerance_enum()
@@ -351,6 +422,8 @@ def migrate():
     create_password_reset_tokens_table()
     create_feature_flags_table()
     create_audit_log_table()
+    create_consultations_table()
+    create_tasks_table()
 
 
 if __name__ == "__main__":
