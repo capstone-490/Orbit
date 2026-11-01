@@ -75,22 +75,23 @@ class RequestLoggingMiddleware:
                 "Unhandled exception while processing request",
                 extra={"method": scope["method"], "path": scope["path"]},
             )
-            if not response_started:
-                body = json.dumps(
-                    {"detail": "Internal Server Error", "request_id": request_id}
-                ).encode()
-                await send(
-                    {
-                        "type": "http.response.start",
-                        "status": 500,
-                        "headers": [
-                            (b"content-type", b"application/json"),
-                            (b"content-length", str(len(body)).encode()),
-                            (REQUEST_ID_HEADER.encode(), request_id.encode()),
-                        ],
-                    }
-                )
-                await send({"type": "http.response.body", "body": body})
+            if response_started:
+                raise
+            body = json.dumps(
+                {"detail": "Internal Server Error", "request_id": request_id}
+            ).encode()
+            await send(
+                {
+                    "type": "http.response.start",
+                    "status": 500,
+                    "headers": [
+                        (b"content-type", b"application/json"),
+                        (b"content-length", str(len(body)).encode()),
+                        (REQUEST_ID_HEADER.encode(), request_id.encode()),
+                    ],
+                }
+            )
+            await send({"type": "http.response.body", "body": body})
             # Not re-raised: re-raising makes Uvicorn print the raw traceback.
         finally:
             duration_ms = round((time.perf_counter() - start) * 1000, 2)

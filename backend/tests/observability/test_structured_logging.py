@@ -5,10 +5,11 @@ import uuid
 
 import pytest
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import StreamingResponse
 from fastapi.testclient import TestClient
 
 from app.api.routers.debug import router as debug_router
-from app.logging_config import configure_logging
+from app.logging_config import RedactingJsonFormatter, configure_logging
 from app.middleware.request_logging import RequestLoggingMiddleware
 
 FAKE_EMAIL = "jane.doe@example.com"
@@ -327,6 +328,35 @@ def test_chained_exception_keeps_both_errors_in_short_stack(logs):
     stack = entries[0]["error"]["stack"]
     assert "KeyError" in stack and "RuntimeError" in stack
     assert FAKE_PHONE not in raw
+
+
+def test_error_after_response_started_is_logged_and_reraised(logs):
+    app = FastAPI()
+    app.add_middleware(RequestLoggingMiddleware)
+
+    @app.get("/stream")
+    def stream():
+        def chunks():
+            yield b"part1"
+            raise RuntimeError(f"stream failed for {FAKE_EMAIL}")
+
+        return StreamingResponse(chunks())
+
+    with pytest.raises(RuntimeError):
+        TestClient(app).get("/stream")
+
+    entries, raw = logs()
+    error_entry = next(e for e in entries if "error" in e)
+    assert error_entry["error"]["type"] == "RuntimeError"
+    assert FAKE_EMAIL not in raw
+
+
+def test_bad_format_args_do_not_crash_formatter():
+    record = logging.LogRecord(
+        "app.test", logging.INFO, __file__, 1, "two args %s %s", ("only-one",), None
+    )
+    entry = json.loads(RedactingJsonFormatter().format(record))
+    assert "two args" in entry["message"]
 
 
 def test_non_pii_content_is_preserved(logs):

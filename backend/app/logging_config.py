@@ -29,6 +29,7 @@ _STANDARD_ATTRS = set(vars(logging.LogRecord("", 0, "", 0, "", (), None))) | {
 # Python says WARNING; the story asks for INFO / WARN / ERROR.
 _LEVEL_NAMES = {"WARNING": "WARN"}
 _VALID_LEVELS = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
+_MESSAGE_FORMAT_ERRORS = (TypeError, ValueError)
 
 
 def _safe_default(obj: Any) -> str:
@@ -114,7 +115,7 @@ class RedactingJsonFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         try:
             message = record.getMessage()
-        except TypeError, ValueError:  # bad %-format args must never crash logging
+        except _MESSAGE_FORMAT_ERRORS:  # bad %-format args must never crash logging
             message = f"{record.msg} {record.args}"
 
         entry: dict[str, Any] = {
