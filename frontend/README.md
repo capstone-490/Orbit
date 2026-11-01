@@ -26,12 +26,12 @@
 
 Compose files are layered rather than independent. Development and monitoring inherit the base configuration.
 
-| File                      | Responsibility                                                          |
-| ------------------------- | ----------------------------------------------------------------------- |
-| `compose.yaml`            | Base configuration: PostgreSQL, migrations and backend                  |
-| `compose.dev.yaml`        | Development overrides: hot reload, bind mounts, frontend and host ports |
-| `compose.test.yaml`       | Isolated test environment with in-memory PostgreSQL                     |
-| `compose.monitoring.yaml` | Optional Prometheus monitoring                                          |
+| File | Responsibility |
+|---|---|
+| `compose.yaml` | Base configuration: PostgreSQL, migrations and backend |
+| `compose.dev.yaml` | Development overrides: hot reload, bind mounts, frontend and host ports |
+| `compose.test.yaml` | Isolated test environment with in-memory PostgreSQL |
+| `compose.monitoring.yaml` | Optional Prometheus monitoring |
 
 ---
 
@@ -76,6 +76,7 @@ make test-fe
 make test-fe-int
 ```
 
+
 The test Compose configuration injects test credentials and uses an in-memory PostgreSQL instance.
 Test data and database state are discarded when the test stack is torn down.
 
@@ -87,37 +88,37 @@ The root `Makefile` is cross-platform (automatically uses `/bin/sh` on Linux/mac
 
 ### Development
 
-| Command                | Description                                                                          |
-| ---------------------- | ------------------------------------------------------------------------------------ |
-| `make dev`             | Builds and starts PostgreSQL, migrations, DB provisioning, seeders, FastAPI and Vite |
-| `make down`            | Stops development containers and removes orphans (preserves database volume)         |
-| `make monitoring`      | Starts development with Prometheus                                                   |
-| `make monitoring-down` | Stops development and Prometheus                                                     |
+| Command | Description |
+|---|---|
+| `make dev` | Builds and starts PostgreSQL, migrations, DB provisioning, seeders, FastAPI and Vite |
+| `make down` | Stops development containers and removes orphans (preserves database volume) |
+| `make monitoring` | Starts development with Prometheus |
+| `make monitoring-down` | Stops development and Prometheus |
 
 ### Production
 
-| Command          | Description                                                          |
-| ---------------- | -------------------------------------------------------------------- |
-| `make prod`      | Builds and starts the production application stack in the background |
-| `make prod-down` | Stops production containers without deleting persistent volumes      |
+| Command | Description |
+|---|---|
+| `make prod` | Builds and starts the production application stack in the background |
+| `make prod-down` | Stops production containers without deleting persistent volumes |
 
 ### Testing
 
-| Command            | Description                                                                |
-| ------------------ | -------------------------------------------------------------------------- |
-| `make test`        | Runs backend and frontend tests in one shared lifecycle                    |
-| `make test-be`     | Runs backend pytest suite                                                  |
-| `make test-be-cov` | Runs backend tests with coverage                                           |
-| `make test-fe`     | Runs isolated frontend unit tests                                          |
-| `make test-fe-cov` | Runs frontend tests with coverage                                          |
+| Command | Description |
+|---|---|
+| `make test` | Runs backend and frontend tests in one shared lifecycle |
+| `make test-be` | Runs backend pytest suite |
+| `make test-be-cov` | Runs backend tests with coverage |
+| `make test-fe` | Runs isolated frontend unit tests |
+| `make test-fe-cov` | Runs frontend tests with coverage |
 | `make test-fe-int` | Runs frontend integration tests against a live backend and seeded database |
 
 ### Database and Cleanup
 
-| Command                                | Description                                                     |
-| -------------------------------------- | --------------------------------------------------------------- |
-| `make migration msg="add_audit_table"` | Generates an Alembic revision                                   |
-| `make clean`                           | Removes development/test containers, volumes and backend caches |
+| Command | Description |
+|---|---|
+| `make migration msg="add_audit_table"` | Generates an Alembic revision |
+| `make clean` | Removes development/test containers, volumes and backend caches |
 
 **WARNING:** `make clean` deletes development and test volumes, including local PostgreSQL data. Do not run it if you need to preserve your development database.
 
@@ -209,7 +210,7 @@ export DB_PASSWORD=your-local-db-password
 
 export SECRET_KEY=local-only-insecure-secret
 export ORBIT_ANONYMIZATION_SECRET=your-local-anonymization-secret
-
+export ORBIT_AUTH_SECRET=...
 export ENABLE_DEBUG_ROUTES=false
 export METRICS_ENABLED=1
 ```
