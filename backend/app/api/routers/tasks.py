@@ -28,7 +28,7 @@ def get_tasks(client_id: int, user_timezone: str = "UTC"):
                     title,
                     description,
                     client_id,
-                    task_status,
+                    status,
                     due_date,
                     last_contact_date
                 FROM tasks_advisor
@@ -75,7 +75,7 @@ def create_task(task: TaskCreate, user_timezone: str = "UTC"):
                     title,
                     description,
                     client_id,
-                    task_status,
+                    status,
                     due_date,
                     last_contact_date
                 )
@@ -86,7 +86,7 @@ def create_task(task: TaskCreate, user_timezone: str = "UTC"):
                     title,
                     description,
                     client_id,
-                    task_status,
+                    status,
                     due_date,
                     last_contact_date
             """,
@@ -94,7 +94,7 @@ def create_task(task: TaskCreate, user_timezone: str = "UTC"):
                     task.title,
                     task.description,
                     task.client_id,
-                    task.task_status.value,
+                    task.status.value,
                     due_date,
                     last_contact_date,
                 ),
@@ -111,7 +111,6 @@ def create_task(task: TaskCreate, user_timezone: str = "UTC"):
     except PsycopgError as e:
         raise HTTPException(
             status_code=500,
-            # detail="Unable to retrieve tasks"
             detail=str(e),
         )
 
@@ -130,7 +129,7 @@ def build_task_response(row, timezone_zi, now=None):
         title=row[1],
         description=row[2],
         client_id=row[3],
-        task_status=row[4],
+        status=row[4],
         due_date=force_timezone_on_DB_return(row[5], timezone_zi),
         last_contact_date=last_contact_date_user_zi,
         urgency_state=urgency,

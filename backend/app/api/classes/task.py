@@ -16,7 +16,7 @@ class TaskCreate(BaseModel):
     title: str | None = None
     description: str | None = None
     client_id: int
-    task_status: TaskStatus = TaskStatus.Todo
+    status: TaskStatus = TaskStatus.Todo
     due_date: datetime
     last_contact_date: datetime | None = None
 
@@ -26,7 +26,7 @@ class TaskResponse(BaseModel):
     title: str | None
     description: str | None
     client_id: int
-    task_status: TaskStatus
+    status: TaskStatus
     due_date: datetime
     last_contact_date: datetime | None
     urgency_state: UrgencyState

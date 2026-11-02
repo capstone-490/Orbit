@@ -55,7 +55,7 @@ def test_get_tasks_success(mock_db, mock_task_row):
     assert data[0]["id"] == 1
     assert data[0]["title"] == "Follow up with customer"
     assert data[0]["client_id"] == 10
-    assert data[0]["task_status"] == "Todo"
+    assert data[0]["status"] == "Todo"
 
 
 def test_get_tasks_empty(mock_db):
@@ -95,7 +95,7 @@ def valid_task_payload():
         "title": "Follow up with customer",
         "description": "Contact customer regarding renewal",
         "client_id": 10,
-        "task_status": "Todo",
+        "status": "Todo",
         "due_date": "2026-11-05T12:00:00+00:00",
         "last_contact_date": "2026-10-25T12:00:00+00:00",
     }
@@ -116,7 +116,7 @@ def test_create_task_success(mock_db, mock_task_row, valid_task_payload):
     assert data["id"] == 1
     assert data["title"] == "Follow up with customer"
     assert data["client_id"] == 10
-    assert data["task_status"] == "Todo"
+    assert data["status"] == "Todo"
 
 
 def test_create_task_without_last_contact_date(
@@ -182,7 +182,7 @@ def test_build_task_response(mock_task_row):
     assert result.id == 1
     assert result.title == "Follow up with customer"
     assert result.client_id == 10
-    assert result.task_status.value == "Todo"
+    assert result.status.value == "Todo"
 
     assert result.due_date.tzinfo is not None
     assert result.last_contact_date.tzinfo is not None
@@ -439,7 +439,7 @@ def test_create_task_returns_computed_urgency(mock_db):
         "title": "Follow up with customer",
         "description": "Contact customer regarding renewal",
         "client_id": 10,
-        "task_status": "Todo",
+        "status": "Todo",
         "due_date": due_date.isoformat(),
         "last_contact_date": None,
     }
@@ -456,6 +456,34 @@ def test_create_task_returns_computed_urgency(mock_db):
     assert task["urgency_color"] == "Red"
 
 
+def test_create_future_task_returns_yellow(mock_db):
+
+    now = datetime.now(UTC)
+
+    due_date = now + timedelta(days=4)
+
+    row = create_task_row(due_date=due_date)
+
+    mock_db.execute.return_value.fetchone.return_value = row
+
+    payload = {
+        "title": "Complet customer follow-up",
+        "description": "Waiting for customer response",
+        "client_id": 10,
+        "status": "Todo",
+        "due_date": due_date.isoformat(),
+    }
+
+    response = client.post("/api/v1/data/tasks", json=payload)
+
+    assert response.status_code == 201
+
+    task = response.json()
+
+    assert task["urgency_state"] == "UPCOMING"
+    assert task["urgency_color"] == "Yellow"
+
+
 def test_create_resolved_task_returns_green(mock_db):
 
     now = datetime.now(UTC)
@@ -470,7 +498,7 @@ def test_create_resolved_task_returns_green(mock_db):
         "title": "Completed customer follow-up",
         "description": "Customer issue resolved",
         "client_id": 10,
-        "task_status": "Resolved",
+        "status": "Resolved",
         "due_date": due_date.isoformat(),
     }
 

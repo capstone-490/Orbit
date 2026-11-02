@@ -421,7 +421,7 @@ def create_tasks_advisor_table():
                     title TEXT,
                     description TEXT,
                     client_id BIGINT NOT NULL,
-                    status task_status NOT NULL DEFAULT 'Todo',
+                    task_status task_status NOT NULL DEFAULT 'Todo',
                     due_date TIMESTAMPTZ NOT NULL,
                     last_contact_date TIMESTAMPTZ,
                 
