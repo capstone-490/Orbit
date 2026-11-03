@@ -105,7 +105,7 @@ def get_advisor_clients(advisor_id: int):
             phone_number AS "phoneNumber",
             email,
             address,
-            date_of_birth AS "dateOfBirth",
+            age,
             occupation,
             timeline::text AS "timeline",
             advisor_id AS "advisorId",
