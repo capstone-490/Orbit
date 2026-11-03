@@ -25,7 +25,7 @@ def get_advisor_tasks(advisor_id: int):
             t.created_at AS "createdAt",
             t.client_id AS "clientId",
             c.name AS "clientName"
-        FROM tasks t
+        FROM t_tasks t
         LEFT JOIN clients c ON t.client_id = c.id
         WHERE t.advisor_id = %s
         ORDER BY t.due_date ASC;
@@ -42,7 +42,7 @@ def get_advisor_tasks(advisor_id: int):
 def update_task_completion(task_id: int, body: TaskCompletionUpdate):
 
     query = """
-        UPDATE tasks
+        UPDATE t_tasks
         SET completed = %s
         WHERE id = %s
         RETURNING
