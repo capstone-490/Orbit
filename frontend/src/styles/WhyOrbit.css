@@ -1,0 +1,178 @@
+/* ---------- Main section ---------- */
+
+.why-orbit {
+  max-width: 1120px;
+  width: 100%;
+  margin: 76px auto 64px;
+  padding: 0 20px;
+}
+
+/* ---------- Heading ---------- */
+
+.why-orbit-heading {
+  max-width: 700px;
+  margin: 0 auto 36px;
+  text-align: center;
+}
+
+/* Make "OUR APP'S MAIN FEATURES" larger */
+.why-orbit-heading .welcome-eyebrow {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+/* ---------- Feature grid ---------- */
+
+.why-orbit-features {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  list-style: none;
+  border: 1px solid #e4eaf3;
+  border-radius: 18px;
+  background: #e4eaf3;
+  box-shadow: 0 8px 26px rgba(35, 65, 110, 0.07);
+}
+
+.why-orbit-feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  padding: 30px 26px;
+  min-height: 145px;
+  background: #ffffff;
+}
+
+/* Larger feature icons */
+.why-orbit-icon {
+  width: 50px;
+  height: 50px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  background: #edf4ff;
+  color: #3478d0;
+  font-size: 24px;
+}
+
+.why-orbit-feature h3 {
+  margin: 0 0 9px;
+  color: #1c2b43;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.why-orbit-feature p {
+  margin: 0;
+  color: #748196;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+/* ---------- AI principles band ---------- */
+
+.why-orbit-principles {
+  margin-top: 22px;
+  padding: 28px 30px 30px;
+  border: 1px solid #dce7f8;
+  border-radius: 18px;
+  background: rgba(237, 244, 255, 0.7);
+}
+
+.why-orbit-principles-label {
+  margin: 0 0 22px;
+  color: #3476cf;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.why-orbit-principles ul {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.why-orbit-principles li {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.why-orbit-principles li > svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+  color: #3478d0;
+  font-size: 21px;
+}
+
+.why-orbit-principles h3 {
+  margin: 0 0 7px;
+  color: #1c2b43;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.why-orbit-principles li p {
+  margin: 0;
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 850px) {
+  .why-orbit {
+    margin-top: 56px;
+  }
+
+  .why-orbit-features {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .why-orbit-principles ul {
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+}
+
+@media (max-width: 520px) {
+  .why-orbit {
+    padding: 0 14px;
+  }
+
+  .why-orbit-heading .welcome-eyebrow {
+    font-size: 15px;
+  }
+
+  .why-orbit-features {
+    grid-template-columns: 1fr;
+  }
+
+  .why-orbit-feature {
+    padding: 22px 20px;
+    min-height: auto;
+  }
+
+  .why-orbit-feature h3 {
+    font-size: 17px;
+  }
+
+  .why-orbit-feature p {
+    font-size: 14px;
+  }
+
+  .why-orbit-principles {
+    padding: 22px;
+  }
+}
