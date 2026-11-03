@@ -52,6 +52,8 @@ if os.getenv("METRICS_ENABLED", "1") == "1":
             generate_latest(),
             media_type=CONTENT_TYPE_LATEST,
         )
+
+
 app.include_router(clients_router)
 app.include_router(advisor_router)
 app.include_router(meetings_router)
