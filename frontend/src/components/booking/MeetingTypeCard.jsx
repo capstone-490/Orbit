@@ -1,9 +1,10 @@
-import { FiCheck } from "react-icons/fi";
-function MeetingTypeCard({title, tag, description, selected, onClick,}) {
+import { FiCheck } from 'react-icons/fi'
+
+function MeetingTypeCard({ title, tag, description, selected, onClick }) {
   return (
     <button
       type="button"
-      className={`meeting-type-card ${selected ? "selected" : ""}`}
+      className={`meeting-type-card ${selected ? 'selected' : ''}`}
       onClick={onClick}
     >
       <div className="meeting-card-header">
@@ -16,13 +17,11 @@ function MeetingTypeCard({title, tag, description, selected, onClick,}) {
         )}
       </div>
 
-      <span className="meeting-tag">
-        {tag}
-      </span>
+      <span className="meeting-tag">{tag}</span>
 
       <p>{description}</p>
     </button>
-  );
+  )
 }
 
-export default MeetingTypeCard;
+export default MeetingTypeCard

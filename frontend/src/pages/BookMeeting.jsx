@@ -1,36 +1,33 @@
 // Substantial AI assistance used; verified with frontend tests and production build.
-import { FiArrowRight } from "react-icons/fi";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import BookingTabs from "../components/booking/BookingTabs";
-import BookingSteps from "../components/booking/BookingSteps";
-import MeetingTypeCard from "../components/booking/MeetingTypeCard";
-import DateTimeStep from "../components/booking/DateTimeStep";
-import BookingDetailsStep from "../components/booking/BookingDetailsStep";
-import orbitLogo from "../assets/orbit-logo.png";
-import "../styles/BookMeeting.css";
+
+import { useState } from 'react'
+import { FiArrowRight } from 'react-icons/fi'
+import { useNavigate } from 'react-router-dom'
+import orbitLogo from '../assets/orbit-logo.png'
+import BookingDetailsStep from '../components/booking/BookingDetailsStep'
+import BookingSteps from '../components/booking/BookingSteps'
+import BookingTabs from '../components/booking/BookingTabs'
+import DateTimeStep from '../components/booking/DateTimeStep'
+import MeetingTypeCard from '../components/booking/MeetingTypeCard'
+import '../styles/BookMeeting.css'
 
 function BookMeeting() {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
 
-  const [selectedType, setSelectedType] = useState("introduction");
-  const [currentStep, setCurrentStep] = useState(1);
-  const [selectedDate, setSelectedDate] = useState(undefined);
-  const [selectedTime, setSelectedTime] = useState(null);
+  const [selectedType, setSelectedType] = useState('introduction')
+  const [currentStep, setCurrentStep] = useState(1)
+  const [selectedDate, setSelectedDate] = useState(undefined)
+  const [selectedTime, setSelectedTime] = useState(null)
 
   const advisor = {
-    firstName: "Nayiri",
-    lastName: "Saba",
-  };
+    firstName: 'Nayiri',
+    lastName: 'Saba',
+  }
   return (
     <div className="book-meeting-page">
       <div className="booking-header">
         <div className="booking-logo-container">
-          <img
-            src={orbitLogo}
-            alt="Orbit"
-            className="booking-logo"
-          />
+          <img src={orbitLogo} alt="Orbit" className="booking-logo" />
         </div>
 
         <h1>Welcome to Orbit</h1>
@@ -43,7 +40,12 @@ function BookMeeting() {
       </div>
 
       <div
-        className={`booking-card ${currentStep === 2 ? "booking-card-date-time" : currentStep === 3 ? "booking-card-details" : ""
+        className={`booking-card ${
+          currentStep === 2
+            ? 'booking-card-date-time'
+            : currentStep === 3
+              ? 'booking-card-details'
+              : ''
         }`}
       >
         <BookingTabs />
@@ -62,36 +64,32 @@ function BookMeeting() {
                 title="Introduction Meeting"
                 tag="Presentation 1 · Corporate Introduction"
                 description="Learn about the advisor, their services, partner companies and approach."
-                selected={selectedType === "introduction"}
-                onClick={() => setSelectedType("introduction")}
+                selected={selectedType === 'introduction'}
+                onClick={() => setSelectedType('introduction')}
               />
 
               <MeetingTypeCard
                 title="Continue My Financial Sessions"
                 tag="Follow-up Consultation"
                 description="Already met with the advisor? Schedule your next education or planning session."
-                selected={selectedType === "follow-up"}
-                onClick={() => setSelectedType("follow-up")}
+                selected={selectedType === 'follow-up'}
+                onClick={() => setSelectedType('follow-up')}
               />
             </div>
 
             <div className="booking-actions">
-              <button
-                type="button"
-                className="continue-button"
-                onClick={() => setCurrentStep(2)}
-              >
+              <button type="button" className="continue-button" onClick={() => setCurrentStep(2)}>
                 Continue to Date & Time
                 <FiArrowRight />
               </button>
             </div>
 
             <div className="booking-login">
-              Already have an advisor account?{" "}
+              Already have an advisor account?{' '}
               <button
                 type="button"
                 className="advisor-login-link"
-                onClick={() => navigate("/login")}
+                onClick={() => navigate('/login')}
               >
                 Advisor Login
               </button>
@@ -110,18 +108,18 @@ function BookMeeting() {
           />
         )}
         {currentStep === 3 && (
-        <BookingDetailsStep
-        selectedType={selectedType}
-        selectedDate={selectedDate}
-        selectedTime={selectedTime}
-        advisor={advisor}
-        onBack={() => setCurrentStep(2)}
-        onChangeBooking={() => setCurrentStep(2)}
-        />  
+          <BookingDetailsStep
+            selectedType={selectedType}
+            selectedDate={selectedDate}
+            selectedTime={selectedTime}
+            advisor={advisor}
+            onBack={() => setCurrentStep(2)}
+            onChangeBooking={() => setCurrentStep(2)}
+          />
         )}
       </div>
     </div>
-  );
+  )
 }
 
-export default BookMeeting;
+export default BookMeeting
