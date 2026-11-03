@@ -26,8 +26,8 @@ describe('App routes', () => {
 
     render(<App />)
 
-    expect(screen.getByText(/book a meeting page is a placeholder/i)).toBeInTheDocument()
-  })
+    expect(screen.getByRole('heading', { name: 'Welcome to Orbit' })).toBeInTheDocument()
+    })
 
   it('renders the shared navigation and navigates to each static page', () => {
     window.history.pushState({}, '', '/dashboard')
