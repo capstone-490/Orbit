@@ -21,7 +21,6 @@ function DateTimeStep({
 
   useEffect(() => {
     if (!selectedDate) {
-      setAvailableTimes([])
       return
     }
 
