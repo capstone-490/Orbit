@@ -84,7 +84,7 @@ describe('BookingDetailsStep', () => {
     expect(onChangeBooking).toHaveBeenCalledOnce()
   })
 
-  it('submits the booking information', () => {
+  it('handles form submission without logging client information', () => {
     const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
 
     renderDetails()
@@ -103,14 +103,7 @@ describe('BookingDetailsStep', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Confirm & Schedule Meeting/i }))
 
-    expect(consoleSpy).toHaveBeenCalledWith(
-      'Booking details:',
-      expect.objectContaining({
-        firstName: 'Daniel',
-        lastName: 'Foster',
-        email: 'daniel@example.com',
-        selectedTime: '09:30 AM',
-      }),
-    )
+    expect(consoleSpy).not.toHaveBeenCalled()
   })
 })
+
