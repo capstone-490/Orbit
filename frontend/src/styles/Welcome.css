@@ -56,7 +56,7 @@
   width: 100%;
   height: 100%;
   position: relative;
-  border: 1px dashed rgba(102, 151, 242, 0.20);
+  border: 1px dashed rgba(102, 151, 242, 0.2);
   border-radius: 50%;
   animation: welcome-spin 40s linear infinite;
 }

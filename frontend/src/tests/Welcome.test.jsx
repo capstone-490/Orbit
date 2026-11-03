@@ -1,7 +1,7 @@
 // AI assistance: Used ChatGPT for implementation guidance and code refinement.
 
-import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
 import '@testing-library/jest-dom/vitest'
 import { MemoryRouter } from 'react-router-dom'
 import Welcome from '../pages/Welcome'
@@ -25,7 +25,6 @@ describe('Welcome Page', () => {
     expect(
       screen.getByRole('heading', {
         name: /your advisory practice,\s*all in one place/i,
-
       }),
     ).toBeInTheDocument()
   })
@@ -70,17 +69,13 @@ describe('Welcome Page', () => {
   it('navigates to the correct routes from each access card', () => {
     const { container } = renderWelcome()
 
-    expect(
-      container.querySelector('a[href="/login"]'),
-    ).toHaveTextContent('Advisor Login')
+    expect(container.querySelector('a[href="/login"]')).toHaveTextContent('Advisor Login')
 
-    expect(
-      container.querySelector('a[href="/create-account"]'),
-    ).toHaveTextContent('Advisor Registration')
+    expect(container.querySelector('a[href="/create-account"]')).toHaveTextContent(
+      'Advisor Registration',
+    )
 
-    expect(
-      container.querySelector('a[href="/book-meeting"]'),
-    ).toHaveTextContent('Public Booking')
+    expect(container.querySelector('a[href="/book-meeting"]')).toHaveTextContent('Public Booking')
   })
 
   it('renders the animated orbit background', () => {
@@ -91,13 +86,9 @@ describe('Welcome Page', () => {
     expect(background).toBeInTheDocument()
     expect(background).toHaveAttribute('aria-hidden', 'true')
 
-    expect(
-      background.querySelectorAll('.welcome-track'),
-    ).toHaveLength(3)
+    expect(background.querySelectorAll('.welcome-track')).toHaveLength(3)
 
-    expect(
-      background.querySelectorAll('.welcome-ring'),
-    ).toHaveLength(3)
+    expect(background.querySelectorAll('.welcome-ring')).toHaveLength(3)
   })
 
   it('renders the footer with the current year', () => {
@@ -106,9 +97,7 @@ describe('Welcome Page', () => {
     const currentYear = new Date().getFullYear()
 
     expect(
-      screen.getByText(
-        new RegExp(`© ${currentYear} Orbit\\. All rights reserved\\.`),
-      ),
+      screen.getByText(new RegExp(`© ${currentYear} Orbit\\. All rights reserved\\.`)),
     ).toBeInTheDocument()
 
     expect(

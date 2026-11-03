@@ -22,5 +22,5 @@ export default function AnimatedOrbitBackground() {
         </div>
       </div>
     </div>
-  );
+  )
 }
