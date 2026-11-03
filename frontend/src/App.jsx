@@ -11,11 +11,13 @@ import Documents from './pages/Documents'
 import FollowUps from './pages/FollowUps'
 import Login from './pages/Login'
 import Tasks from './pages/Tasks'
+import Welcome from './pages/Welcome'
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={<Welcome />} />
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
         <Route path="/create-account" element={<CreateAccount />} />
