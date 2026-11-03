@@ -94,7 +94,7 @@ def create_client(
         with get_connection() as conn, conn.cursor() as cur:
             cur.execute(
                 """
-                INSERT INTO clients (
+                INSERT INTO t_clients (
                     name, email, phone_number, address,
                     age, occupation, timeline, advisor_id
                 )
@@ -130,8 +130,7 @@ def list_clients(advisor: dict[str, int] = Depends(get_current_advisor)):
             SELECT id, name, email, phone_number,
                    address, age, occupation,
                    timeline, created_at
-            FROM clients
-                 WHERE advisor_id = %(advisor_id)s
+            FROM t_clients
             ORDER BY created_at DESC, id DESC
                  """,
             {"advisor_id": advisor["id"]},
