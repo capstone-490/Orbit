@@ -741,7 +741,7 @@ CREATE TABLE public_booking_links (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE (organization_id, subscription_id, id),
-    FOREIGN KEY (organization_id, organizer_membership_id) 
+    FOREIGN KEY (organization_id, organizer_membership_id)
         REFERENCES memberships(organization_id, id),
     FOREIGN KEY (organization_id, subscription_id)
         REFERENCES subscriptions(organization_id, id),
@@ -1060,10 +1060,10 @@ BEGIN
         )
     );
 
-    IF NEW.status = 'active' 
-        AND NEW.is_busy = TRUE 
-        AND NEW.deleted_at IS NULL 
-        AND NEW.advisor_membership_id IS NOT NULL 
+    IF NEW.status = 'active'
+        AND NEW.is_busy = TRUE
+        AND NEW.deleted_at IS NULL
+        AND NEW.advisor_membership_id IS NOT NULL
     THEN
         -- evict expired holds overlapping this internal meeting window
         UPDATE bookings
@@ -1390,7 +1390,7 @@ CREATE TABLE approval_requests (
         REFERENCES agents(organization_id, id),
     FOREIGN KEY (organization_id, delegation_id)
         REFERENCES agent_delegations(organization_id, id),
-    
+
     -- Require at least one requester (agent or human membership)
     CONSTRAINT chk_approval_requests_requester_present CHECK (
         requesting_agent_id IS NOT NULL OR requesting_membership_id IS NOT NULL
