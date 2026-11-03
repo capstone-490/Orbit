@@ -54,11 +54,11 @@ describe('DashboardSchedule Component', () => {
     render(<DashboardSchedule scheduleData={mockScheduleData} />)
 
     expect(screen.getAllByText('Oct 30')).toHaveLength(2)
-    expect(screen.getByText('9:00AM')).toBeInTheDocument()
+    expect(screen.getByText('9:00a.m.')).toBeInTheDocument()
     expect(screen.getByText('45 mins')).toBeInTheDocument()
     expect(screen.getByText(/Quarterly asset assessment/i)).toBeInTheDocument()
 
-    expect(screen.getByText('11:30AM')).toBeInTheDocument()
+    expect(screen.getByText('11:30a.m.')).toBeInTheDocument()
     expect(screen.getByText('30 mins')).toBeInTheDocument()
     expect(screen.getByText(/New portfolio setup/i)).toBeInTheDocument()
   })
