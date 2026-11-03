@@ -8,6 +8,8 @@ services:
       POSTGRES_DB: ${DB_NAME:?Set DB_NAME}
       POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+    ports:
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql
     healthcheck:
@@ -42,6 +44,8 @@ services:
       target: runtime
     env_file:
       - .env
+    environment:
+      DB_HOST: db
     depends_on:
       db:
         condition: service_healthy

@@ -31,7 +31,7 @@ def get_tasks(client_id: int, user_timezone: str = "UTC"):
                     status,
                     due_date,
                     last_contact_date
-                FROM tasks_advisor
+                FROM t_task_advisor
                 WHERE client_id = %s
                 ORDER BY due_date ASC
             """,
@@ -71,7 +71,7 @@ def create_task(task: TaskCreate, user_timezone: str = "UTC"):
         with get_connection() as conn:
             row = conn.execute(
                 """
-                INSERT INTO tasks_advisor (
+                INSERT INTO t_task_advisor (
                     title,
                     description,
                     client_id,

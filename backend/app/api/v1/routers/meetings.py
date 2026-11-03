@@ -117,7 +117,7 @@ def list_meetings(
                 m.duration_minutes,
                 m.completion_status,
                 c.name AS client_name
-            FROM meetings m
+            FROM t_meetings m
             JOIN clients c ON c.id = m.client_id
             WHERE m.advisor_id = %(advisor_id)s
             ORDER BY m.meeting_date ASC, m.id ASC
@@ -141,7 +141,7 @@ def list_scheduled_meetings(
         cur.execute(
             """
                 SELECT id, client_id, advisor_id, meeting_date, completion_status
-                FROM meetings
+                FROM t_meetings
                 WHERE advisor_id = %(advisor_id)s AND completion_status = 'Scheduled'
                 ORDER BY meeting_date DESC, id DESC
                 """,
@@ -164,7 +164,7 @@ def list_completed_meetings(
         cur.execute(
             """
                 SELECT id, client_id, advisor_id, meeting_date, completion_status
-                FROM meetings
+                FROM t_meetings
                 WHERE advisor_id = %(advisor_id)s AND completion_status = 'Completed'
                 ORDER BY meeting_date DESC, id DESC
                 """,
@@ -188,7 +188,7 @@ def list_meetings_for_client(
         cur.execute(
             """
                 SELECT id, client_id, advisor_id, meeting_date, completion_status
-                FROM meetings
+                FROM t_meetings
                 WHERE advisor_id = %(advisor_id)s AND client_id = %(client_id)s
                 ORDER BY meeting_date DESC, id DESC
                 """,
