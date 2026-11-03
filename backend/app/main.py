@@ -13,9 +13,8 @@ from app.api.routers.meetings import router as meetings_router
 from app.core.feature_flags import get_variant
 from app.core.security.anonymizer import TokenStore
 from app.logging_config import configure_logging, get_logger
-from app.middleware.request_logging import RequestLoggingMiddleware
 from app.metrics_middleware import MetricsMiddleware
-
+from app.middleware.request_logging import RequestLoggingMiddleware
 
 configure_logging()
 logger = get_logger("app")
