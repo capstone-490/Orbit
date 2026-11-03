@@ -39,7 +39,7 @@ def register_advisor(advisor: AdvisorRegistration):
         with get_connection() as conn, conn.cursor() as cur:
             cur.execute(
                 """
-                    INSERT INTO advisors (username, email, password_hash)
+                    INSERT INTO t_advisors (username, email, password_hash)
                     VALUES (%s, %s, %s)
                     RETURNING id, username, email
                     """,

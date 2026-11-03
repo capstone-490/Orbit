@@ -26,8 +26,8 @@ def get_meeting_briefing_notes(
         cur.execute(
             """
             SELECT m.client_id
-            FROM meetings AS m
-            JOIN clients AS c ON c.id = m.client_id
+            FROM t_meetings AS m
+            JOIN t_clients AS c ON c.id = m.client_id
             WHERE m.id = %(meeting_id)s
               AND m.advisor_id = %(advisor_id)s
               AND c.advisor_id = %(advisor_id)s
@@ -51,7 +51,7 @@ def get_meeting_briefing_notes(
         cur.execute(
             """
             SELECT id, title, content, created_at, updated_at
-            FROM notes
+            FROM t_notes
             WHERE client_id = %(client_id)s
             ORDER BY created_at DESC, id DESC
             """,
@@ -106,7 +106,7 @@ def create_continuing_session(
             {"lock_key": lock_key},
         )
         cur.execute(
-            "SELECT id FROM clients WHERE id = %(client_id)s AND advisor_id = %(advisor_id)s",
+            "SELECT id FROM t_clients WHERE id = %(client_id)s AND advisor_id = %(advisor_id)s",
             {"client_id": booking.client_id, "advisor_id": advisor["id"]},
         )
         if cur.fetchone() is None:
@@ -114,7 +114,7 @@ def create_continuing_session(
 
         cur.execute(
             """
-                SELECT id FROM meetings
+                SELECT id FROM t_meetings
                 WHERE advisor_id = %(advisor_id)s
                   AND completion_status = 'Scheduled'
                   AND meeting_date < %(meeting_end)s
@@ -133,7 +133,7 @@ def create_continuing_session(
 
         cur.execute(
             """
-                INSERT INTO meetings (advisor_id, client_id, meeting_date)
+                INSERT INTO t_meetings (advisor_id, client_id, meeting_date)
                 VALUES (%(advisor_id)s, %(client_id)s, %(meeting_date)s)
                 RETURNING id, client_id, advisor_id, meeting_date, completion_status
                 """,
@@ -168,8 +168,8 @@ def list_meetings(
                 m.meeting_code,
                 c.name AS client_name,
                 c.timeline::text AS client_timeline
-            FROM meetings m
-            JOIN clients c ON c.id = m.client_id
+            FROM t_meetings m
+            JOIN t_clients c ON c.id = m.client_id
             WHERE m.advisor_id = %(advisor_id)s
             ORDER BY m.meeting_date ASC, m.id ASC
             """,
@@ -193,7 +193,7 @@ def list_scheduled_meetings(
             """
                 SELECT id, client_id, advisor_id, meeting_date, completion_status,
                        meeting_uri, meeting_code
-                FROM meetings
+                FROM t_meetings
                 WHERE advisor_id = %(advisor_id)s AND completion_status = 'Scheduled'
                 ORDER BY meeting_date DESC, id DESC
                 """,
@@ -217,7 +217,7 @@ def list_completed_meetings(
             """
                 SELECT id, client_id, advisor_id, meeting_date, completion_status,
                        meeting_uri, meeting_code
-                FROM meetings
+                FROM t_meetings
                 WHERE advisor_id = %(advisor_id)s AND completion_status = 'Completed'
                 ORDER BY meeting_date DESC, id DESC
                 """,
@@ -242,7 +242,7 @@ def list_meetings_for_client(
             """
                 SELECT id, client_id, advisor_id, meeting_date, completion_status,
                        meeting_uri, meeting_code
-                FROM meetings
+                FROM t_meetings
                 WHERE advisor_id = %(advisor_id)s AND client_id = %(client_id)s
                 ORDER BY meeting_date DESC, id DESC
                 """,
@@ -275,7 +275,7 @@ def reschedule_meeting(
             """
             SELECT id, client_id, advisor_id, meeting_date,
                    duration_minutes, completion_status
-            FROM meetings
+            FROM t_meetings
             WHERE id = %s AND advisor_id = %s
             FOR UPDATE
             """,
@@ -311,7 +311,7 @@ def reschedule_meeting(
         cur.execute(
             """
             SELECT id
-            FROM meetings
+            FROM t_meetings
             WHERE advisor_id = %s
               AND id <> %s
               AND completion_status = 'Scheduled'
@@ -336,7 +336,7 @@ def reschedule_meeting(
 
         cur.execute(
             """
-            UPDATE meetings
+            UPDATE t_meetings
             SET meeting_date = %s,
                 updated_at = NOW()
             WHERE id = %s AND advisor_id = %s
