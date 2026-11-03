@@ -1,3 +1,4 @@
+// AI assistance: Used ChatGPT for implementation guidance and code refinement.
 
 import {
   FiArrowRight,
