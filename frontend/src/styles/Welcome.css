@@ -138,8 +138,8 @@
 }
 
 .welcome-logo-frame {
-  width: 82px;
-  height: 82px;
+  width: 120px;
+  height: auto;
   margin: 0 auto 24px;
   padding: 9px;
   border-radius: 20px;

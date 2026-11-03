@@ -11,6 +11,8 @@ import { Link } from 'react-router-dom'
 import orbitLogo from '../assets/orbit-logo.png'
 import '../styles/Welcome.css'
 import AnimatedOrbitBackground from '../components/AnimatedOrbitBackground';
+import WhyOrbit from '../components/WhyOrbit';
+import '../styles/WhyOrbit.css';
 
 const accessOptions = [
   {
@@ -72,6 +74,9 @@ function Welcome() {
             streamline everyday workflows for financial advisors.
           </p>
         </section>
+        
+        {/* Why Orbit section */}
+        <WhyOrbit />
 
         {/* Access options */}
         <section
