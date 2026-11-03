@@ -2,8 +2,9 @@ import sys
 from logging.config import fileConfig
 from pathlib import Path
 
-from alembic import context
 from sqlalchemy import create_engine, pool
+
+from alembic import context
 
 # ensure the backend root (/app) is on sys.path so app.* imports resolve
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
