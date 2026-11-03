@@ -29,15 +29,15 @@ def get_tasks(
             rows = conn.execute(
                 """
                 SELECT
-                    id,
-                    title,
-                    description,
-                    client_id,
-                    status,
-                    due_date,
-                    last_contact_date
-                FROM tasks_advisor
-                INNER JOIN clients c ON c.id = t.client_id
+                    t.id,
+                    t.title,
+                    t.description,
+                    t.client_id,
+                    t.status,
+                    t.due_date,
+                    t.last_contact_date
+                FROM t_tasks_advisor t
+                INNER JOIN t_clients c ON c.id = t.client_id
                 WHERE t.client_id = %s
                   AND c.advisor_id = %s
                 ORDER BY due_date ASC
@@ -82,7 +82,7 @@ def create_task(
         with get_connection(str(advisor["id"]), "Advisor") as conn:
             row = conn.execute(
                 """
-                INSERT INTO tasks_advisor (
+                INSERT INTO t_task_advisor (
                     title,
                     description,
                     client_id,
@@ -92,7 +92,7 @@ def create_task(
                 )
                 VALUES (%s, %s, %s, %s, %s,
                         COALESCE(%s, NOW()))
-                FROM clients c
+                FROM t_clients c
                 WHERE c.id = %s
                   AND c.advisor_id = %s
                 RETURNING
