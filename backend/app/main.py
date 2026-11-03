@@ -14,7 +14,7 @@ from app.core.feature_flags import get_variant
 from app.core.security.anonymizer import TokenStore
 from app.logging_config import configure_logging, get_logger
 from app.middleware.request_logging import RequestLoggingMiddleware
-from app.middleware import MetricsMiddleware
+from app.metrics_middleware import MetricsMiddleware
 
 
 configure_logging()
