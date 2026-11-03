@@ -1,3 +1,5 @@
+// AI assistance: Used ChatGPT for implementation guidance and code refinement.
+
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom/vitest'
