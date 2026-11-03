@@ -106,4 +106,3 @@ describe('BookingDetailsStep', () => {
     expect(consoleSpy).not.toHaveBeenCalled()
   })
 })
-
