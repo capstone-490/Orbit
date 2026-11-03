@@ -5,13 +5,9 @@ import { FiArrowRight, FiCalendar, FiLogIn, FiUserPlus } from 'react-icons/fi'
 import { Link } from 'react-router-dom'
 import orbitLogo from '../assets/orbit-logo.png'
 import '../styles/Welcome.css'
-<<<<<<< HEAD
-import AnimatedOrbitBackground from '../components/AnimatedOrbitBackground'
+import AnimatedOrbitBackground from '../components/AnimatedOrbitBackground/AnimatedOrbitBackground'
 import WhyOrbit from '../components/WhyOrbit'
 import '../styles/WhyOrbit.css'
-=======
-import AnimatedOrbitBackground from '../components/AnimatedOrbitBackground';
->>>>>>> 69bcd83 (removed duplicated code)
 
 const accessOptions = [
   {
@@ -64,6 +60,9 @@ function Welcome() {
             organize meetings, and streamline everyday workflows for financial advisors.
           </p>
         </section>
+        
+        {/* Why Orbit section */}
+        <WhyOrbit />
 
         {/* Why Orbit section */}
         <WhyOrbit />
