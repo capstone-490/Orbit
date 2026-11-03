@@ -1,11 +1,12 @@
 // Substantial AI assistance used; verified with frontend tests and production build.
-import { useEffect, useState } from "react";
-import { DayPicker } from "@daypicker/react";
-import "@daypicker/react/style.css";
 
-import {FiArrowLeft, FiArrowRight, FiCheck, FiClock, FiZap,} from "react-icons/fi";
+import { DayPicker } from '@daypicker/react'
+import { useEffect, useState } from 'react'
+import '@daypicker/react/style.css'
 
-import { getAvailableTimes } from "../../services/BookingApi";
+import { FiArrowLeft, FiArrowRight, FiCheck, FiClock, FiZap } from 'react-icons/fi'
+
+import { getAvailableTimes } from '../../services/BookingApi'
 
 function DateTimeStep({
   selectedDate,
@@ -15,32 +16,32 @@ function DateTimeStep({
   onBack,
   onContinue,
 }) {
-  const [availableTimes, setAvailableTimes] = useState([]);
-  const [loadingTimes, setLoadingTimes] = useState(false);
+  const [availableTimes, setAvailableTimes] = useState([])
+  const [loadingTimes, setLoadingTimes] = useState(false)
 
   useEffect(() => {
     if (!selectedDate) {
-      setAvailableTimes([]);
-      return;
+      setAvailableTimes([])
+      return
     }
 
     const loadAvailableTimes = async () => {
-      setLoadingTimes(true);
-      setSelectedTime(null);
+      setLoadingTimes(true)
+      setSelectedTime(null)
 
       try {
-        const times = await getAvailableTimes(selectedDate);
-        setAvailableTimes(times);
+        const times = await getAvailableTimes(selectedDate)
+        setAvailableTimes(times)
       } catch (error) {
-        console.error("Failed to load available times:", error);
-        setAvailableTimes([]);
+        console.error('Failed to load available times:', error)
+        setAvailableTimes([])
       } finally {
-        setLoadingTimes(false);
+        setLoadingTimes(false)
       }
-    };
+    }
 
-    loadAvailableTimes();
-  }, [selectedDate, setSelectedTime]);
+    void loadAvailableTimes()
+  }, [selectedDate, setSelectedTime])
 
   return (
     <div className="date-time-content">
@@ -77,28 +78,20 @@ function DateTimeStep({
           <div className="time-card-header">
             <strong>
               {selectedDate
-                ? selectedDate.toLocaleDateString("en-US", {
-                    weekday: "long",
-                    month: "long",
-                    day: "numeric",
+                ? selectedDate.toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    month: 'long',
+                    day: 'numeric',
                   })
-                : "Select a date"}
+                : 'Select a date'}
             </strong>
 
-            {selectedDate && !loadingTimes && (
-              <span>
-                {availableTimes.length} slots free
-              </span>
-            )}
+            {selectedDate && !loadingTimes && <span>{availableTimes.length} slots free</span>}
           </div>
 
-          {!selectedDate && (
-            <p>Select a date to see available times.</p>
-          )}
+          {!selectedDate && <p>Select a date to see available times.</p>}
 
-          {loadingTimes && (
-            <p>Loading available times...</p>
-          )}
+          {loadingTimes && <p>Loading available times...</p>}
 
           {selectedDate && !loadingTimes && (
             <>
@@ -109,20 +102,12 @@ function DateTimeStep({
                   <button
                     key={time}
                     type="button"
-                    className={
-                      selectedTime === time
-                        ? "selected"
-                        : ""
-                    }
-                    onClick={() =>
-                      setSelectedTime(time)
-                    }
+                    className={selectedTime === time ? 'selected' : ''}
+                    onClick={() => setSelectedTime(time)}
                   >
                     {time}
 
-                    {selectedTime === time && (
-                      <FiCheck />
-                    )}
+                    {selectedTime === time && <FiCheck />}
                   </button>
                 ))}
               </div>
@@ -130,10 +115,7 @@ function DateTimeStep({
               <div className="booking-notice">
                 <FiZap />
 
-                <span>
-                  Calendar invite will be sent after
-                  booking confirmation.
-                </span>
+                <span>Calendar invite will be sent after booking confirmation.</span>
               </div>
             </>
           )}
@@ -141,11 +123,7 @@ function DateTimeStep({
       </div>
 
       <div className="date-time-actions">
-        <button
-          type="button"
-          className="back-button"
-          onClick={onBack}
-        >
+        <button type="button" className="back-button" onClick={onBack}>
           <FiArrowLeft />
           Back to Session Type
         </button>
@@ -161,7 +139,7 @@ function DateTimeStep({
         </button>
       </div>
     </div>
-  );
+  )
 }
 
-export default DateTimeStep;
+export default DateTimeStep

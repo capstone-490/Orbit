@@ -27,7 +27,7 @@ describe('App routes', () => {
     render(<App />)
 
     expect(screen.getByRole('heading', { name: 'Welcome to Orbit' })).toBeInTheDocument()
-    })
+  })
 
   it('renders the shared navigation and navigates to each static page', () => {
     window.history.pushState({}, '', '/dashboard')

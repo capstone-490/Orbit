@@ -1,5 +1,13 @@
-import { useState } from "react";
-import {FiArrowLeft, FiArrowRight, FiCalendar, FiClock, FiEdit2, FiShield, FiUser,} from "react-icons/fi";
+import { useState } from 'react'
+import {
+  FiArrowLeft,
+  FiArrowRight,
+  FiCalendar,
+  FiClock,
+  FiEdit2,
+  FiShield,
+  FiUser,
+} from 'react-icons/fi'
 
 function BookingDetailsStep({
   selectedType,
@@ -10,46 +18,44 @@ function BookingDetailsStep({
   onChangeBooking,
 }) {
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    notes: "",
-  });
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    notes: '',
+  })
 
   const handleChange = (event) => {
-    const { name, value } = event.target;
+    const { name, value } = event.target
 
     setFormData((previousData) => ({
       ...previousData,
       [name]: value,
-    }));
-  };
+    }))
+  }
 
   const handleSubmit = (event) => {
-    event.preventDefault();
+    event.preventDefault()
 
-    console.log("Booking details:", {
+    console.log('Booking details:', {
       selectedType,
       selectedDate,
       selectedTime,
       ...formData,
-    });
-  };
+    })
+  }
 
   const formattedDate = selectedDate
-    ? selectedDate.toLocaleDateString("en-US", {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-        year: "numeric",
+    ? selectedDate.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
       })
-    : "";
+    : ''
 
   const meetingName =
-    selectedType === "follow-up"
-      ? "Follow-up Consultation"
-      : "Introduction Meeting";
+    selectedType === 'follow-up' ? 'Follow-up Consultation' : 'Introduction Meeting'
 
   return (
     <div className="booking-details-content">
@@ -79,34 +85,26 @@ function BookingDetailsStep({
 
           <div>
             <span>ADVISOR</span>
-            <p> {advisor.firstName} {advisor.lastName}
-                {advisor.designation && `, ${advisor.designation}`}
+            <p>
+              {' '}
+              {advisor.firstName} {advisor.lastName}
+              {advisor.designation && `, ${advisor.designation}`}
             </p>
           </div>
         </div>
 
-        <button
-          type="button"
-          className="change-booking-button"
-          onClick={onChangeBooking}
-        >
+        <button type="button" className="change-booking-button" onClick={onChangeBooking}>
           Change
           <FiEdit2 />
         </button>
       </div>
 
-      <form
-        className="booking-details-form"
-        onSubmit={handleSubmit}
-      >
+      <form className="booking-details-form" onSubmit={handleSubmit}>
         <div className="details-heading">
           <div>
             <h2>Your Contact Details</h2>
 
-            <p>
-              Enter your information to receive secure meeting
-              access credentials.
-            </p>
+            <p>Enter your information to receive secure meeting access credentials.</p>
           </div>
 
           <span>STEP 3 OF 3</span>
@@ -178,8 +176,7 @@ function BookingDetailsStep({
 
           <div className="form-group full-width">
             <label htmlFor="notes">
-              Anything you'd like the advisor to know?{" "}
-              <em>(Optional)</em>
+              Anything you'd like the advisor to know? <em>(Optional)</em>
             </label>
 
             <textarea
@@ -196,35 +193,25 @@ function BookingDetailsStep({
           <FiShield />
 
           <p>
-            <strong>
-              SEC Rule 204-2 & Zero-Knowledge Encryption compliant.
-            </strong>{" "}
-            Your contact details remain strictly confidential and
-            are never shared or sold to third parties.
+            <strong>SEC Rule 204-2 & Zero-Knowledge Encryption compliant.</strong> Your contact
+            details remain strictly confidential and are never shared or sold to third parties.
           </p>
         </div>
 
         <div className="details-actions">
-          <button
-            type="button"
-            className="back-button"
-            onClick={onBack}
-          >
+          <button type="button" className="back-button" onClick={onBack}>
             <FiArrowLeft />
             Back to Date & Time
           </button>
 
-          <button
-            type="submit"
-            className="confirm-booking-button"
-          >
+          <button type="submit" className="confirm-booking-button">
             Confirm & Schedule Meeting
             <FiArrowRight />
           </button>
         </div>
       </form>
     </div>
-  );
+  )
 }
 
-export default BookingDetailsStep;
+export default BookingDetailsStep
