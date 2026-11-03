@@ -46,6 +46,12 @@ app.add_middleware(
 if os.getenv("METRICS_ENABLED", "1") == "1":
     app.add_middleware(MetricsMiddleware)
 
+    @app.get("/metrics", include_in_schema=False)
+    def metrics():
+        return Response(
+            generate_latest(),
+            media_type=CONTENT_TYPE_LATEST,
+        )
 app.include_router(clients_router)
 app.include_router(advisor_router)
 app.include_router(meetings_router)
@@ -94,11 +100,3 @@ def read_flag(
         "variant": variant,
         "use_new_feature": variant == "B",
     }
-
-
-@app.get("/metrics", include_in_schema=False)
-def metrics():
-    return Response(
-        generate_latest(),
-        media_type=CONTENT_TYPE_LATEST,
-    )
