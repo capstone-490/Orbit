@@ -85,6 +85,7 @@ def test_list_advisor_clients_returns_rows(mock_db):
         {
             "id": 10,
             "name": "Sarah Smith",
+            "age": 42,
             "createdAt": "2026-10-28T17:57:27+00:00",
         }
     ]
@@ -96,11 +97,14 @@ def test_list_advisor_clients_returns_rows(mock_db):
         {
             "id": 10,
             "name": "Sarah Smith",
+            "age": 42,
             "createdAt": "2026-10-28T17:57:27+00:00",
         }
     ]
     query, params = cursor.execute.call_args.args
     assert "WHERE advisor_id = %s" in query
+    assert "age" in query
+    assert "date_of_birth" not in query
     assert params == (2,)
     assert connection.cursor.call_args.kwargs == {"row_factory": dict_row}
 
