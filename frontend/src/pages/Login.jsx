@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import orbitLogo from '../assets/orbit-logo.png'
 import { loginAdvisor } from '../services/AuthApi'
 import '../styles/Login.css'
+import AnimatedOrbitBackground from '../components/AnimatedOrbitBackground';
 
 function Login() {
   const navigate = useNavigate()
@@ -39,27 +40,7 @@ function Login() {
   return (
     <main className="login-page">
         {/* Animated Orbit Background */}
-  <div className="welcome-sky" aria-hidden="true">
-    <div className="welcome-track welcome-track-one">
-      <div className="welcome-ring welcome-ring-one">
-        <span className="welcome-planet welcome-planet-blue" />
-      </div>
-    </div>
-
-    <div className="welcome-track welcome-track-two">
-      <div className="welcome-ring welcome-ring-two">
-        <span className="welcome-planet welcome-planet-green" />
-        <span className="welcome-planet welcome-planet-blue welcome-planet-opposite" />
-      </div>
-    </div>
-
-    <div className="welcome-track welcome-track-three">
-      <div className="welcome-ring welcome-ring-three">
-        <span className="welcome-planet welcome-planet-blue" />
-      </div>
-    </div>
-  </div>
-
+      <AnimatedOrbitBackground />
 
       <section className="login-shell" aria-labelledby="login-title">
         <div className="login-brand">
