@@ -36,13 +36,6 @@ function BookingDetailsStep({
 
   const handleSubmit = (event) => {
     event.preventDefault()
-
-    console.log('Booking details:', {
-      selectedType,
-      selectedDate,
-      selectedTime,
-      ...formData,
-    })
   }
 
   const formattedDate = selectedDate
