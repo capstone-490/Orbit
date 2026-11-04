@@ -16,7 +16,7 @@ class TaskCompletionUpdate(BaseModel):
 @router.get("/{advisor_id}/tasks")
 def get_advisor_tasks(advisor_id: int):
     query = """
-        SELECT 
+        SELECT
             t.id,
             t.advisor_id AS "advisorId",
             t.task_title AS "taskTitle",
@@ -45,7 +45,7 @@ def update_task_completion(task_id: int, body: TaskCompletionUpdate):
         UPDATE tasks
         SET completed = %s
         WHERE id = %s
-        RETURNING 
+        RETURNING
             id,
             advisor_id AS "advisorId",
             task_title AS "taskTitle",
@@ -72,7 +72,7 @@ def update_task_completion(task_id: int, body: TaskCompletionUpdate):
 @router.get("/{advisor_id}/schedule")
 def get_advisor_schedule(advisor_id: int):
     query = """
-        SELECT 
+        SELECT
             c.id,
             c.meeting_time AS "time",
             c.duration,
@@ -99,7 +99,7 @@ def get_advisor_schedule(advisor_id: int):
 @router.get("/{advisor_id}/clients")
 def get_advisor_clients(advisor_id: int):
     query = """
-        SELECT 
+        SELECT
             id,
             name,
             phone_number AS "phoneNumber",

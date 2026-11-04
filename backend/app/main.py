@@ -7,6 +7,7 @@ from fastapi import Depends, FastAPI, Header, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
+from app.api.routers.advisor_registration import router as advisor_registration_router
 from app.api.routers.advisors import router as advisor_router
 from app.api.routers.clients import router as clients_router
 from app.api.routers.meetings import router as meetings_router
@@ -55,6 +56,7 @@ if os.getenv("METRICS_ENABLED", "1") == "1":
 
 app.include_router(clients_router)
 app.include_router(advisor_router)
+app.include_router(advisor_registration_router)
 app.include_router(meetings_router)
 
 

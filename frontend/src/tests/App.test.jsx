@@ -18,7 +18,9 @@ describe('App routes', () => {
 
     render(<App />)
 
-    expect(screen.getByText(/create an account page is a placeholder/i)).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /create your account/i })).toBeInTheDocument()
+
+    expect(screen.getByRole('button', { name: /create account/i })).toBeInTheDocument()
   })
 
   it('renders the book a meeting page at its route', () => {
@@ -26,7 +28,7 @@ describe('App routes', () => {
 
     render(<App />)
 
-    expect(screen.getByText(/book a meeting page is a placeholder/i)).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Welcome to Orbit' })).toBeInTheDocument()
   })
 
   it('renders the shared navigation and navigates to each static page', () => {
