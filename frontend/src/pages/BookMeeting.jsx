@@ -10,6 +10,7 @@ import BookingTabs from '../components/booking/BookingTabs'
 import DateTimeStep from '../components/booking/DateTimeStep'
 import MeetingTypeCard from '../components/booking/MeetingTypeCard'
 import '../styles/BookMeeting.css'
+import AnimatedOrbitBackground from '../components/AnimatedOrbitBackground/AnimatedOrbitBackground'
 
 function BookMeeting() {
   const navigate = useNavigate()
@@ -25,6 +26,8 @@ function BookMeeting() {
   }
   return (
     <div className="book-meeting-page">
+           {/* Background decoration */}
+            <AnimatedOrbitBackground />
       <div className="booking-header">
         <div className="booking-logo-container">
           <img src={orbitLogo} alt="Orbit" className="booking-logo" />
