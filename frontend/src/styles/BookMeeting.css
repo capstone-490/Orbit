@@ -160,7 +160,7 @@
   color: #3f5fe7;
 }
 
-.booking-step.active p {
+.booking-step.active > .step-description {
   color: #172033;
 }
 
@@ -169,10 +169,6 @@
   flex: 1;
   margin: 0 12px;
   background: #edf0f5;
-}
-
-.step-line.completed {
-  background: #b7c6ff;
 }
 
 .booking-content {
@@ -277,7 +273,7 @@
   color: #858994;
 }
 
-.meeting-type-card.selected p {
+.meeting-type-card:where(.selected) p {
   color: #4567ec;
 }
 
@@ -360,7 +356,7 @@
   color: #ffffff;
 }
 
-.booking-step.completed .step-number svg {
+.booking-step:where(.completed .step-number) svg {
   width: 14px;
   height: 14px;
 }
@@ -369,7 +365,7 @@
   color: #4f68e8;
 }
 
-.booking-step.completed p {
+.booking-step:where(.completed) p {
   color: #172033;
 }
 
@@ -513,11 +509,6 @@
   color: #172033;
 }
 
-.calendar-card .rdp-day:not(.rdp-disabled) .rdp-day_button {
-  color: #172033;
-  font-weight: 600;
-}
-
 .calendar-card .rdp-disabled .rdp-day_button {
   color: #070707;
   font-weight: 500;
@@ -641,7 +632,7 @@
   color: #3f5fe7;
 }
 
-.time-slots button.selected svg {
+.time-slots :where(button.selected) svg {
   width: 11px;
   height: 11px;
 }
