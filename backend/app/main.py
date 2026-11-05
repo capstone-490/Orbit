@@ -11,6 +11,7 @@ from app.api.routers.advisor_registration import router as advisor_registration_
 from app.api.routers.advisors import router as advisor_router
 from app.api.routers.clients import router as clients_router
 from app.api.routers.meetings import router as meetings_router
+from app.api.routers.sessions import router as sessions_router
 from app.core.feature_flags import get_variant
 from app.core.security.anonymizer import TokenStore
 from app.logging_config import configure_logging, get_logger
@@ -37,9 +38,9 @@ app.add_middleware(
         "http://localhost:5173",
         "http://127.0.0.1:5173",
     ],
-    allow_credentials=False,
+    allow_credentials=True,
     allow_methods=["GET", "POST", "PATCH"],
-    allow_headers=["Content-Type"],
+    allow_headers=["Content-Type", "Authorization"],
     expose_headers=["x-request-id"],
 )
 
@@ -54,6 +55,7 @@ if os.getenv("METRICS_ENABLED", "1") == "1":
         )
 
 
+app.include_router(sessions_router)
 app.include_router(clients_router)
 app.include_router(advisor_router)
 app.include_router(advisor_registration_router)

@@ -25,6 +25,13 @@
       "quoteStyle": "single"
     }
   },
+  "linter": {
+    "rules": {
+      "style": {
+        "noDescendingSpecificity": "off"
+      }
+    }
+  },
   "json": {
     "formatter": {
       "indentStyle": "space",

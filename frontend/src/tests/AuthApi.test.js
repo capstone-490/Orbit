@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { loginAdvisor, registerAdvisor } from '../services/AuthApi'
+import { loginAdvisor, logoutAdvisor, registerAdvisor } from '../services/AuthApi'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -127,5 +127,19 @@ describe('registerAdvisor', () => {
     await expect(registerAdvisor(advisor)).rejects.toThrow(
       'Unable to create your account. Please try again.',
     )
+  })
+})
+
+describe('logoutAdvisor', () => {
+  it('sends a credentialed logout request', async () => {
+    const fetchMock = vi.fn(async () => ({ ok: true }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await logoutAdvisor()
+
+    expect(fetchMock).toHaveBeenCalledWith('http://localhost:8001/auth/logout', {
+      credentials: 'include',
+      method: 'POST',
+    })
   })
 })

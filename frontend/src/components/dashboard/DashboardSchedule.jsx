@@ -8,12 +8,13 @@ const formatShortTime = (timestamp) => {
 
   // Format to 12-hour time and remove spaces (e.g., "10:00 PM" -> "10:00PM")
   return date
-    .toLocaleTimeString([], {
+    .toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
       hour12: true,
     })
     .replace(/\s+/g, '')
+    .toUpperCase()
 }
 
 const formatShortDate = (timestamp) => {

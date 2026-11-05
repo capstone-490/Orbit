@@ -7,9 +7,13 @@ from psycopg.errors import UniqueViolation
 
 from app.api.routers import clients
 from app.api.routers.clients import ClientCreate
+from app.auth import create_access_token
 from app.main import app
 
-client = TestClient(app)
+client = TestClient(
+    app,
+    headers={"Authorization": f"Bearer {create_access_token(1)}"},
+)
 
 COLUMNS = [
     "id",
