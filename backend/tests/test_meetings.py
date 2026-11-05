@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api.routers import meetings
+from app.api.v1.routers import meetings
 from app.auth import create_access_token
 from app.main import app
 

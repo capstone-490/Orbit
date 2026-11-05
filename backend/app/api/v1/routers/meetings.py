@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.auth import get_current_advisor
-from app.db.db import get_connection
+from app.dependencies.db import get_connection
 
 router = APIRouter(
     prefix="/meetings",

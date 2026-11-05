@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.db.deps import get_db
+from app.dependencies.deps import get_db
 from app.main import app
 
 

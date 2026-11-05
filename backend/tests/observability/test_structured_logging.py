@@ -8,7 +8,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 from fastapi.testclient import TestClient
 
-from app.api.routers.debug import router as debug_router
+from app.api.v1.routers.debug import router as debug_router
 from app.logging_config import RedactingJsonFormatter, configure_logging
 from app.middleware.request_logging import RequestLoggingMiddleware
 

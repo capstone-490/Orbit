@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from app.db.db import get_connection
+from app.dependencies.db import get_connection
 
 CONFIG_PATH = Path(__file__).resolve().parent.parent / "config" / "feature_flags.json"
 

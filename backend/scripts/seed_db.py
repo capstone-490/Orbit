@@ -4,7 +4,7 @@ import sys
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.db.db import SessionLocal
+from app.dependencies.db import SessionLocal
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)

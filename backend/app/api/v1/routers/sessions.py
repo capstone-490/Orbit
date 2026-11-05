@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel, EmailStr
 
 from app.auth import create_access_token, get_current_advisor
-from app.db.db import get_connection
+from app.dependencies.db import get_connection
 from app.security.passwords import verify_password
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])

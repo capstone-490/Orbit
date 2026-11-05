@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from psycopg import Error as PsycopgError
 
-from app.api.routers.tasks import build_task_response, router
+from app.api.v1.routers.tasks import build_task_response, router
 from app.services.sla_cal import UrgencyState, compute_urgency
 
 app = FastAPI()
@@ -31,7 +31,7 @@ def mock_task_row():
 
 @pytest.fixture
 def mock_db():
-    with patch("app.api.routers.tasks.get_connection") as mock_conn:
+    with patch("app.api.v1.routers.tasks.get_connection") as mock_conn:
         connection = MagicMock()
 
         mock_conn.return_value.__enter__.return_value = connection
@@ -235,7 +235,7 @@ def create_task_row(due_date, status="Todo", last_contact_date=None):
     )
 
 
-@patch("app.api.routers.tasks.compute_urgency")
+@patch("app.api.v1.routers.tasks.compute_urgency")
 def test_get_tasks_calls_sla_calculator(mock_compute, mock_db, fixed_now):
 
     mock_compute.side_effect = compute_urgency
@@ -247,7 +247,7 @@ def test_get_tasks_calls_sla_calculator(mock_compute, mock_db, fixed_now):
     mock_db.execute.return_value.fetchall.return_value = [row]
 
     with patch(
-        "app.api.routers.tasks.compute_urgency", wraps=compute_urgency
+        "app.api.v1.routers.tasks.compute_urgency", wraps=compute_urgency
     ) as sla_spy:
         response = client.get(
             "/api/v1/data/tasks", params={"client_id": 10, "user_timezone": "UTC"}

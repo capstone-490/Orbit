@@ -1,7 +1,7 @@
 from psycopg import sql
 
 from app.core.config import settings
-from app.db.db import get_admin_connection
+from app.dependencies.db import get_admin_connection
 
 ALLOWED_ROLES = {"orbit_app", "orbit_test"}
 

@@ -3,7 +3,7 @@ from psycopg import Error as PsycopgError
 from psycopg.rows import dict_row
 from pydantic import BaseModel, StrictBool
 
-from app.db.db import get_connection
+from app.dependencies.db import get_connection
 
 router = APIRouter(prefix="/advisors", tags=["Advisors"])
 

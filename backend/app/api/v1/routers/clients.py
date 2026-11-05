@@ -8,7 +8,7 @@ from psycopg.errors import UniqueViolation
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from app.auth import get_current_advisor
-from app.db.db import get_connection
+from app.dependencies.db import get_connection
 
 router = APIRouter(
     prefix="/clients",

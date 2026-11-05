@@ -1,6 +1,6 @@
 import pytest
 
-from app.api.routers.clients import ClientCreate
+from app.api.v1.routers.clients import ClientCreate
 from app.core.security.anonymizer import TokenStore, mask_for_ai
 
 

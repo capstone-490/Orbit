@@ -4,7 +4,7 @@ import hashlib
 import logging
 from contextlib import closing
 
-from app.db.db import get_connection
+from app.dependencies.db import get_connection
 
 logger = logging.getLogger(__name__)
 
