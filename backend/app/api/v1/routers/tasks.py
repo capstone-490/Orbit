@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from psycopg import Error as PsycopgError
 
-from app.api.classes.task import TaskCreate, TaskResponse
-from app.db.db import get_connection
+from app.classes.task import TaskCreate, TaskResponse
+from app.dependencies.db import get_connection
 from app.services.sla_cal import (
     URGENCY_COLOR,
     compute_urgency,

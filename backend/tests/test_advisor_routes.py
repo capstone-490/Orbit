@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 from psycopg import OperationalError
 from psycopg.rows import dict_row
 
-from app.api.routers import advisors
+from app.api.v1.routers import advisors
 from app.main import app
 
 client = TestClient(app)

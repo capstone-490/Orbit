@@ -6,7 +6,7 @@
 # from psycopg import errors
 
 # from app.core.config import settings
-# from app.db.db import get_admin_connection, get_connection
+# from app.dependencies.db import get_admin_connection, get_connection
 
 # TABLES = [
 #     "approval_requests",

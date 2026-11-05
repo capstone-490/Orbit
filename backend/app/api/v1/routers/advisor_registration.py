@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from psycopg.errors import UniqueViolation
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
-from app.db.db import get_connection
+from app.dependencies.db import get_connection
 from app.security.passwords import hash_password
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])

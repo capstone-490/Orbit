@@ -21,7 +21,25 @@ Orbit is an AI-powered client and workflow management platform built for financi
 - make
 - pnpm
 - docker
-- See frontend|backend/README.md
+  
+```bash
+cd backend/
+uv sync
+cd ../frontend
+pnpm install
+
+cd ..
+make dev        # run live app
+make mon        # run live with metrics
+make test       # test front and backend
+make test-fe    # test frontend
+make test-be    # test backend
+make down       # stop running containers
+make clean      # remove all containers
+
+```
+
+**See Backend/Frontend README for detailed instruction**
 
 ## Tech Stack
 

@@ -7,11 +7,13 @@ from fastapi import Depends, FastAPI, Header, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
-from app.api.routers.advisor_registration import router as advisor_registration_router
-from app.api.routers.advisors import router as advisor_router
-from app.api.routers.clients import router as clients_router
-from app.api.routers.meetings import router as meetings_router
-from app.api.routers.sessions import router as sessions_router
+from app.api.v1.routers.advisor_registration import (
+    router as advisor_registration_router,
+)
+from app.api.v1.routers.advisors import router as advisor_router
+from app.api.v1.routers.clients import router as clients_router
+from app.api.v1.routers.meetings import router as meetings_router
+from app.api.v1.routers.sessions import router as sessions_router
 from app.core.feature_flags import get_variant
 from app.core.security.anonymizer import TokenStore
 from app.logging_config import configure_logging, get_logger
@@ -63,7 +65,7 @@ app.include_router(meetings_router)
 
 
 if os.getenv("ENABLE_DEBUG_ROUTES", "").lower() in {"1", "true", "yes"}:
-    from app.api.routers.debug import router as debug_router
+    from app.api.v1.routers.debug import router as debug_router
 
     app.include_router(debug_router)
     logger.warning("Debug routes enabled; do not use in production")

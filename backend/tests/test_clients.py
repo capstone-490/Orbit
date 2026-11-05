@@ -5,8 +5,8 @@ import pytest
 from fastapi.testclient import TestClient
 from psycopg.errors import UniqueViolation
 
-from app.api.routers import clients
-from app.api.routers.clients import ClientCreate
+from app.api.v1.routers import clients
+from app.api.v1.routers.clients import ClientCreate
 from app.auth import create_access_token
 from app.main import app
 

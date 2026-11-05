@@ -15,6 +15,7 @@ x-test-env: &test-env
 
   SECRET_KEY: test-only-secret-key
   ORBIT_ANONYMIZATION_SECRET: test-only-orbit-anonymization-secret-2026
+  ORBIT_AUTH_SECRET: test-only-orbit-auth-super-secret-2026
   ENABLE_DEBUG_ROUTES: ${ENABLE_DEBUG_ROUTES:-false}
   METRICS_ENABLED: ${METRICS_ENABLED:-1}
 

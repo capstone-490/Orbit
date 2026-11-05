@@ -25,7 +25,7 @@ def test_password_hashing():
     assert not verify_password("WrongPassword123!", hashed)
 
 
-@patch("app.api.routers.advisor_registration.get_connection")
+@patch("app.api.v1.routers.advisor_registration.get_connection")
 def test_successful_registration(mock_get_connection):
     cursor = MagicMock()
     cursor.fetchone.return_value = (
@@ -91,7 +91,7 @@ def test_blank_username():
     assert response.status_code == 422
 
 
-@patch("app.api.routers.advisor_registration.get_connection")
+@patch("app.api.v1.routers.advisor_registration.get_connection")
 def test_duplicate_email(mock_get_connection):
     cursor = MagicMock()
     cursor.execute.side_effect = UniqueViolation(

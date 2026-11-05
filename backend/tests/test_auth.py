@@ -9,7 +9,7 @@ from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from app import auth
-from app.api.routers import sessions
+from app.api.v1.routers import sessions
 from app.main import app
 from app.security.passwords import hash_password
 
@@ -142,7 +142,8 @@ def test_registration_can_be_followed_by_login(monkeypatch):
     connection.__enter__.return_value = connection
     connection.cursor.return_value.__enter__.return_value = cursor
     monkeypatch.setattr(
-        "app.api.routers.advisor_registration.get_connection", lambda: connection
+        "app.api.v1.routers.advisor_registration.get_connection",
+        lambda: connection,
     )
     monkeypatch.setattr(sessions, "get_connection", lambda: connection)
 

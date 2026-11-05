@@ -5,7 +5,7 @@ from fastapi import Depends, Header
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.db.db import SessionLocal
+from app.dependencies.db import SessionLocal
 
 
 def get_db(
