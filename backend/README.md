@@ -39,22 +39,18 @@ Compose files are layered rather than independent. Development and monitoring in
 
 Follow the official installation guides for your system:
 
-- **Windows (with WSL2):** [Install Docker Desktop on Windows](https://docs.docker.com/desktop/setup/install/windows-install/)  
-- **macOS:** [Install Docker Desktop on Mac](https://docs.docker.com/desktop/setup/install/mac-install/)  
-- **Linux (Ubuntu/Debian):** [Install Docker Engine on Linux](https://docs.docker.com/engine/install/ubuntu/)  
-
-After installation, check that Docker is working:
+- **Windows (with WSL2):** [Install Docker Desktop on Windows](https://docs.docker.com/desktop/setup/install/windows-install/)
+- **macOS:** [Install Docker Desktop on Mac](https://docs.docker.com/desktop/setup/install/mac-install/)
+- **Linux (Ubuntu/Debian):** [Install Docker Engine on Linux](https://docs.docker.com/engine/install/ubuntu/)
+  After installation, check that Docker is working:
 
 ```bash
+# check
 docker --version
 docker compose version
 ```
 
-**IMPORTANT:** Before running any Docker commands, make sure Docker Desktop is running.
-
-## 1. Setup Environment Variables
-
-### For Docker Development (`make dev`)
+## 1. Setup
 
 Create a `.env` file in the **project root** before starting the development stack:
 
@@ -62,14 +58,12 @@ Create a `.env` file in the **project root** before starting the development sta
 cp .env.example .env
 ```
 
-**.env Important distinctions:**
-
-- `POSTGRES_USER` and `POSTGRES_PASSWORD` initialize the PostgreSQL container.
-- `DB_USER` and `DB_PASSWORD` configure the application database connection.
-- `DB_HOST=db` is used for connections between containers.
-- `DB_HOST=127.0.0.1` is used when running the backend directly on your host.
-
-The application database credentials are provisioned separately by `scripts.provision_db_credentials`.
+```bash
+cd backend/
+uv sync
+cd ../frontend/
+pnpm install
+```
 
 ### Automated Tests
 
@@ -81,6 +75,7 @@ make test-be
 make test-fe
 make test-fe-int
 ```
+
 
 The test Compose configuration injects test credentials and uses an in-memory PostgreSQL instance.
 Test data and database state are discarded when the test stack is torn down.
