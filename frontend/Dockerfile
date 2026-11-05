@@ -23,9 +23,12 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
 # -------------------------------------------------------------------
 FROM deps AS dev
 
+ENV NODE_ENV=development
 ENV CI=true
 
-CMD ["pnpm", "vitest", "run"]
+EXPOSE 5173
+
+CMD ["pnpm", "dev", "--host", "0.0.0.0"]
 
 # -------------------------------------------------------------------
 # production build & runtime (nginx)
