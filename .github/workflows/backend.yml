@@ -26,11 +26,11 @@ jobs:
         env:
           POSTGRES_USER: orbit_user
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          POSTGRES_DB: orbit_db
+          POSTGRES_DB: orbit_test_db
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U orbit_user -d orbit_db"
+          --health-cmd "pg_isready -U orbit_user -d orbit_test_db"
           --health-interval 5s
           --health-timeout 3s
           --health-retries 5
@@ -61,8 +61,8 @@ jobs:
 
       - name: Run Migrations & Pytest Coverage
         env:
-          DATABASE_URL: postgresql+psycopg://orbit_user:${{ secrets.POSTGRES_PASSWORD }}@127.0.0.1:5432/orbit_db
-          DB_NAME: orbit_db
+          DATABASE_URL: postgresql+psycopg://orbit_user:${{ secrets.POSTGRES_PASSWORD }}@127.0.0.1:5432/orbit_test_db
+          DB_NAME: orbit_test_db
           DB_USER: orbit_user
           DB_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           DB_HOST: 127.0.0.1

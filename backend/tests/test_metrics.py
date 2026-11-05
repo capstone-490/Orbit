@@ -2,6 +2,7 @@
 from fastapi.testclient import TestClient
 from prometheus_client import REGISTRY, generate_latest
 
+from app.auth import create_access_token
 from app.main import app
 
 client = TestClient(app)
@@ -38,7 +39,11 @@ def api_metrics_text():
 
 def test_no_pii_in_labels():
     # Use an advisor id  to test the dynamic route
-    response = client.get("/meetings/123456?email=secret@example.com")
+    access_token = create_access_token(123456)
+    response = client.get(
+        "/meetings/123456?email=secret@example.com",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
     text = api_metrics_text()
     assert response.status_code == 200
     assert 'route="/meetings/{advisor_id}"' in text

@@ -9,6 +9,8 @@ vi.mock('../pages/AdvisorDashboard', () => ({
 
 afterEach(() => {
   cleanup()
+  vi.unstubAllGlobals()
+  vi.restoreAllMocks()
   window.history.pushState({}, '', '/')
 })
 
@@ -31,11 +33,35 @@ describe('App routes', () => {
     expect(screen.getByRole('heading', { name: 'Welcome to Orbit' })).toBeInTheDocument()
   })
 
-  it('renders the shared navigation and navigates to each static page', () => {
+  it('redirects unauthenticated users away from advisor pages', async () => {
     window.history.pushState({}, '', '/dashboard')
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: false })),
+    )
+
     render(<App />)
 
-    expect(screen.getByRole('heading', { name: 'Dashboard page' })).toBeInTheDocument()
+    expect(await screen.findByText('Welcome to Orbit')).toBeInTheDocument()
+    expect(window.location.pathname).toBe('/login')
+  })
+
+  it('renders the shared navigation and navigates to each static page', async () => {
+    window.history.pushState({}, '', '/dashboard')
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({
+          user: { id: 1, name: 'Test User' },
+        }),
+      })),
+    )
+
+    render(<App />)
+
+    expect(await screen.findByRole('heading', { name: 'Dashboard page' })).toBeInTheDocument()
 
     const destinations = [
       ['Calendar', 'Calendar'],

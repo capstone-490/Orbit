@@ -1,12 +1,23 @@
 // Substantial AI assistance used; verified with frontend tests and production build.
-import { cleanup, render, screen } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
-import { afterEach, describe, expect, it } from 'vitest'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { MemoryRouter, useLocation } from 'react-router-dom'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import Navbar from '../components/dashboard/Navbar'
+import { logoutAdvisor } from '../services/AuthApi'
+
+vi.mock('../services/AuthApi', () => ({
+  logoutAdvisor: vi.fn(),
+}))
 
 afterEach(() => {
   cleanup()
+  vi.clearAllMocks()
 })
+
+function CurrentPath() {
+  const location = useLocation()
+  return <span data-testid="current-path">{location.pathname}</span>
+}
 
 describe('Navbar', () => {
   const mockUser = {
@@ -46,5 +57,20 @@ describe('Navbar', () => {
     links.forEach(([name, href]) => {
       expect(screen.getByRole('link', { name })).toHaveAttribute('href', href)
     })
+  })
+
+  it('signs out and navigates to login', async () => {
+    logoutAdvisor.mockResolvedValue(undefined)
+    render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <Navbar user={mockUser} />
+        <CurrentPath />
+      </MemoryRouter>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sign out' }))
+
+    await waitFor(() => expect(logoutAdvisor).toHaveBeenCalledOnce())
+    expect(await screen.findByTestId('current-path')).toHaveTextContent('/login')
   })
 })
