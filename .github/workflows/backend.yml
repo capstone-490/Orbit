@@ -39,6 +39,7 @@ jobs:
       POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       ORBIT_ANONYMIZATION_SECRET: ci-only-anonymization-secret-for-tests
+      ORBIT_AUTH_SECRET: ci-only-auth-secret-for-tests-2026
     
     services:
       postgres:
