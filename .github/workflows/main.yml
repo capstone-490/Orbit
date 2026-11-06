@@ -1,4 +1,4 @@
-# Below 50% AI-generated
+
 name: CI/CD Orchestrator
 
 on:
@@ -34,6 +34,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -48,17 +49,17 @@ jobs:
       backend: ${{ steps.changes.outputs.backend }}
       frontend: ${{ steps.changes.outputs.frontend }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 #v7.0.1
-      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d #v4.0.3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: changes
         with:
           filters: .github/src-filters.yml
 
+  # Both suites run for every PR and push to main.
+  # SonarCloud needs both coverage reports for a combined analysis.
   backend-ci:
     needs: detect-changes
-    if: >-
-      (github.event_name == 'push' || github.event_name == 'pull_request') &&
-      (needs.detect-changes.outputs.backend == 'true' || github.ref == 'refs/heads/main')
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
     uses: ./.github/workflows/backend.yml
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
@@ -71,12 +72,61 @@ jobs:
 
   frontend-ci:
     needs: detect-changes
-    if: >-
-      (github.event_name == 'push' || github.event_name == 'pull_request') &&
-      (needs.detect-changes.outputs.frontend == 'true' || github.ref == 'refs/heads/main')
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
     uses: ./.github/workflows/frontend.yml
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  sonar-analysis:
+    name: SonarCloud Analysis
+    needs: [backend-ci, frontend-ci]
+    # Do not expose the Sonar token to pull requests from forks.
+    if: >-
+      github.event_name == 'push' ||
+      (
+        github.event_name == 'pull_request' &&
+        github.event.pull_request.head.repo.full_name == github.repository
+      )
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Download Backend Coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend
+
+      - name: Download Frontend Coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-coverage
+          path: frontend/coverage
+
+      - name: Verify Coverage Reports
+        run: |
+          test -s backend/coverage.xml
+          test -s frontend/coverage/lcov.info
+          echo "Both coverage reports are present."
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@v8.3.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.organization=capstone-490
+            -Dsonar.projectKey=capstone-490_Orbit
+            -Dsonar.sources=backend/app,frontend/src
+            -Dsonar.tests=backend/tests,frontend/src
+            -Dsonar.test.inclusions=backend/tests/**/*.py,frontend/src/**/*.test.js,frontend/src/**/*.test.jsx,frontend/src/**/*.test.ts,frontend/src/**/*.test.tsx,frontend/src/**/*.spec.js,frontend/src/**/*.spec.jsx,frontend/src/**/*.spec.ts,frontend/src/**/*.spec.tsx
+            -Dsonar.exclusions=**/node_modules/**,**/dist/**,backend/.venv/**,**/coverage/**
+            -Dsonar.python.coverage.reportPaths=backend/coverage.xml
+            -Dsonar.javascript.lcov.reportPaths=frontend/coverage/lcov.info
 
   auto-tag:
     needs: [backend-ci, frontend-ci]
@@ -89,7 +139,6 @@ jobs:
       PROJECT_TOKEN: ${{ secrets.PROJECT_ACCESS_TOKEN }}
     permissions:
       contents: write
-  
 
   check-release-schedule:
     name: Check Sprint & Milestone Schedule
@@ -171,7 +220,7 @@ jobs:
 
               if [[ "$ITER_NUM" == "0" || "$ITER_NUM" == "8" || "$ITER_NUM" == "13" ]]; then
                 RUN_MILE="true"
-                MILE_NUM="" # leave blank so release-version.yml auto-increments release-1
+                MILE_NUM=""
                 echo "Iteration $ITER_NUM is a Release! Scheduling release-$MILE_NUM."
               fi
               break
@@ -199,7 +248,6 @@ jobs:
 
   publish-milestone-release:
     needs: check-release-schedule
-    # if both iteration and milestone run on the same day, run milestone after iteration finishes
     if: needs.check-release-schedule.outputs.run_milestone == 'true'
     uses: ./.github/workflows/release-version.yml
     with:
