@@ -6,8 +6,6 @@ on:
     secrets:
       CODECOV_TOKEN:
         required: false
-      SONAR_TOKEN:
-        required: false
 
 permissions:
   contents: read
@@ -18,8 +16,9 @@ jobs:
     defaults:
       run:
         working-directory: frontend
+
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 #v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
@@ -43,6 +42,14 @@ jobs:
       - name: Run Unit Tests & Coverage (Vitest)
         run: pnpm vitest run --coverage
 
+      - name: Upload Frontend Coverage Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: frontend/coverage/lcov.info
+          if-no-files-found: error
+          retention-days: 1
+
       - name: Upload Frontend Coverage to Codecov
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
@@ -51,5 +58,3 @@ jobs:
           name: frontend-coverage
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
-
-   
