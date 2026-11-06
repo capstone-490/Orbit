@@ -6,11 +6,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 INSECURE_DEFAULT_SECRET = "local-and-ci-test-only-secret-key"
 INSECURE_DEFAULT_ANONYMIZATION_SECRET = "Supercalifragilisticexpialidocious"
+from pathlib import Path
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=Path(__file__).resolve().parents[3] / ".env",
         env_file_encoding="utf-8",
         case_sensitive=True,
         extra="ignore",

@@ -291,7 +291,7 @@ def test_get_task_upcoming_yellow(mock_db):
 
     due_date = now + timedelta(hours=48)
 
-    if now.weekday() > 4:
+    if now.weekday() >= 4:  # Friday (4), Saturday (5), or Sunday (6)
         due_date = now + timedelta(hours=96)
 
     row = create_task_row(due_date)
