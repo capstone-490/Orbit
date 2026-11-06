@@ -26,8 +26,8 @@ function BookMeeting() {
   }
   return (
     <div className="book-meeting-page">
-           {/* Background decoration */}
-            <AnimatedOrbitBackground />
+      {/* Background decoration */}
+      <AnimatedOrbitBackground />
       <div className="booking-header">
         <div className="booking-logo-container">
           <img src={orbitLogo} alt="Orbit" className="booking-logo" />
