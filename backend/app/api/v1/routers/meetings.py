@@ -1,5 +1,5 @@
 # Substantial AI assistance used; verified with backend tests and live auth smoke test.
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, field_validator
@@ -31,7 +31,7 @@ def create_continuing_session(
     booking: ContinuingSessionCreate,
     advisor: dict[str, int] = Depends(get_current_advisor),
 ):
-    meeting_date = booking.meeting_date.astimezone(timezone.utc)
+    meeting_date = booking.meeting_date.astimezone(UTC)
     lock_key = f"meeting:{advisor['id']}:{meeting_date.isoformat()}"
 
     with get_connection() as conn, conn.cursor() as cur:
