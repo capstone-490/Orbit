@@ -53,6 +53,92 @@ def test_list_meetings_empty(mock_db):
     assert params["advisor_id"] == 1
 
 
+def test_create_continuing_session_for_existing_client(mock_db):
+    mock_db.fetchone.side_effect = [
+        (7,),
+        None,
+        (11, 7, 1, "2026-12-01T10:00:00Z", "Scheduled"),
+    ]
+    mock_db.description = [
+        SimpleNamespace(name="id"),
+        SimpleNamespace(name="client_id"),
+        SimpleNamespace(name="advisor_id"),
+        SimpleNamespace(name="meeting_date"),
+        SimpleNamespace(name="completion_status"),
+    ]
+
+    response = client.post(
+        "/meetings/continuing-session",
+        json={"client_id": 7, "meeting_date": "2026-12-01T10:00:00Z"},
+    )
+
+    assert response.status_code == 201
+    assert response.json() == {
+        "id": 11,
+        "client_id": 7,
+        "advisor_id": 1,
+        "meeting_date": "2026-12-01T10:00:00Z",
+        "completion_status": "Scheduled",
+    }
+    assert mock_db.execute.call_count == 4
+    insert_query, insert_params = mock_db.execute.call_args.args
+    assert "INSERT INTO meetings" in insert_query
+    assert insert_params["advisor_id"] == 1
+    assert insert_params["client_id"] == 7
+
+
+def test_continuing_session_requires_client_belonging_to_advisor(mock_db):
+    mock_db.fetchone.return_value = None
+
+    response = client.post(
+        "/meetings/continuing-session",
+        json={"client_id": 7, "meeting_date": "2026-12-01T10:00:00Z"},
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Client not found."
+    assert mock_db.execute.call_count == 2
+
+
+def test_continuing_session_rejects_unavailable_time_slot(mock_db):
+    mock_db.fetchone.side_effect = [
+        (7,),
+        None,
+        (11, 7, 1, "2026-12-01T10:00:00Z", "Scheduled"),
+        (7,),
+        (11,),
+    ]
+    mock_db.description = [
+        SimpleNamespace(name="id"),
+        SimpleNamespace(name="client_id"),
+        SimpleNamespace(name="advisor_id"),
+        SimpleNamespace(name="meeting_date"),
+        SimpleNamespace(name="completion_status"),
+    ]
+    request = {
+        "client_id": 7,
+        "meeting_date": "2026-12-01T10:00:00Z",
+    }
+
+    first_response = client.post("/meetings/continuing-session", json=request)
+    second_response = client.post("/meetings/continuing-session", json=request)
+
+    assert first_response.status_code == 201
+    assert second_response.status_code == 409
+    assert second_response.json()["detail"] == "Time slot is unavailable."
+    assert mock_db.execute.call_count == 7
+
+
+def test_continuing_session_requires_timezone(mock_db):
+    response = client.post(
+        "/meetings/continuing-session",
+        json={"client_id": 7, "meeting_date": "2026-12-01T10:00:00"},
+    )
+
+    assert response.status_code == 422
+    mock_db.execute.assert_not_called()
+
+
 def test_cannot_read_another_advisors_meetings(mock_db):
     response = client.get("/meetings/2")
 

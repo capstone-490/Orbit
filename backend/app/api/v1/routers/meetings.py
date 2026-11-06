@@ -1,5 +1,8 @@
 # Substantial AI assistance used; verified with backend tests and live auth smoke test.
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, field_validator
 
 from app.auth import get_current_advisor
 from app.dependencies.db import get_connection
@@ -9,6 +12,69 @@ router = APIRouter(
     tags=["Meetings"],
     dependencies=[Depends(get_current_advisor)],
 )
+
+
+class ContinuingSessionCreate(BaseModel):
+    client_id: int
+    meeting_date: datetime
+
+    @field_validator("meeting_date")
+    @classmethod
+    def require_timezone(cls, value: datetime) -> datetime:
+        if value.tzinfo is None or value.utcoffset() is None:
+            raise ValueError("meeting_date must include a timezone.")
+        return value
+
+
+@router.post("/continuing-session", status_code=201)
+def create_continuing_session(
+    booking: ContinuingSessionCreate,
+    advisor: dict[str, int] = Depends(get_current_advisor),
+):
+    meeting_date = booking.meeting_date.astimezone(timezone.utc)
+    lock_key = f"meeting:{advisor['id']}:{meeting_date.isoformat()}"
+
+    with get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT pg_advisory_xact_lock(hashtextextended(%(lock_key)s, 0))",
+            {"lock_key": lock_key},
+        )
+        cur.execute(
+            "SELECT id FROM clients WHERE id = %(client_id)s AND advisor_id = %(advisor_id)s",
+            {"client_id": booking.client_id, "advisor_id": advisor["id"]},
+        )
+        if cur.fetchone() is None:
+            raise HTTPException(status_code=404, detail="Client not found.")
+
+        cur.execute(
+            """
+                SELECT id FROM meetings
+                WHERE advisor_id = %(advisor_id)s
+                  AND meeting_date = %(meeting_date)s
+                  AND completion_status = 'Scheduled'
+                LIMIT 1
+                """,
+            {"advisor_id": advisor["id"], "meeting_date": meeting_date},
+        )
+        if cur.fetchone() is not None:
+            raise HTTPException(status_code=409, detail="Time slot is unavailable.")
+
+        cur.execute(
+            """
+                INSERT INTO meetings (advisor_id, client_id, meeting_date)
+                VALUES (%(advisor_id)s, %(client_id)s, %(meeting_date)s)
+                RETURNING id, client_id, advisor_id, meeting_date, completion_status
+                """,
+            {
+                "advisor_id": advisor["id"],
+                "client_id": booking.client_id,
+                "meeting_date": meeting_date,
+            },
+        )
+        columns = [column.name for column in cur.description]
+        row = cur.fetchone()
+
+    return dict(zip(columns, row))
 
 
 @router.get("/{advisor_id}")
