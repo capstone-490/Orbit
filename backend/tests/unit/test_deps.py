@@ -3,19 +3,11 @@ from unittest.mock import MagicMock, patch
 import pytest
 from sqlalchemy.orm import Session
 
-<<<<<<< HEAD
 from app.dependencies.deps import get_db
 
 
 class TestGetDb:
     @patch("app.dependencies.deps.SessionLocal")
-=======
-from app.db.deps import get_db
-
-
-class TestGetDb:
-    @patch("app.db.deps.SessionLocal")
->>>>>>> 87fe284 (add makefile to make testing locally easier, break up compose for prod and local deployment, partly dockerize frontend, prep move to new schema)
     def test_sets_empty_rls_context_without_header(self, mock_session_local):
         """Missing organization header defaults to no tenant."""
         db = MagicMock(spec=Session)
@@ -38,11 +30,7 @@ class TestGetDb:
 
         db.close.assert_called_once()
 
-<<<<<<< HEAD
     @patch("app.dependencies.deps.SessionLocal")
-=======
-    @patch("app.db.deps.SessionLocal")
->>>>>>> 87fe284 (add makefile to make testing locally easier, break up compose for prod and local deployment, partly dockerize frontend, prep move to new schema)
     def test_empty_organization_header_uses_default_context(self, mock_session_local):
         """An empty organization header behaves like a missing header."""
         db = MagicMock(spec=Session)
@@ -61,11 +49,7 @@ class TestGetDb:
 
         db.close.assert_called_once()
 
-<<<<<<< HEAD
     @patch("app.dependencies.deps.SessionLocal")
-=======
-    @patch("app.db.deps.SessionLocal")
->>>>>>> 87fe284 (add makefile to make testing locally easier, break up compose for prod and local deployment, partly dockerize frontend, prep move to new schema)
     def test_session_closed_when_consumer_raises(self, mock_session_local):
         """Session cleanup occurs when the consumer raises an exception."""
         db = MagicMock(spec=Session)
@@ -80,11 +64,7 @@ class TestGetDb:
 
         db.close.assert_called_once()
 
-<<<<<<< HEAD
     @patch("app.dependencies.deps.SessionLocal")
-=======
-    @patch("app.db.deps.SessionLocal")
->>>>>>> 87fe284 (add makefile to make testing locally easier, break up compose for prod and local deployment, partly dockerize frontend, prep move to new schema)
     def test_session_closed_when_rls_setup_fails(self, mock_session_local):
         """Session is closed even if setting RLS context fails."""
         db = MagicMock(spec=Session)
@@ -98,11 +78,7 @@ class TestGetDb:
 
         db.close.assert_called_once()
 
-<<<<<<< HEAD
     @patch("app.dependencies.deps.SessionLocal")
-=======
-    @patch("app.db.deps.SessionLocal")
->>>>>>> 87fe284 (add makefile to make testing locally easier, break up compose for prod and local deployment, partly dockerize frontend, prep move to new schema)
     def test_session_closed_exactly_once(self, mock_session_local):
         """Normal generator exhaustion must not close the session twice."""
         db = MagicMock(spec=Session)
