@@ -44,7 +44,6 @@ if os.getenv("METRICS_ENABLED", "1") == "1":
             media_type=CONTENT_TYPE_LATEST,
         )
 
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
