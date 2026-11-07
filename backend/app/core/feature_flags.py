@@ -41,10 +41,7 @@ def get_variant(flag_name: str, user_id: str) -> str:
                 return "B"
             return "A"
     except Exception:
-        logger.exception(
-            'Error fetching feature flag %s, returning "A" ',
-            flag_name,
-        )
+        logger.exception('Error fetching feature flag, returning "A"')
     return "A"
 
 
