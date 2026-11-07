@@ -14,6 +14,7 @@ from app.api.v1.routers.advisors import router as advisor_router
 from app.api.v1.routers.clients import router as clients_router
 from app.api.v1.routers.meetings import router as meetings_router
 from app.api.v1.routers.sessions import router as sessions_router
+from app.api.v1.routers.google_meet_integration import router as google_meet_integration_router
 from app.core.feature_flags import get_variant
 from app.core.security.anonymizer import TokenStore
 from app.logging_config import configure_logging, get_logger
@@ -62,6 +63,7 @@ app.include_router(clients_router)
 app.include_router(advisor_router)
 app.include_router(advisor_registration_router)
 app.include_router(meetings_router)
+app.include_router(google_meet_integration_router)
 
 
 if os.getenv("ENABLE_DEBUG_ROUTES", "").lower() in {"1", "true", "yes"}:
