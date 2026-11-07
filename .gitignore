@@ -233,3 +233,7 @@ coverage/
 #Google Meet Integration
 credentials.json
 token.json
+
+certs/
+certbot_www/
+backups/

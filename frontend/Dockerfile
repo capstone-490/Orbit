@@ -35,13 +35,18 @@ CMD ["pnpm", "dev", "--host", "0.0.0.0"]
 # -------------------------------------------------------------------
 FROM deps AS builder
 
+ARG VITE_API_URL=/api/v1
+ENV VITE_API_URL=${VITE_API_URL}
+
 COPY . .
 RUN pnpm build
 
-FROM nginx:1.27-alpine AS runtime
-COPY --from=builder /workspace/dist /usr/share/nginx/html
+FROM nginxinc/nginx-unprivileged:1.27-alpine AS runtime
+
+COPY --chown=nginx:nginx nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder --chown=nginx:nginx /workspace/dist /usr/share/nginx/html
 
 USER nginx
 
-EXPOSE 80
+EXPOSE 8080 8443
 CMD ["nginx", "-g", "daemon off;"]

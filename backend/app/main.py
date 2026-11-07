@@ -19,13 +19,17 @@ logger = get_logger("app")
 
 def create_application() -> FastAPI:
     """Application factory."""
+    is_prod = settings.ENVIRONMENT in ("staging", "production")
 
     application = FastAPI(
         title="Orbit API",
         description="Orbit backend API",
         version="1.0.0",
         lifespan=lifespan,
-        debug=settings.DEBUG,
+        debug=settings.DEBUG and not is_prod,
+        docs_url=None if is_prod else "/docs",
+        redoc_url=None if is_prod else "/redoc",
+        openapi_url=None if is_prod else "/openapi.json",
     )
 
     register_middleware(application)
@@ -37,10 +41,10 @@ def create_application() -> FastAPI:
 def register_middleware(application: FastAPI) -> None:
     """Register application middleware."""
 
-    application.add_middleware(RequestLoggingMiddleware)
-
     if settings.METRICS_ENABLED:
         application.add_middleware(MetricsMiddleware)
+
+    application.add_middleware(RequestLoggingMiddleware)
 
     application.add_middleware(
         CORSMiddleware,
