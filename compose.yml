@@ -1,5 +1,12 @@
 name: orbit
 
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "20m"
+    max-file: "5"
+    compress: "true"
+
 services:
   db:
     image: postgres:18.6-alpine3.24
@@ -19,13 +26,20 @@ services:
       retries: 5
     networks:
       - backend_net
+    logging: *default-logging
 
   migration:
     build:
       context: ./backend
       dockerfile: Dockerfile
       target: runtime
-    command: ["alembic", "-c", "/app/alembic.ini", "upgrade", "head"]
+    command:
+      - sh
+      - -c
+      - >-
+        alembic -c /app/alembic.ini upgrade head &&
+        python -m scripts.provision_db_credentials &&
+        python -m scripts.load_feature_flags
     env_file:
       - .env
     environment:
@@ -36,6 +50,7 @@ services:
     networks:
       - backend_net
     restart: "no"
+    logging: *default-logging
 
   backend:
     build:
@@ -46,16 +61,47 @@ services:
       - .env
     environment:
       DB_HOST: db
+      ENVIRONMENT: production
+      DEBUG: "false"
+      ENABLE_DEBUG_ROUTES: "false"
     depends_on:
       db:
         condition: service_healthy
       migration:
         condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     networks:
       - backend_net
     restart: unless-stopped
     init: true
     stop_grace_period: 30s
+    logging: *default-logging
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: runtime
+      args:
+        VITE_API_URL: /api/v1
+    ports:
+      - "80:8080"
+      - "443:8443"
+    volumes:
+      - ./certs:/etc/nginx/certs:ro
+      - ./certbot_www:/var/www/certbot:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - backend_net
+    restart: unless-stopped
+    logging: *default-logging
 
 networks:
   backend_net:

@@ -1,4 +1,5 @@
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 
 from pydantic import PostgresDsn, computed_field, model_validator
@@ -7,12 +8,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 INSECURE_DEFAULT_SECRET = "local-and-ci-test-only-secret-key"
 INSECURE_DEFAULT_ANONYMIZATION_SECRET = "Supercalifragilisticexpialidocious"
 
-from pathlib import Path
-
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=Path(__file__).resolve().parents[3] / ".env",
+        env_file=(".env", Path(__file__).resolve().parents[3] / ".env"),
         env_file_encoding="utf-8",
         case_sensitive=True,
         extra="ignore",
@@ -27,12 +26,15 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     METRICS_ENABLED: bool = True
     ENABLE_DEBUG_ROUTES: bool = False
+    COOKIE_SECURE: bool = (
+        False  # Keep False on HTTP IP deployments; set True with HTTPS
+    )
 
     SECRET_KEY: str = INSECURE_DEFAULT_SECRET
     ORBIT_AUTH_SECRET: str = ""
     ORBIT_ANONYMIZATION_SECRET: str = INSECURE_DEFAULT_ANONYMIZATION_SECRET
 
-    VITE_API_URL: str = "http://localhost:8001"
+    VITE_API_URL: str = "http://localhost:8001/api/v1"
 
     # Frontend
     FRONTEND_URL: str = "http://localhost:5173"
@@ -67,16 +69,18 @@ class Settings(BaseSettings):
     def enforce_production_secrets(self) -> Settings:
         if self.ENVIRONMENT in ("staging", "production") and (
             self.SECRET_KEY == INSECURE_DEFAULT_SECRET
+            or not self.ORBIT_AUTH_SECRET
             or self.ORBIT_ANONYMIZATION_SECRET == INSECURE_DEFAULT_ANONYMIZATION_SECRET
-            or self.VITE_API_URL == "http://localhost:8001"
+            or self.VITE_API_URL == "http://localhost:8001/api/v1"
         ):
-            raise ValueError("Environment variables must be set in staging/production")
-
-        if (
-            self.ENVIRONMENT in ("staging", "production")
-            and self.POSTGRES_PASSWORD == ""
+            raise ValueError(
+                "SECRET_KEY, ORBIT_AUTH_SECRET, ORBIT_ANONYMIZATION_SECRET, "
+                "and VITE_API_URL must be set in staging/production"
+            )
+        if self.ENVIRONMENT in ("staging", "production") and (
+            not self.POSTGRES_PASSWORD or not self.DB_PASSWORD
         ):
-            raise ValueError("POSTGRES_PASSWORD must be configured")
+            raise ValueError("POSTGRES_PASSWORD and DB_PASSWORD must be configured")
 
         return self
 
@@ -100,19 +104,13 @@ class Settings(BaseSettings):
     @computed_field  # type: ignore[prop-decorator]
     @property
     def sqlalchemy_database_uri(self) -> str:
-        return (
-            f"{self.DB_DRIVER}://"
-            f"{self.DB_USER}:{self.DB_PASSWORD}"
-            f"@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
-        )
+        return self._build_database_uri(self.DB_USER, self.DB_PASSWORD, self.DB_DRIVER)
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def admin_database_uri(self) -> str:
-        return (
-            f"{self.DB_DRIVER}://"
-            f"{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
-            f"@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+        return self._build_database_uri(
+            self.POSTGRES_USER, self.POSTGRES_PASSWORD, self.DB_DRIVER
         )
 
     @computed_field  # type: ignore[prop-decorator]

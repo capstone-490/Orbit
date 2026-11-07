@@ -188,6 +188,7 @@ def configure_logging(
 ) -> None:
     """Install the redacting JSON handlers on the root logger. Safe to call more than once."""
     level_no = _resolve_level(level if level is not None else os.getenv("LOG_LEVEL"))
+    # keep disabled in production
     log_file = log_file if log_file is not None else os.getenv("LOG_FILE")
     full_stack = full_stack if full_stack is not None else _env_flag("LOG_FULL_STACK")
 
