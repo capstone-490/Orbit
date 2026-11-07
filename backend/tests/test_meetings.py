@@ -41,7 +41,7 @@ def mock_db(monkeypatch):
 def test_list_meetings_empty(mock_db):
     mock_db.fetchall.return_value = []
 
-    response = client.get("/meetings/1")
+    response = client.get("/api/v1/meetings/1")
 
     assert response.status_code == 200
     assert response.json() == []
@@ -54,7 +54,7 @@ def test_list_meetings_empty(mock_db):
 
 
 def test_cannot_read_another_advisors_meetings(mock_db):
-    response = client.get("/meetings/2")
+    response = client.get("/api/v1/meetings/2")
 
     assert response.status_code == 403
     mock_db.execute.assert_not_called()
@@ -73,7 +73,7 @@ def test_list_meetings_with_data(mock_db):
         SimpleNamespace(name="completion_status"),
     ]
 
-    response = client.get("/meetings/1")
+    response = client.get("/api/v1/meetings/1")
 
     assert response.status_code == 200
     assert response.json() == [
@@ -112,7 +112,7 @@ def test_list_scheduled_meetings(mock_db):
         SimpleNamespace(name="completion_status"),
     ]
 
-    response = client.get("/meetings/scheduled/1")
+    response = client.get("/api/v1/meetings/scheduled/1")
 
     assert response.status_code == 200
     assert response.json() == [
@@ -144,7 +144,7 @@ def test_list_completed_meetings(mock_db):
         SimpleNamespace(name="completion_status"),
     ]
 
-    response = client.get("/meetings/completed/1")
+    response = client.get("/api/v1/meetings/completed/1")
 
     assert response.status_code == 200
     assert response.json() == [
@@ -177,7 +177,7 @@ def test_list_meetings_for_client(mock_db):
         SimpleNamespace(name="completion_status"),
     ]
 
-    response = client.get("/meetings/1/1")
+    response = client.get("/api/v1/meetings/1/1")
 
     assert response.status_code == 200
     assert response.json() == [

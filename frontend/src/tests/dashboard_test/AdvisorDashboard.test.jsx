@@ -81,9 +81,15 @@ describe('AdvisorDashboard', () => {
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledTimes(3)
-      expect(fetchMock).toHaveBeenCalledWith('http://localhost:8001/advisors/1/tasks')
-      expect(fetchMock).toHaveBeenCalledWith('http://localhost:8001/advisors/1/schedule')
-      expect(fetchMock).toHaveBeenCalledWith('http://localhost:8001/advisors/1/clients')
+      expect(fetchMock).toHaveBeenCalledWith('http://localhost:8001/api/v1/advisors/1/tasks', {
+        credentials: 'include',
+      })
+      expect(fetchMock).toHaveBeenCalledWith('http://localhost:8001/api/v1/advisors/1/schedule', {
+        credentials: 'include',
+      })
+      expect(fetchMock).toHaveBeenCalledWith('http://localhost:8001/api/v1/advisors/1/clients', {
+        credentials: 'include',
+      })
     })
   })
 

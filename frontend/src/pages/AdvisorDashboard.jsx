@@ -4,8 +4,9 @@ import DashboardSchedule from '../components/dashboard/DashboardSchedule'
 import DashboardSummary from '../components/dashboard/DashboardSummary'
 import DashboardTasks from '../components/dashboard/DashboardTasks'
 import { getAdvisorDashboard } from '../services/AdvisorDashboardApi'
+import { withAuthCredentials } from '../services/AuthApi'
 
-const API_BASE_URL = 'http://localhost:8001'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001/api/v1'
 
 function AdvisorDashboard() {
   const [dashboardData, setDashboardData] = useState(null)
@@ -21,29 +22,33 @@ function AdvisorDashboard() {
   useEffect(() => {
     let active = true
 
-    const fetchData = async () => {
+    const fetchAllDashboardData = async () => {
       try {
         if (active) setLoading(true)
 
         // Fetch tasks, schedule, and clients concurrently
-        const [tasksRes, scheduleRes, clientsRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/advisors/${advisorId}/tasks`),
-          fetch(`${API_BASE_URL}/advisors/${advisorId}/schedule`),
-          fetch(`${API_BASE_URL}/advisors/${advisorId}/clients`),
+        const [tasksRes, scheduleRes, clientsRes, summaryData] = await Promise.all([
+          fetch(`${API_BASE_URL}/advisors/${advisorId}/tasks`, withAuthCredentials()),
+          fetch(`${API_BASE_URL}/advisors/${advisorId}/schedule`, withAuthCredentials()),
+          fetch(`${API_BASE_URL}/advisors/${advisorId}/clients`, withAuthCredentials()),
+          getAdvisorDashboard(),
         ])
 
         if (!tasksRes.ok || !scheduleRes.ok || !clientsRes.ok) {
           throw new Error('Failed to fetch dashboard data')
         }
 
-        const tasksData = await tasksRes.json()
-        const scheduleData = await scheduleRes.json()
-        const clientsData = await clientsRes.json()
+        const [tasksData, scheduleData, clientsData] = await Promise.all([
+          tasksRes.json(),
+          scheduleRes.json(),
+          clientsRes.json(),
+        ])
 
         if (active) {
           setTasks(tasksData)
           setSchedule(scheduleData)
           setClients(clientsData)
+          setDashboardData(summaryData)
         }
       } catch (err) {
         if (active) setError(err.message)
@@ -52,12 +57,12 @@ function AdvisorDashboard() {
       }
     }
 
-    void fetchData()
+    void fetchAllDashboardData()
 
     return () => {
       active = false
     }
-  }, [])
+  }, [advisorId])
 
   const handleTaskUpdated = (updatedTask) => {
     setTasks((currentTasks) =>
@@ -65,22 +70,11 @@ function AdvisorDashboard() {
     )
   }
 
-  useEffect(() => {
-    const loadDashboard = async () => {
-      const data = await getAdvisorDashboard()
-      setDashboardData(data)
-    }
-
-    loadDashboard().catch((error) => {
-      console.error('Failed to load dashboard:', error)
-    })
-  }, [])
-
-  if (loading || !dashboardData) {
+  if (loading) {
     return <p>Please wait</p>
   }
 
-  if (error) {
+  if (error || !dashboardData) {
     return <p role="alert">Could not load dashboard data: {error}</p>
   }
 

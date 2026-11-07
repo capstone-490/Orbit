@@ -1,4 +1,7 @@
-from fastapi import APIRouter, HTTPException
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
+from fastapi import APIRouter, HTTPException, Query
 from psycopg import Error as PsycopgError
 
 from app.classes.task import TaskCreate, TaskResponse
@@ -11,12 +14,14 @@ from app.services.sla_cal import (
     get_timezone,
 )
 
-router = APIRouter()
+router = APIRouter(prefix="/tasks", tags=["Tasks"])
 
 
-@router.get("/api/v1/data/tasks", response_model=list[TaskResponse])
-def get_tasks(client_id: int, user_timezone: str = "UTC"):
-
+@router.get("", response_model=list[TaskResponse])
+def get_tasks(
+    client_id: int = Query(..., gt=0),
+    user_timezone: str = Query(default="UTC"),
+):
     try:
         timezone_zi = get_timezone(user_timezone)
 
@@ -31,31 +36,37 @@ def get_tasks(client_id: int, user_timezone: str = "UTC"):
                     status,
                     due_date,
                     last_contact_date
-                FROM tasks_advisor
+                FROM t_task_advisor
                 WHERE client_id = %s
                 ORDER BY due_date ASC
             """,
                 (client_id,),
             ).fetchall()
 
-        tasks = []
+        return [build_task_response(row, timezone_zi) for row in rows]
 
-        for row in rows:
-            task = build_task_response(row, timezone_zi)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=str(exc),
+        ) from exc
 
-            tasks.append(task)
-
-        return tasks
-
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-    except PsycopgError as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except PsycopgError as exc:
+        raise HTTPException(
+            status_code=500,
+            detail="Database operation failed",
+        ) from exc
 
 
-@router.post("/api/v1/data/tasks", response_model=TaskResponse, status_code=201)
-def create_task(task: TaskCreate, user_timezone: str = "UTC"):
+@router.post(
+    "",
+    response_model=TaskResponse,
+    status_code=201,
+)
+def create_task(
+    task: TaskCreate,
+    user_timezone: str = Query(default="UTC"),
+):
 
     try:
         # Validate timezone-aware datetimes
@@ -71,7 +82,7 @@ def create_task(task: TaskCreate, user_timezone: str = "UTC"):
         with get_connection() as conn:
             row = conn.execute(
                 """
-                INSERT INTO tasks_advisor (
+                INSERT INTO t_task_advisor (
                     title,
                     description,
                     client_id,
@@ -115,7 +126,11 @@ def create_task(task: TaskCreate, user_timezone: str = "UTC"):
         )
 
 
-def build_task_response(row, timezone_zi, now=None):
+def build_task_response(
+    row,
+    timezone_zi: ZoneInfo,
+    now: datetime | None = None,
+) -> TaskResponse:
 
     urgency = compute_urgency(status=row[4], due_date=row[5], tz=timezone_zi, now=now)
 
