@@ -18,7 +18,7 @@ import logging
 import time
 import uuid
 
-from app.logging_config import request_id_var
+from app.observability.logging_config import request_id_var
 
 logger = logging.getLogger("app.http")
 
