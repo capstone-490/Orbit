@@ -23,6 +23,7 @@ from app.observability.logging_config import request_id_var
 logger = logging.getLogger("app.http")
 
 REQUEST_ID_HEADER = "x-request-id"
+SILENT_PATHS = {"/metrics", "/health", "/api/v1/health"}
 
 
 def _valid_uuid(value: str | None) -> str | None:
@@ -98,22 +99,23 @@ class RequestLoggingMiddleware:
             # Not re-raised: re-raising makes Uvicorn print the raw traceback.
         finally:
             duration_ms = round((time.perf_counter() - start) * 1000, 2)
-            level = (
-                logging.ERROR
-                if status_code >= 500
-                else logging.WARNING
-                if status_code >= 400
-                else logging.INFO
-            )
-            logger.log(
-                level,
-                "Request completed",
-                extra={
-                    "method": scope["method"],
-                    "path": scope["path"],  # no query string on purpose
-                    "status_code": status_code,
-                    "response_failed": response_failed,
-                    "duration_ms": duration_ms,
-                },
-            )
+            if scope["path"] not in SILENT_PATHS or status_code >= 400:
+                level = (
+                    logging.ERROR
+                    if status_code >= 500
+                    else logging.WARNING
+                    if status_code >= 400
+                    else logging.INFO
+                )
+                logger.log(
+                    level,
+                    "Request completed",
+                    extra={
+                        "method": scope["method"],
+                        "path": scope["path"],
+                        "status_code": status_code,
+                        "response_failed": response_failed,
+                        "duration_ms": duration_ms,
+                    },
+                )
             request_id_var.reset(token)
