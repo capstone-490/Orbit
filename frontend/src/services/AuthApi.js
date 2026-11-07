@@ -1,5 +1,5 @@
 // Substantial AI assistance used; verified with frontend tests and production build.
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001/api/v1'
 
 export function withAuthCredentials(options = {}) {
   return { ...options, credentials: 'include' }

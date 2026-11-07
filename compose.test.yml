@@ -19,7 +19,7 @@ x-test-env: &test-env
   ENABLE_DEBUG_ROUTES: ${ENABLE_DEBUG_ROUTES:-false}
   METRICS_ENABLED: ${METRICS_ENABLED:-1}
 
-  VITE_API_URL: http://127.0.0.1:8001
+  VITE_API_URL: http://127.0.0.1:8001/api/v1
 
 x-backend-bind: &backend-bind
   type: bind
@@ -123,7 +123,7 @@ services:
       target: dev
     environment:
       CI: "true"
-      VITE_API_URL: http://localhost:8001
+      VITE_API_URL: http://localhost:8001/api/v1
     volumes:
       - type: bind
         source: ./frontend

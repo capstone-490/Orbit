@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import hashlib
 import hmac
-import os
 import threading
 from collections import OrderedDict
 from collections.abc import Callable
+
+from app.core.config import get_settings
 
 MIN_SECRET_LENGTH = 32
 
@@ -23,7 +24,7 @@ class TokenStore:
 
     @staticmethod
     def _load_secret() -> bytes:
-        secret = os.getenv("ORBIT_ANONYMIZATION_SECRET")
+        secret = get_settings().ORBIT_ANONYMIZATION_SECRET
 
         if secret is None or not secret.strip():
             raise RuntimeError(

@@ -104,5 +104,5 @@ def list_meetings_for_client(
 
 
 def _require_matching_advisor(advisor_id: int, advisor: dict[str, int]) -> None:
-    if advisor_id != advisor["id"]:
+    if int(advisor_id) != int(advisor["id"]):
         raise HTTPException(status_code=403, detail="Not authorized for this advisor.")

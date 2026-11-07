@@ -1,110 +1,74 @@
 #!/usr/bin/env python3
 # Below 50% AI-generated
-import os
-from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI, Header, Query, Request, Response
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
-from app.api.v1.routers.advisor_registration import (
-    router as advisor_registration_router,
-)
-from app.api.v1.routers.advisors import router as advisor_router
-from app.api.v1.routers.clients import router as clients_router
-from app.api.v1.routers.meetings import router as meetings_router
-from app.api.v1.routers.sessions import router as sessions_router
-from app.core.feature_flags import get_variant
-from app.core.security.anonymizer import TokenStore
-from app.logging_config import configure_logging, get_logger
-from app.metrics_middleware import MetricsMiddleware
+from app.api.router import api_router
+from app.core.config import settings
+from app.health.router import health_router
+from app.lifecycle.lifespan import lifespan
+from app.middleware.metrics import MetricsMiddleware
 from app.middleware.request_logging import RequestLoggingMiddleware
+from app.observability.logging_config import configure_logging, get_logger
+from app.observability.metrics import metrics_router
 
 configure_logging()
 logger = get_logger("app")
 
 
-@asynccontextmanager
-async def lifespan(_app: FastAPI):
-    TokenStore._load_secret()
-    yield
+def create_application() -> FastAPI:
+    """Application factory."""
+
+    application = FastAPI(
+        title="Orbit API",
+        description="Orbit backend API",
+        version="1.0.0",
+        lifespan=lifespan,
+        debug=settings.DEBUG,
+    )
+
+    register_middleware(application)
+    register_routers(application)
+
+    return application
 
 
-app = FastAPI(lifespan=lifespan)
+def register_middleware(application: FastAPI) -> None:
+    """Register application middleware."""
 
-app.add_middleware(RequestLoggingMiddleware)
+    application.add_middleware(RequestLoggingMiddleware)
 
-if os.getenv("METRICS_ENABLED", "1") == "1":
-    app.add_middleware(MetricsMiddleware)
+    if settings.METRICS_ENABLED:
+        application.add_middleware(MetricsMiddleware)
 
-    @app.get("/metrics", include_in_schema=False)
-    def metrics():
-        return Response(
-            generate_latest(),
-            media_type=CONTENT_TYPE_LATEST,
-        )
-
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ],
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PATCH"],
-    allow_headers=["Content-Type", "Authorization"],
-    expose_headers=["x-request-id"],
-)
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.CORS_ORIGINS,
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE"],
+        allow_headers=["Content-Type", "Authorization", "X-Request-ID"],
+        expose_headers=["X-Request-ID"],
+    )
 
 
-app.include_router(sessions_router)
-app.include_router(clients_router)
-app.include_router(advisor_router)
-app.include_router(advisor_registration_router)
-app.include_router(meetings_router)
+def register_routers(application: FastAPI) -> None:
+    application.include_router(api_router)
+    application.include_router(health_router)
+
+    if settings.METRICS_ENABLED:
+        application.include_router(metrics_router)
+
+    if settings.ENABLE_DEBUG_ROUTES:
+        if settings.ENVIRONMENT in ("staging", "production"):
+            raise RuntimeError(
+                "Debug routes cannot be enabled in staging or production"
+            )
+
+        from app.api.v1.routers.debug import router as debug_router
+
+        application.include_router(debug_router)
+        logger.warning("Debug routes enabled")
 
 
-if os.getenv("ENABLE_DEBUG_ROUTES", "").lower() in {"1", "true", "yes"}:
-    from app.api.v1.routers.debug import router as debug_router
-
-    app.include_router(debug_router)
-    logger.warning("Debug routes enabled; do not use in production")
-
-
-def get_user_id(user_id: str | None = Header(default=None)) -> str:
-    # Temporary: to be replaced with authenticated user when login is implemented.
-    return user_id or "unknown"
-
-
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
-
-
-@app.get("/health")
-def health():
-    return {"status": "ok"}
-
-
-# Temporary endpoint for testing A/B feature flags.
-@app.get("/ab-test")
-def ab_test(request: Request, user_id: str = Depends(get_user_id)):
-    variant = get_variant("demo-ab", user_id)
-    request.state.ab_variant = variant
-    return {"Variant": variant}
-
-
-@app.get("/flag")
-def read_flag(
-    request: Request,
-    name: str = Query(..., min_length=1, max_length=100),
-    user_id: str = Depends(get_user_id),
-):
-    variant = get_variant(name, user_id)
-    request.state.ab_variant = variant
-    return {
-        "name": name,
-        "variant": variant,
-        "use_new_feature": variant == "B",
-    }
+app = create_application()
