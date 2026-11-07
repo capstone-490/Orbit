@@ -25,7 +25,7 @@ def test_password_hashing():
     assert not verify_password("WrongPassword123!", hashed)
 
 
-@patch("app.api.v1.routers.advisor_registration.get_connection")
+@patch("app.api.v1.routers.advisor_registrations.get_connection")
 def test_successful_registration(mock_get_connection):
     cursor = MagicMock()
     cursor.fetchone.return_value = (
@@ -39,7 +39,7 @@ def test_successful_registration(mock_get_connection):
     connection.cursor.return_value.__enter__.return_value = cursor
     mock_get_connection.return_value = connection
 
-    response = client.post("/auth/register", json=VALID_ADVISOR)
+    response = client.post("/api/v1/auth/register", json=VALID_ADVISOR)
 
     assert response.status_code == 201
     assert response.json() == {
@@ -57,7 +57,7 @@ def test_successful_registration(mock_get_connection):
 
 def test_invalid_email():
     response = client.post(
-        "/auth/register",
+        "/api/v1/auth/register",
         json={**VALID_ADVISOR, "email": "not-an-email"},
     )
 
@@ -66,7 +66,7 @@ def test_invalid_email():
 
 def test_short_password():
     response = client.post(
-        "/auth/register",
+        "/api/v1/auth/register",
         json={**VALID_ADVISOR, "password": "short"},
     )
 
@@ -77,21 +77,21 @@ def test_missing_required_field():
     data = VALID_ADVISOR.copy()
     del data["username"]
 
-    response = client.post("/auth/register", json=data)
+    response = client.post("/api/v1/auth/register", json=data)
 
     assert response.status_code == 422
 
 
 def test_blank_username():
     response = client.post(
-        "/auth/register",
+        "/api/v1/auth/register",
         json={**VALID_ADVISOR, "username": "   "},
     )
 
     assert response.status_code == 422
 
 
-@patch("app.api.v1.routers.advisor_registration.get_connection")
+@patch("app.api.v1.routers.advisor_registrations.get_connection")
 def test_duplicate_email(mock_get_connection):
     cursor = MagicMock()
     cursor.execute.side_effect = UniqueViolation(
@@ -103,7 +103,7 @@ def test_duplicate_email(mock_get_connection):
     connection.cursor.return_value.__enter__.return_value = cursor
     mock_get_connection.return_value = connection
 
-    response = client.post("/auth/register", json=VALID_ADVISOR)
+    response = client.post("/api/v1/auth/register", json=VALID_ADVISOR)
 
     assert response.status_code == 409
     assert response.json()["detail"] == ("An account with this email already exists.")

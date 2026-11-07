@@ -1,9 +1,9 @@
 from fastapi.testclient import TestClient
 
-from app import main
 from app.main import app
 
 client = TestClient(app)
+from app.api.v1.routers import feature_flags
 
 
 def test_root_returns_hello():
@@ -27,22 +27,40 @@ def test_ab_test_uses_provided_user_id(monkeypatch):
         seen.update(name=name, user_id=user_id)
         return "B"
 
-    monkeypatch.setattr(main, "get_variant", fake_get_variant)
+    monkeypatch.setattr(
+        feature_flags,
+        "get_variant",
+        fake_get_variant,
+    )
 
-    response = client.get("/ab-test", headers={"User-ID": "advisor-7"})
+    response = client.get(
+        "/api/v1/feature-flags/ab-test", headers={"User-ID": "advisor-7"}
+    )
 
     assert response.status_code == 200
     assert response.json() == {"Variant": "B"}
     assert seen == {"name": "demo-ab", "user_id": "advisor-7"}
 
 
-def test_ab_test_defaults_missing_user_id(monkeypatch):
-    monkeypatch.setattr(main, "get_variant", lambda name, user_id: user_id)
+def test_ab_test_defaults_missing_user_id(client, monkeypatch):
+    seen = {}
 
-    response = client.get("/ab-test")
+    def fake_get_variant(name, user_id):
+        seen["user_id"] = user_id
+        return "A"
+
+    monkeypatch.setattr(
+        feature_flags,
+        "get_variant",
+        fake_get_variant,
+    )
+
+    response = client.get(
+        "/api/v1/feature-flags/ab-test",
+    )
 
     assert response.status_code == 200
-    assert response.json() == {"Variant": "unknown"}
+    assert seen["user_id"] == "unknown"
 
 
 def test_flag_returns_variant_and_boolean(monkeypatch):
@@ -52,9 +70,15 @@ def test_flag_returns_variant_and_boolean(monkeypatch):
         seen.update(name=name, user_id=user_id)
         return "B"
 
-    monkeypatch.setattr(main, "get_variant", fake_get_variant)
+    monkeypatch.setattr(
+        feature_flags,
+        "get_variant",
+        fake_get_variant,
+    )
 
-    response = client.get("/flag?name=demo", headers={"User-ID": "advisor-7"})
+    response = client.get(
+        "/api/v1/feature-flags/demo", headers={"User-ID": "advisor-7"}
+    )
 
     assert response.status_code == 200
     assert seen == {"name": "demo", "user_id": "advisor-7"}
@@ -66,7 +90,7 @@ def test_flag_returns_variant_and_boolean(monkeypatch):
 
 
 def test_flag_requires_nonempty_name():
-    response = client.get("/flag?name=")
+    response = client.get("/api/v1/feature-flags/")
 
     assert response.status_code == 422
 

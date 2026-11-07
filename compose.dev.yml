@@ -64,7 +64,7 @@ services:
           selinux: z
       - frontend_node_modules:/workspace/node_modules
     environment:
-      VITE_API_URL: ${VITE_API_URL:-http://localhost:8001}
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:8001/api/v1}
     networks:
       - backend_net
 

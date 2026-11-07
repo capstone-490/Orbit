@@ -9,8 +9,8 @@ from fastapi.responses import StreamingResponse
 from fastapi.testclient import TestClient
 
 from app.api.v1.routers.debug import router as debug_router
-from app.logging_config import RedactingJsonFormatter, configure_logging
 from app.middleware.request_logging import RequestLoggingMiddleware
+from app.observability.logging_config import RedactingJsonFormatter, configure_logging
 
 FAKE_EMAIL = "jane.doe@example.com"
 FAKE_SIN = "046-454-286"

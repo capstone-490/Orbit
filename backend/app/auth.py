@@ -3,11 +3,12 @@ import base64
 import hashlib
 import hmac
 import json
-import os
 import secrets
 import time
 
 from fastapi import Cookie, Header, HTTPException
+
+from app.core.config import settings
 
 PASSWORD_HASH_ITERATIONS = 600_000
 TOKEN_LIFETIME_SECONDS = 60 * 60
@@ -93,7 +94,8 @@ def get_current_advisor(
 
 
 def _secret() -> bytes:
-    secret = os.environ.get("ORBIT_AUTH_SECRET", "").encode()
+    secret = settings.ORBIT_AUTH_SECRET.encode()
+
     if len(secret) < 32:
         raise RuntimeError("ORBIT_AUTH_SECRET must contain at least 32 bytes")
     return secret

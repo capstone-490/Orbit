@@ -74,7 +74,7 @@ describe('registerAdvisor', () => {
 
     await expect(registerAdvisor(advisor)).resolves.toEqual(responseData)
 
-    expect(fetchMock).toHaveBeenCalledWith('http://localhost:8001/auth/register', {
+    expect(fetchMock).toHaveBeenCalledWith('http://localhost:8001/api/v1/auth/register', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -137,7 +137,7 @@ describe('logoutAdvisor', () => {
 
     await logoutAdvisor()
 
-    expect(fetchMock).toHaveBeenCalledWith('http://localhost:8001/auth/logout', {
+    expect(fetchMock).toHaveBeenCalledWith('http://localhost:8001/api/v1/auth/logout', {
       credentials: 'include',
       method: 'POST',
     })
