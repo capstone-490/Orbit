@@ -40,6 +40,8 @@ class MetricsMiddleware:
     async def __call__(self, scope, receive, send):
         if scope["type"] != "http" or scope["path"] in (
             "/metrics",
+            # "/health",
+            # "/api/v1/health",
             "/docs",
             "/openapi.json",
             "/redoc",
