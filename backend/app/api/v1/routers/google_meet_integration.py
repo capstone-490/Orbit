@@ -1,84 +1,183 @@
-from __future__ import print_function
+# Below 50% AI-generated
+import os
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Cookie, Depends, HTTPException
 from fastapi.responses import RedirectResponse
-from main import app
-
-import os.path
-
-from google.auth.transport.requests import Request
+from google.api_core.exceptions import GoogleAPICallError
+from google.apps import meet_v2
+from google.auth.exceptions import RefreshError
+from google.auth.transport.requests import Request as GoogleRequest
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
-from google.apps import meet_v2
 
+from app.auth import get_current_advisor
+from app.core.config import settings
+from app.dependencies.db import get_connection
+from app.logging_config import get_logger
 
-# If modifying these scopes, delete the file token.json.
-SCOPES = ['https://www.googleapis.com/auth/meetings.space.created']
+logger = get_logger("google_meet_integration")
 
+# If modifying these scopes, every advisor must reconnect their Google account.
+SCOPES = ["https://www.googleapis.com/auth/meetings.space.created"]
+
+OAUTH_STATE_COOKIE = "google_oauth_state"
+OAUTH_STATE_MAX_AGE = 600
 
 router = APIRouter(
     prefix="/google-meet-integration",
     tags=["Google Meet Integration"],
+    dependencies=[Depends(get_current_advisor)],
 )
 
 
 @router.get("/authorize")
 def authorize():
-  flow = Flow.from_client_secrets_file(
-      'credentials.json', scopes=SCOPES)
+    flow = _build_flow()
 
-  # The URI created here must exactly match one of the authorized redirect URIs
-  # for the OAuth 2.0 client, which you configured in the API Console. If this
-  # value doesn't match an authorized URI, you will get a 'redirect_uri_mismatch'
-  # error.
-  flow.redirect_uri = app.url_path_for('oauth2callback')
+    authorization_url, state = flow.authorization_url(
+        # Offline access returns a refresh token so we can create meetings later
+        # without re-prompting; prompt=consent guarantees one on reconnect too.
+        access_type="offline",
+        prompt="consent",
+    )
 
-  authorization_url, state = flow.authorization_url(
-      # Enable offline access so that you can refresh an access token without
-      # re-prompting the user for permission. Recommended for web server apps.
-      access_type='offline')
-
-  return RedirectResponse(authorization_url)
+    response = RedirectResponse(authorization_url)
+    # The callback needs the state (CSRF check) and the PKCE code verifier
+    # generated for this flow.
+    response.set_cookie(
+        key=OAUTH_STATE_COOKIE,
+        value=f"{state}:{flow.code_verifier}",
+        max_age=OAUTH_STATE_MAX_AGE,
+        httponly=True,
+        secure=os.environ.get("ORBIT_COOKIE_SECURE", "false").lower() == "true",
+        samesite="lax",
+        path=router.prefix,
+    )
+    return response
 
 
 @router.get("/oauth2callback")
-def oauth2callback(request: Request):
-    # TODO: Implement OAuth 2.0 callback handling
-    pass
+def oauth2callback(
+    code: str | None = None,
+    state: str | None = None,
+    error: str | None = None,
+    oauth_state: str = Cookie(default="", alias=OAUTH_STATE_COOKIE),
+    advisor: dict[str, int] = Depends(get_current_advisor),
+):
+    stored_state, _, code_verifier = oauth_state.partition(":")
+
+    if error == "access_denied":
+        # The advisor cancelled on the consent screen
+        raise HTTPException(status_code=403, detail="Google authorization denied.")
+    if error:
+        raise HTTPException(status_code=400, detail="Google authorization failed.")
+    if not code or not state or not stored_state or state != stored_state:
+        raise HTTPException(status_code=400, detail="Invalid OAuth state.")
+
+    flow = _build_flow(state=state, code_verifier=code_verifier)
+    try:
+        flow.fetch_token(code=code)
+    except Exception:
+        # Usually an expired or already-used authorization code
+        logger.exception("Google OAuth token exchange failed")
+        raise HTTPException(
+            status_code=400, detail="Google authorization failed."
+        ) from None
+
+    _save_credentials(advisor["id"], flow.credentials)
+
+    # Redirect so the one-time code leaves the address bar and a refresh
+    # doesn't try to exchange it again.
+    response = RedirectResponse(router.url_path_for("authorized"), status_code=303)
+    response.delete_cookie(OAUTH_STATE_COOKIE, path=router.prefix)
+    return response
 
 
-def main():
-    """Shows basic usage of the Google Meet API.
-    """
-    creds = None
-    # The file token.json stores the user's access and refresh tokens, and is
-    # created automatically when the authorization flow completes for the first
-    # time.
-    if os.path.exists('token.json'):
-        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
-    # If there are no (valid) credentials available, let the user log in.
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = Flow.from_client_secrets_file(
-                'credentials.json', SCOPES)
-            #creds = flow.run_local_server(port=0)
-            print(flow.authorization_url(prompt='consent'))
-            #creds = flow.credentials
-        # Save the credentials for the next run
-        with open('token.json', 'w') as token:
-            token.write(creds.to_json())
+@router.get("/authorized")
+def authorized():
+    return {"message": "Google authorization has been given."}
+
+
+@router.get("/status")
+def connection_status(advisor: dict[str, int] = Depends(get_current_advisor)):
+    return {"connected": _load_credentials(advisor["id"]) is not None}
+
+
+@router.post("/spaces", status_code=201)
+def create_space(advisor: dict[str, int] = Depends(get_current_advisor)):
+    creds = _load_credentials(advisor["id"])
+    if creds is None:
+        raise HTTPException(status_code=409, detail="Google account not connected.")
+
+    if not creds.valid:
+        try:
+            creds.refresh(GoogleRequest())
+        except RefreshError:
+            # Refresh token was revoked or expired; the advisor must reconnect.
+            raise HTTPException(
+                status_code=409, detail="Google account must be reconnected."
+            ) from None
+        _save_credentials(advisor["id"], creds)
 
     try:
         client = meet_v2.SpacesServiceClient(credentials=creds)
-        request = meet_v2.CreateSpaceRequest()
-        response = client.create_space(request=request)
-        print(f'Space created: {response.meeting_uri}')
-    except Exception as error:
-        # TODO(developer) - Handle errors from Meet API.
-        print(f'An error occurred: {error}')
+        space = client.create_space(request=meet_v2.CreateSpaceRequest())
+    except GoogleAPICallError:
+        logger.exception("Google Meet space creation failed")
+        raise HTTPException(
+            status_code=502, detail="Could not create Google Meet space."
+        ) from None
+
+    return {
+        "name": space.name,
+        "meeting_uri": space.meeting_uri,
+        "meeting_code": space.meeting_code,
+    }
 
 
-if __name__ == '__main__':
-    main()
+def _build_flow(state: str | None = None, code_verifier: str | None = None) -> Flow:
+    try:
+        flow = Flow.from_client_secrets_file(
+            settings.GOOGLE_CLIENT_SECRETS_FILE,
+            scopes=SCOPES,
+            state=state,
+            code_verifier=code_verifier or None,
+            autogenerate_code_verifier=code_verifier is None,
+        )
+    except FileNotFoundError:
+        raise HTTPException(
+            status_code=503, detail="Google integration is not configured."
+        ) from None
+
+    # Google redirects back to this backend's oauth2callback route. It must
+    # exactly match an authorized redirect URI on the OAuth client in the Google
+    # Cloud Console, and Google requires an absolute URI, hence the backend host.
+    flow.redirect_uri = f"{settings.BACKEND_URL}{router.url_path_for('oauth2callback')}"
+    return flow
+
+
+def _load_credentials(advisor_id: int) -> Credentials | None:
+    with get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT credentials FROM google_oauth_credentials WHERE advisor_id = %s",
+            (advisor_id,),
+        )
+        row = cur.fetchone()
+
+    if row is None:
+        return None
+    return Credentials.from_authorized_user_info(row[0], SCOPES)
+
+
+def _save_credentials(advisor_id: int, creds: Credentials) -> None:
+    with get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+                INSERT INTO google_oauth_credentials (advisor_id, credentials)
+                VALUES (%s, %s::jsonb)
+                ON CONFLICT (advisor_id) DO UPDATE
+                SET credentials = EXCLUDED.credentials, updated_at = NOW()
+                """,
+            (advisor_id, creds.to_json()),
+        )
+        conn.commit()
