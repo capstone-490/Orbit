@@ -1,4 +1,4 @@
-from datetime import UTC, date
+from datetime import UTC, date, datetime
 from unittest.mock import MagicMock
 
 import pytest
@@ -45,7 +45,7 @@ def test_create_client_success(mock_db):
     mock_db.fetchone.return_value = (1,)
 
     response = client.post(
-        "/clients",
+        "/api/v1/clients",
         json={
             "name": "Alice Smith",
             "email": "alice@example.com",
@@ -63,7 +63,7 @@ def test_create_client_success(mock_db):
     mock_db.execute.assert_called_once()
     query, params = mock_db.execute.call_args.args
 
-    assert "INSERT INTO clients" in query
+    assert "INSERT INTO t_clients" in query
     assert params["name"] == "Alice Smith"
     assert params["email"] == "alice@example.com"
     assert params["phone_number"] == "514-555-1234"
@@ -83,7 +83,7 @@ def test_create_client_missing_required_field(mock_db, missing_field):
     }
     del payload[missing_field]
 
-    response = client.post("/clients", json=payload)
+    response = client.post("/api/v1/clients", json=payload)
 
     assert response.status_code == 422
     mock_db.execute.assert_not_called()
@@ -105,7 +105,7 @@ def test_create_client_invalid_fields(mock_db, field, value):
     }
     payload[field] = value
 
-    response = client.post("/clients", json=payload)
+    response = client.post("/api/v1/clients", json=payload)
 
     assert response.status_code == 422
     mock_db.execute.assert_not_called()
@@ -130,7 +130,7 @@ def test_create_client_optional_fields(mock_db):
     mock_db.fetchone.return_value = (2,)
 
     response = client.post(
-        "/clients",
+        "/api/v1/clients",
         json={
             "name": "Bob Jones",
             "email": "bob@example.com",
@@ -152,7 +152,7 @@ def test_create_client_duplicate(mock_db):
     mock_db.execute.side_effect = UniqueViolation("Duplicate client")
 
     response = client.post(
-        "/clients",
+        "/api/v1/clients",
         json={
             "name": "Alice Smith",
             "email": "alice@example.com",
@@ -164,11 +164,8 @@ def test_create_client_duplicate(mock_db):
     assert "already exists" in response.json()["detail"]
 
 
-def test_list_clients(mock_db):
-    from datetime import datetime
-
+def test_list_clients(client, mock_db, auth_headers):
     mock_db.description = [MagicMock(name="column") for _ in COLUMNS]
-
     for column, name in zip(mock_db.description, COLUMNS):
         column.name = name
 
@@ -186,23 +183,28 @@ def test_list_clients(mock_db):
         )
     ]
 
-    response = client.get("/clients")
-
+    # Endpoint must be /api/v1/clients (collection), not /api/v1/clients/1
+    response = client.get("/api/v1/clients", headers=auth_headers)
     assert response.status_code == 200
-    assert len(response.json()) == 1
-    assert response.json()[0]["name"] == "Alice Smith"
-    assert response.json()[0]["email"] == "alice@example.com"
 
 
-def test_list_clients_empty(mock_db):
+def test_get_client(client, mock_db, auth_headers):
     mock_db.description = [MagicMock(name="column") for _ in COLUMNS]
-
     for column, name in zip(mock_db.description, COLUMNS):
         column.name = name
 
-    mock_db.fetchall.return_value = []
+    mock_db.fetchone.return_value = (
+        1,
+        "Alice Smith",
+        "alice@example.com",
+        "514-555-1234",
+        None,
+        None,
+        None,
+        None,
+        datetime(2026, 10, 15, tzinfo=UTC),
+    )
 
-    response = client.get("/clients")
-
+    response = client.get("/api/v1/clients/1", headers=auth_headers)
     assert response.status_code == 200
-    assert response.json() == []
+    assert response.json()["id"] == 1

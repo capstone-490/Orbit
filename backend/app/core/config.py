@@ -19,10 +19,20 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    CORS_ORIGINS: list[str] = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
+
     ENVIRONMENT: Literal["local", "dev", "test", "staging", "production"] = "local"
     DEBUG: bool = False
+    METRICS_ENABLED: bool = True
+    ENABLE_DEBUG_ROUTES: bool = False
+
     SECRET_KEY: str = INSECURE_DEFAULT_SECRET
+    ORBIT_AUTH_SECRET: str = ""
     ORBIT_ANONYMIZATION_SECRET: str = INSECURE_DEFAULT_ANONYMIZATION_SECRET
+
     VITE_API_URL: str = "http://localhost:8001"
 
     # Public URL of this FastAPI backend, used to build absolute URLs to its routes
