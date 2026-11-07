@@ -35,6 +35,17 @@ app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(RequestLoggingMiddleware)
 
+if os.getenv("METRICS_ENABLED", "1") == "1":
+    app.add_middleware(MetricsMiddleware)
+
+    @app.get("/metrics", include_in_schema=False)
+    def metrics():
+        return Response(
+            generate_latest(),
+            media_type=CONTENT_TYPE_LATEST,
+        )
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -46,16 +57,6 @@ app.add_middleware(
     allow_headers=["Content-Type", "Authorization"],
     expose_headers=["x-request-id"],
 )
-
-if os.getenv("METRICS_ENABLED", "1") == "1":
-    app.add_middleware(MetricsMiddleware)
-
-    @app.get("/metrics", include_in_schema=False)
-    def metrics():
-        return Response(
-            generate_latest(),
-            media_type=CONTENT_TYPE_LATEST,
-        )
 
 
 app.include_router(sessions_router)
