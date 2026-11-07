@@ -23,6 +23,12 @@ class Settings(BaseSettings):
     ORBIT_ANONYMIZATION_SECRET: str = INSECURE_DEFAULT_ANONYMIZATION_SECRET
     VITE_API_URL: str = "http://localhost:8001"
 
+    # Public URL of this FastAPI backend, used to build absolute URLs to its routes
+    BACKEND_URL: str = "http://localhost:8001"
+
+    # OAuth client downloaded from Google Cloud Console (never commit this file)
+    GOOGLE_CLIENT_SECRETS_FILE: str = "credentials.json"
+
     DB_HOST: str = "127.0.0.1"
     DB_PORT: int = 5432
     DB_USER: str
