@@ -42,10 +42,10 @@ def create_application() -> FastAPI:
 def register_middleware(application: FastAPI) -> None:
     """Register application middleware."""
 
+    application.add_middleware(RequestLoggingMiddleware)
+
     if settings.METRICS_ENABLED:
         application.add_middleware(MetricsMiddleware)
-
-    application.add_middleware(RequestLoggingMiddleware)
 
     application.add_middleware(
         CORSMiddleware,
