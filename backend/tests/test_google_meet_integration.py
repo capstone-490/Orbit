@@ -287,6 +287,7 @@ EVENT = {
     "end": {"dateTime": "2026-11-10T14:45:00-05:00"},
     "hangoutLink": "https://meet.google.com/abc-defg-hij",
     "htmlLink": "https://www.google.com/calendar/event?eid=evt123",
+    "conferenceData": {"conferenceId": "abc-defg-hij"},
 }
 
 
@@ -348,6 +349,7 @@ def test_create_meeting_schedules_calendar_event_with_meet(
         "start": "2026-11-10T14:00:00-05:00",
         "end": "2026-11-10T14:45:00-05:00",
         "meeting_uri": "https://meet.google.com/abc-defg-hij",
+        "meeting_code": "abc-defg-hij",
         "calendar_link": "https://www.google.com/calendar/event?eid=evt123",
     }
 
@@ -355,7 +357,9 @@ def test_create_meeting_schedules_calendar_event_with_meet(
     kwargs = mock_calendar.events.return_value.insert.call_args.kwargs
     assert kwargs["calendarId"] == "cal-1"
     assert kwargs["conferenceDataVersion"] == 1
+    assert kwargs["sendUpdates"] == "all"
     body = kwargs["body"]
+    assert "attendees" not in body
     assert body["summary"] == "Portfolio review"
     assert body["start"] == {"dateTime": "2026-11-10T14:00:00-05:00"}
     assert body["end"] == {"dateTime": "2026-11-10T14:45:00-05:00"}
@@ -378,9 +382,12 @@ def test_create_meeting_saves_orbit_meeting(mock_db, stored_creds, mock_calendar
     assert client_params == (7, 1)
 
     [(_, params)] = _insert_calls(mock_db)
-    advisor_id, client_id, meeting_date = params
+    advisor_id, client_id, meeting_date, meeting_uri, meeting_code = params
     assert (advisor_id, client_id) == (1, 7)
     assert meeting_date.isoformat() == "2026-11-10T14:00:00-05:00"
+    # The Meet link and code from Google are stored with the meeting
+    assert meeting_uri == "https://meet.google.com/abc-defg-hij"
+    assert meeting_code == "abc-defg-hij"
     mock_db.connection.commit.assert_called_once()
 
 
@@ -506,3 +513,161 @@ def test_create_meeting_calendar_api_error_returns_502(
     assert response.status_code == 502
     # No Orbit meeting is recorded when Google didn't create one
     assert _insert_calls(mock_db) == []
+
+
+# Public booking route; no Orbit login
+public_client = TestClient(app)
+
+BOOKING = {
+    "email": "jane@example.com",
+    "name": "Jane Doe",
+    "phone_number": "555-0100",
+    "start": "2030-01-15T14:00:00-05:00",
+}
+
+
+def test_book_meeting_for_existing_client(mock_db, stored_creds, mock_calendar):
+    # Credentials, existing client of advisor 1, then _schedule_calendar_event's
+    # client check, Orbit calendar and inserted meeting id
+    mock_db.fetchone.side_effect = [
+        CREDS_ROW,
+        (7, 1),
+        CLIENT_ROW,
+        ("cal-1",),
+        MEETING_ROW,
+    ]
+
+    response = public_client.post(f"{PREFIX}/book/1", json=BOOKING)
+
+    assert response.status_code == 201
+    assert response.json() == {
+        "meeting_id": 42,
+        "title": "Portfolio review",
+        "start": "2026-11-10T14:00:00-05:00",
+        "end": "2026-11-10T14:45:00-05:00",
+        "meeting_uri": "https://meet.google.com/abc-defg-hij",
+        "meeting_code": "abc-defg-hij",
+    }
+
+    kwargs = mock_calendar.events.return_value.insert.call_args.kwargs
+    assert kwargs["calendarId"] == "cal-1"
+    assert kwargs["sendUpdates"] == "all"
+    body = kwargs["body"]
+    # The user is invited at the email they entered
+    assert body["attendees"] == [
+        {"email": "jane@example.com", "displayName": "Jane Doe"}
+    ]
+    assert body["summary"] == "Meeting"
+    assert body["start"] == {"dateTime": "2030-01-15T14:00:00-05:00"}
+    assert body["end"] == {"dateTime": "2030-01-15T15:00:00-05:00"}
+
+    assert _executed(mock_db, "INSERT INTO clients") == []
+    [(_, params)] = _insert_calls(mock_db)
+    assert params[:2] == (1, 7)
+    assert params[3:] == ("https://meet.google.com/abc-defg-hij", "abc-defg-hij")
+
+
+def test_book_meeting_creates_new_client(mock_db, stored_creds, mock_calendar):
+    mock_db.fetchone.side_effect = [
+        CREDS_ROW,
+        None,  # no client with this email
+        (8,),  # new client id
+        CLIENT_ROW,
+        ("cal-1",),
+        MEETING_ROW,
+    ]
+
+    response = public_client.post(f"{PREFIX}/book/1", json=BOOKING)
+
+    assert response.status_code == 201
+    [(_, client_params)] = _executed(mock_db, "INSERT INTO clients")
+    assert client_params == ("Jane Doe", "jane@example.com", "555-0100", 1)
+    [(_, meeting_params)] = _insert_calls(mock_db)
+    assert meeting_params[:2] == (1, 8)
+
+
+def test_book_meeting_uses_title_and_duration(mock_db, stored_creds, mock_calendar):
+    mock_db.fetchone.side_effect = [
+        CREDS_ROW,
+        (7, 1),
+        CLIENT_ROW,
+        ("cal-1",),
+        MEETING_ROW,
+    ]
+
+    response = public_client.post(
+        f"{PREFIX}/book/1",
+        json={**BOOKING, "title": "Retirement planning", "duration_minutes": 30},
+    )
+
+    assert response.status_code == 201
+    body = mock_calendar.events.return_value.insert.call_args.kwargs["body"]
+    assert body["summary"] == "Retirement planning"
+    assert body["end"] == {"dateTime": "2030-01-15T14:30:00-05:00"}
+
+
+def test_book_meeting_in_the_past_returns_422(mock_db, mock_calendar):
+    response = public_client.post(
+        f"{PREFIX}/book/1", json={**BOOKING, "start": "2020-01-15T14:00:00-05:00"}
+    )
+
+    assert response.status_code == 422
+    mock_db.execute.assert_not_called()
+    mock_calendar.events.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"email": "not-an-email"},
+        {"name": ""},
+        {"phone_number": ""},
+        {"phone_number": "5" * 33},
+        {"start": "2030-01-15T14:00:00"},  # no UTC offset
+        {"duration_minutes": 0},
+        {"title": ""},
+    ],
+)
+def test_book_meeting_rejects_invalid_payload(mock_db, mock_calendar, changes):
+    response = public_client.post(f"{PREFIX}/book/1", json={**BOOKING, **changes})
+
+    assert response.status_code == 422
+    mock_db.execute.assert_not_called()
+
+
+def test_book_meeting_with_unconnected_advisor_returns_404(mock_db, mock_calendar):
+    mock_db.fetchone.return_value = None
+
+    response = public_client.post(f"{PREFIX}/book/99", json=BOOKING)
+
+    assert response.status_code == 404
+    mock_calendar.events.assert_not_called()
+
+
+def test_book_meeting_with_another_advisors_client_returns_409(
+    mock_db, stored_creds, mock_calendar
+):
+    mock_db.fetchone.side_effect = [CREDS_ROW, (7, 2)]
+
+    response = public_client.post(f"{PREFIX}/book/1", json=BOOKING)
+
+    assert response.status_code == 409
+    mock_calendar.events.assert_not_called()
+    assert _insert_calls(mock_db) == []
+
+
+def test_book_meeting_with_taken_phone_number_returns_409(
+    mock_db, stored_creds, mock_calendar
+):
+    mock_db.fetchone.side_effect = [CREDS_ROW, None]
+
+    def execute(query, params=None):
+        if "INSERT INTO clients" in query:
+            raise gmi.UniqueViolation()
+
+    mock_db.execute.side_effect = execute
+
+    response = public_client.post(f"{PREFIX}/book/1", json=BOOKING)
+
+    assert response.status_code == 409
+    mock_calendar.events.assert_not_called()

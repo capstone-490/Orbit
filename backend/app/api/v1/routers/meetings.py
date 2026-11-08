@@ -116,6 +116,8 @@ def list_meetings(
                 m.meeting_date,
                 m.duration_minutes,
                 m.completion_status,
+                m.meeting_uri,
+                m.meeting_code,
                 c.name AS client_name
             FROM meetings m
             JOIN clients c ON c.id = m.client_id
@@ -140,7 +142,8 @@ def list_scheduled_meetings(
     with get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             """
-                SELECT id, client_id, advisor_id, meeting_date, completion_status
+                SELECT id, client_id, advisor_id, meeting_date, completion_status,
+                       meeting_uri, meeting_code
                 FROM meetings
                 WHERE advisor_id = %(advisor_id)s AND completion_status = 'Scheduled'
                 ORDER BY meeting_date DESC, id DESC
@@ -163,7 +166,8 @@ def list_completed_meetings(
     with get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             """
-                SELECT id, client_id, advisor_id, meeting_date, completion_status
+                SELECT id, client_id, advisor_id, meeting_date, completion_status,
+                       meeting_uri, meeting_code
                 FROM meetings
                 WHERE advisor_id = %(advisor_id)s AND completion_status = 'Completed'
                 ORDER BY meeting_date DESC, id DESC
@@ -187,7 +191,8 @@ def list_meetings_for_client(
     with get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             """
-                SELECT id, client_id, advisor_id, meeting_date, completion_status
+                SELECT id, client_id, advisor_id, meeting_date, completion_status,
+                       meeting_uri, meeting_code
                 FROM meetings
                 WHERE advisor_id = %(advisor_id)s AND client_id = %(client_id)s
                 ORDER BY meeting_date DESC, id DESC
