@@ -1,11 +1,13 @@
 # Substantial AI assistance used; verified with backend tests and live auth smoke test.
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, field_validator
 
 from app.auth import get_current_advisor
 from app.dependencies.db import get_connection
+
+CONTINUING_SESSION_DURATION = timedelta(hours=1)
 
 router = APIRouter(
     prefix="/meetings",
@@ -21,7 +23,7 @@ class ContinuingSessionCreate(BaseModel):
     @field_validator("meeting_date")
     @classmethod
     def require_timezone(cls, value: datetime) -> datetime:
-        if value.tzinfo is None or value.utcoffset() is None:
+        if value.tzinfo is None:
             raise ValueError("meeting_date must include a timezone.")
         return value
 
@@ -32,7 +34,8 @@ def create_continuing_session(
     advisor: dict[str, int] = Depends(get_current_advisor),
 ):
     meeting_date = booking.meeting_date.astimezone(UTC)
-    lock_key = f"meeting:{advisor['id']}:{meeting_date.isoformat()}"
+    meeting_end = meeting_date + CONTINUING_SESSION_DURATION
+    lock_key = f"meeting-advisor:{advisor['id']}"
 
     with get_connection() as conn, conn.cursor() as cur:
         cur.execute(
@@ -50,11 +53,17 @@ def create_continuing_session(
             """
                 SELECT id FROM meetings
                 WHERE advisor_id = %(advisor_id)s
-                  AND meeting_date = %(meeting_date)s
                   AND completion_status = 'Scheduled'
+                  AND meeting_date < %(meeting_end)s
+                  AND meeting_date + %(duration)s > %(meeting_date)s
                 LIMIT 1
                 """,
-            {"advisor_id": advisor["id"], "meeting_date": meeting_date},
+            {
+                "advisor_id": advisor["id"],
+                "meeting_date": meeting_date,
+                "meeting_end": meeting_end,
+                "duration": CONTINUING_SESSION_DURATION,
+            },
         )
         if cur.fetchone() is not None:
             raise HTTPException(status_code=409, detail="Time slot is unavailable.")
