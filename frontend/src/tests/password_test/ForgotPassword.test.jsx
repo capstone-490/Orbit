@@ -2,10 +2,10 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { requestPasswordReset } from '../services/AuthApi'
-import ForgotPassword from './ForgotPassword'
+import ForgotPassword from '../../pages/ForgotPassword'
+import { requestPasswordReset } from '../../services/AuthApi.passwordReset'
 
-vi.mock('../services/AuthApi', () => ({
+vi.mock('../../services/AuthApi.passwordReset', () => ({
   requestPasswordReset: vi.fn(),
 }))
 

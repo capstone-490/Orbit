@@ -1,7 +1,7 @@
 import hashlib
 import os
 import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr, Field
@@ -59,7 +59,7 @@ def forgot_password(payload: ForgotPasswordRequest):
             )
 
             token = secrets.token_urlsafe(32)
-            expires_at = datetime.now(timezone.utc) + timedelta(
+            expires_at = datetime.now(UTC) + timedelta(
                 minutes=RESET_TOKEN_TTL_MINUTES
             )
 

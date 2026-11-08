@@ -35,9 +35,7 @@ export async function validateResetToken(token) {
   )
 
   if (!response.ok) {
-    throw new Error(
-      await readErrorMessage(response, 'This reset link is invalid or has expired.'),
-    )
+    throw new Error(await readErrorMessage(response, 'This reset link is invalid or has expired.'))
   }
 
   return response.json()

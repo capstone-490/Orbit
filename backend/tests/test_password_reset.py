@@ -6,7 +6,7 @@ password hashing.
 """
 
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi import FastAPI
@@ -62,7 +62,7 @@ class FakeCursor:
 
     def execute(self, sql, params=()):
         sql = " ".join(sql.split())
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         self._row = None
 
         if sql.startswith("SELECT id, username FROM advisors WHERE email"):
@@ -231,7 +231,7 @@ def test_validate_rejects_unknown_token(client):
 
 def test_validate_rejects_expired_token(client, sent_emails, db):
     token = extract_token(request_reset(client, sent_emails))
-    db.tokens[0]["expires_at"] = datetime.now(timezone.utc) - timedelta(minutes=1)
+    db.tokens[0]["expires_at"] = datetime.now(UTC) - timedelta(minutes=1)
 
     response = client.get("/auth/reset-password/validate", params={"token": token})
 
@@ -270,7 +270,7 @@ def test_reset_token_cannot_be_used_twice(client, sent_emails, db):
 
 def test_reset_rejects_expired_token(client, sent_emails, db):
     token = extract_token(request_reset(client, sent_emails))
-    db.tokens[0]["expires_at"] = datetime.now(timezone.utc) - timedelta(seconds=1)
+    db.tokens[0]["expires_at"] = datetime.now(UTC) - timedelta(seconds=1)
 
     response = client.post(
         "/auth/reset-password", json={"token": token, "password": NEW_PASSWORD}

@@ -9,11 +9,11 @@ import Clients from './pages/Clients'
 import CreateAccount from './pages/CreateAccount'
 import Documents from './pages/Documents'
 import FollowUps from './pages/FollowUps'
+import ForgotPassword from './pages/ForgotPassword'
 import Login from './pages/Login'
+import ResetPassword from './pages/ResetPassword'
 import Tasks from './pages/Tasks'
 import Welcome from './pages/Welcome'
-import ForgotPassword from './pages/ForgotPassword'
-import ResetPassword from './pages/ResetPassword'
 
 function App() {
   return (

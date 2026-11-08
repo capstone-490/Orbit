@@ -28,7 +28,7 @@ def send_email(to: str, subject: str, body: str) -> None:
         )
 
         try:
-            result = resend.Emails.send(
+            resend.Emails.send(
                 {
                     "from": sender,
                     "to": [to],
