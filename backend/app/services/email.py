@@ -1,9 +1,10 @@
 import logging
-import os
 import smtplib
 from email.message import EmailMessage
 
 import resend
+
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -15,21 +16,14 @@ def send_email(to: str, subject: str, body: str) -> None:
     SMTP is used as a fallback when Resend is not configured.
     If neither is configured, log the message for local development.
     """
-    resend_api_key = os.getenv("RESEND_API_KEY")
-
     # Prefer Resend when an API key is available.
-    if resend_api_key:
-        resend.api_key = resend_api_key
-
-        sender = os.getenv(
-            "RESEND_FROM_EMAIL",
-            "Orbit <onboarding@resend.dev>",
-        )
+    if settings.RESEND_API_KEY:
+        resend.api_key = settings.RESEND_API_KEY
 
         try:
             resend.Emails.send(
                 {
-                    "from": sender,
+                    "from": settings.RESEND_FROM_EMAIL,
                     "to": [to],
                     "subject": subject,
                     "text": body,
@@ -42,24 +36,22 @@ def send_email(to: str, subject: str, body: str) -> None:
         return
 
     # Use SMTP if Resend is not configured.
-    host = os.getenv("SMTP_HOST")
-
-    if host:
+    if settings.SMTP_HOST:
         message = EmailMessage()
-        message["From"] = os.getenv("SMTP_FROM", "no-reply@orbit.local")
+        message["From"] = settings.SMTP_FROM
         message["To"] = to
         message["Subject"] = subject
         message.set_content(body)
 
-        port = int(os.getenv("SMTP_PORT", "587"))
-        username = os.getenv("SMTP_USERNAME")
-        password = os.getenv("SMTP_PASSWORD")
-
         try:
-            with smtplib.SMTP(host, port, timeout=10) as smtp:
+            with smtplib.SMTP(
+                settings.SMTP_HOST,
+                settings.SMTP_PORT,
+                timeout=10,
+            ) as smtp:
                 smtp.starttls()
-                if username and password:
-                    smtp.login(username, password)
+                if settings.SMTP_USERNAME and settings.SMTP_PASSWORD:
+                    smtp.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
                 smtp.send_message(message)
         except Exception:
             logger.exception("Failed to send email through SMTP to %s", to)
