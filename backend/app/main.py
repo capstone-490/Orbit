@@ -6,6 +6,8 @@ from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI, Header, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
+from app.api.v1.routers import password_reset
+
 
 from app.api.v1.routers.advisor_registration import (
     router as advisor_registration_router,
@@ -63,6 +65,7 @@ app.include_router(clients_router)
 app.include_router(advisor_router)
 app.include_router(advisor_registration_router)
 app.include_router(meetings_router)
+app.include_router(password_reset.router)
 
 
 if os.getenv("ENABLE_DEBUG_ROUTES", "").lower() in {"1", "true", "yes"}:

@@ -12,6 +12,8 @@ import FollowUps from './pages/FollowUps'
 import Login from './pages/Login'
 import Tasks from './pages/Tasks'
 import Welcome from './pages/Welcome'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 
 function App() {
   return (
@@ -19,6 +21,8 @@ function App() {
       <Routes>
         <Route path="/" element={<Welcome />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/create-account" element={<CreateAccount />} />
         <Route path="/book-meeting" element={<BookMeeting />} />
         <Route element={<AdvisorLayout />}>
