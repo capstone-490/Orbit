@@ -1,4 +1,5 @@
 # Substantial AI assistance used; verified with backend tests and live auth smoke test.
+from datetime import timedelta
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
@@ -127,6 +128,23 @@ def test_continuing_session_rejects_unavailable_time_slot(mock_db):
     assert second_response.status_code == 409
     assert second_response.json()["detail"] == "Time slot is unavailable."
     assert mock_db.execute.call_count == 7
+
+
+def test_continuing_session_rejects_overlapping_one_hour_meeting(mock_db):
+    mock_db.fetchone.side_effect = [(7,), (11,)]
+
+    response = client.post(
+        "/meetings/continuing-session",
+        json={"client_id": 7, "meeting_date": "2026-11-07T10:30:00Z"},
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "Time slot is unavailable."
+    availability_query, params = mock_db.execute.call_args_list[2].args
+    assert "meeting_date < %(meeting_end)s" in availability_query
+    assert "meeting_date + %(duration)s > %(meeting_date)s" in availability_query
+    assert params["meeting_end"].isoformat() == "2026-11-07T11:30:00+00:00"
+    assert params["duration"] == timedelta(hours=1)
 
 
 def test_continuing_session_requires_timezone(mock_db):
