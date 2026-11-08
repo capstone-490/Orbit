@@ -59,9 +59,7 @@ def forgot_password(payload: ForgotPasswordRequest):
             )
 
             token = secrets.token_urlsafe(32)
-            expires_at = datetime.now(UTC) + timedelta(
-                minutes=RESET_TOKEN_TTL_MINUTES
-            )
+            expires_at = datetime.now(UTC) + timedelta(minutes=RESET_TOKEN_TTL_MINUTES)
 
             cur.execute(
                 """
