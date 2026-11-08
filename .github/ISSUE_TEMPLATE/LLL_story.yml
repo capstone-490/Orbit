@@ -1,0 +1,62 @@
+name: User Story
+description: Submit a new user story with tracking, estimations, and criteria
+title: "[LLL] [Architecture: <Subsystem/Module Name>] Spike - <Technical Unknown>"
+labels: ["spike", "[LLL]", "NeedsStakeholderReview"]
+type: Story
+projects:
+  - "capstone-490/Orbit"
+
+body:
+  - type: dropdown
+    id: milestone
+    attributes:
+      label: Milestone
+      description: ""
+      options:
+        - "Release 1"
+    validations:
+      required: true
+
+  - type: textarea
+    id: conetext
+    attributes:
+      label: Architectural Context
+      description: Explicitly cite the specific component, layer, or non-functional requirement from your System Architecture Document that this spike addresses.
+      placeholder: |
+        ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: knowlegde_gap
+    attributes:
+      label: Knowledge Gap
+      description: State exactly why your current academic background leaves you unprepared for this task.
+      placeholder: |
+        What I know versus what the architecture context requires I know.
+    validations:
+      required: true
+
+  - type: textarea
+    id: target_plan
+    attributes:
+      label: Targeted Learning Plan
+      description: Course of action planned to bridge the gap. List the professional or primary sources (official documentation, specifications, RFCs) you will study.
+      placeholder: |
+        ...
+        1. ...
+        2. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: definition_of_done
+    attributes:
+      label: Definition Of Done
+      description: Define a measurable, technical proof-of-concept success criterion (e.g., a local compiled sandbox, a benchmark threshold).
+      placeholder: |
+        1. ...
+        2. ...
+    validations:
+      required: true
+

@@ -1,7 +1,7 @@
 name: User Story
 description: Submit a new user story with tracking, estimations, and criteria
 title: "[Story]: <Short descriptive name>"
-labels: ["story", "feature:needs-triage", "NeedsStakeholderReview", "NeedsStakeholderSignOff"]
+labels: ["story", "feature:needs-triage", "NeedsStakeholderReview"]
 type: Story
 projects:
   - "capstone-490/Orbit"
