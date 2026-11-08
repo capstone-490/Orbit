@@ -1,0 +1,139 @@
+'Below 50% Ai-generated
+@startuml Advisor_Workspace_Domain_Model
+
+skinparam style strictuml
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam Shadowing false
+skinparam classAttributeIconSize 0
+skinparam nodesep 55
+skinparam ranksep 65
+
+top to bottom direction
+
+title Orbit - Client and Workspace Domain Model
+
+package "Actors and Scope" {
+
+    entity Subscription {
+        id : UUID
+        name : Text
+        purpose : Text
+    }
+
+    entity Membership {
+        id : UUID
+        status : Text
+    }
+
+    entity Agent {
+        id : UUID
+        name : Text
+        agent_type : Text
+    }
+}
+
+package "Client and Document Management" {
+
+    entity Client {
+        id : UUID
+        display_name : Text
+        email : Text
+        onboarding_stage : Text
+        status : Text
+    }
+
+    entity Goal {
+        id : UUID
+        name : Text
+        duration : Text
+        status : Text
+    }
+
+    entity Note {
+        id : UUID
+        title : Text
+        status : Text
+    }
+
+    entity Folder {
+        id : UUID
+        name : Text
+        status : Text
+    }
+
+    entity Document {
+        id : UUID
+        name : Text
+        classification : Text
+        workflow_status : Text
+        status : Text
+    }
+
+    Subscription ||--o{ Client : contains >
+    Subscription ||--o{ Folder : contains >
+    Subscription ||--o{ Document : contains >
+
+    Membership |o--o{ Client : advises >
+
+    Client ||--o{ Goal : has >
+    Client ||--o{ Note : has >
+    Client |o--o{ Document : associated with >
+
+    Folder |o--o{ Folder : parent of >
+    Folder |o--o{ Document : contains >
+
+    Membership |o--o{ Note : writes >
+    Agent |o--o{ Note : writes >
+}
+
+package "Meetings and Tasks" {
+
+    entity MeetingType {
+        id : UUID
+        slug : Text
+        title : Text
+        duration_minutes : Integer
+        meeting_mode : Text
+    }
+
+    entity Meeting {
+        id : UUID
+        title : Text
+        scheduled_range : TSTZRANGE
+        attendee_membership_ids : UUID[]
+        status : Text
+        completion_status : Text
+    }
+
+    entity Task {
+        id : UUID
+        title : Text
+        due_date : Date
+        task_status : Text
+        status : Text
+    }
+
+    Subscription ||--o{ MeetingType : has >
+    Subscription ||--o{ Meeting : has >
+    Subscription ||--o{ Task : has >
+
+    Membership ||--o{ MeetingType : owns >
+    Agent |o--o{ MeetingType : pre-meeting for >
+
+    MeetingType |o--o{ Meeting : used for >
+    Client |o--o{ Meeting : attends >
+    Folder |o--o{ Meeting : contains >
+    Membership |o--o{ Meeting : advises >
+    Membership |o--o{ Meeting : organizes >
+    Agent |o--o{ Meeting : organizes >
+
+    Meeting |o--o{ Task : generates >
+    Client |o--o{ Task : has >
+    Folder |o--o{ Task : contains >
+    Membership |o--o{ Task : oversees >
+    Membership |o--o{ Task : assigned to >
+    Agent |o--o{ Task : assigned to >
+}
+
+@enduml
