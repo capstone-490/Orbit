@@ -630,6 +630,9 @@ CREATE TABLE meetings (
         CHECK (status IN ('provisioning', 'active', 'cancelled', 'deleted')),
     completion_status TEXT NOT NULL DEFAULT 'scheduled'
         CHECK (completion_status IN ('scheduled', 'completed', 'no_show', 'rescheduled')),
+    -- google meet link and code (e.g. abc-defg-hij); NULL when not a google meet
+    meeting_uri TEXT,
+    meeting_code TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     deleted_at TIMESTAMPTZ,

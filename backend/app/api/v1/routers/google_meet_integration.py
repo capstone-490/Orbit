@@ -1,7 +1,7 @@
 # Below 50% AI-generated
 import os
 import uuid
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException
 from fastapi.responses import RedirectResponse
@@ -13,7 +13,8 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-from pydantic import AwareDatetime, BaseModel, Field
+from psycopg.errors import UniqueViolation
+from pydantic import AwareDatetime, BaseModel, EmailStr, Field
 
 from app.auth import get_current_advisor
 from app.core.config import settings
@@ -42,9 +43,27 @@ router = APIRouter(
     dependencies=[Depends(get_current_advisor)],
 )
 
+# Routes for users who aren't advisors; no Orbit login required.
+public_router = APIRouter(
+    prefix="/google-meet-integration",
+    tags=["Google Meet Integration"],
+)
+
 
 class MeetingCreate(BaseModel):
     client_id: int = Field(gt=0)
+    title: str = Field(default="Meeting", min_length=1, max_length=200)
+    # Must include a UTC offset, e.g. 2026-11-10T14:00:00-05:00
+    start: AwareDatetime
+    duration_minutes: int = Field(default=60, ge=1, le=24 * 60)
+
+
+class BookingCreate(BaseModel):
+    # The user is invited to the meeting at this email
+    email: EmailStr
+    # name and phone_number are required to create a client record
+    name: str = Field(min_length=1, max_length=200)
+    phone_number: str = Field(min_length=1, max_length=32)
     title: str = Field(default="Meeting", min_length=1, max_length=200)
     # Must include a UTC offset, e.g. 2026-11-10T14:00:00-05:00
     start: AwareDatetime
@@ -149,20 +168,9 @@ def create_meeting(
     meeting: MeetingCreate, advisor: dict[str, int] = Depends(get_current_advisor)
 ):
     creds = _get_valid_credentials(advisor["id"])
-    end = meeting.start + timedelta(minutes=meeting.duration_minutes)
-
-    event_body = {
-        "summary": meeting.title,
-        "start": {"dateTime": meeting.start.isoformat()},
-        "end": {"dateTime": end.isoformat()},
-        "conferenceData": {
-            "createRequest": {
-                # Unique per request so Google doesn't dedupe separate meetings
-                "requestId": str(uuid.uuid4()),
-                "conferenceSolutionKey": {"type": "hangoutsMeet"},
-            }
-        },
-    }
+    event_body = _build_event_body(
+        meeting.title, meeting.start, meeting.duration_minutes
+    )
 
     meeting_id, event = _schedule_calendar_event(
         creds, advisor["id"], meeting.client_id, meeting.start, event_body
@@ -176,8 +184,109 @@ def create_meeting(
         "start": event["start"]["dateTime"],
         "end": event["end"]["dateTime"],
         "meeting_uri": event.get("hangoutLink"),
+        "meeting_code": _meeting_code(event),
         "calendar_link": event.get("htmlLink"),
     }
+
+
+@public_router.post("/book/{advisor_id}", status_code=201)
+def book_meeting(advisor_id: int, booking: BookingCreate):
+    if booking.start <= datetime.now(UTC):
+        raise HTTPException(status_code=422, detail="Meeting must be in the future.")
+
+    try:
+        creds = _get_valid_credentials(advisor_id)
+    except HTTPException:
+        # Unknown advisor, or one whose Google account isn't connected
+        raise HTTPException(
+            status_code=404, detail="Advisor is not accepting bookings."
+        ) from None
+
+    client_id = _get_or_create_booking_client(advisor_id, booking)
+    event_body = _build_event_body(
+        booking.title,
+        booking.start,
+        booking.duration_minutes,
+        attendees=[{"email": booking.email, "displayName": booking.name}],
+    )
+
+    meeting_id, event = _schedule_calendar_event(
+        creds, advisor_id, client_id, booking.start, event_body
+    )
+
+    return {
+        "meeting_id": meeting_id,
+        "title": event.get("summary"),
+        "start": event["start"]["dateTime"],
+        "end": event["end"]["dateTime"],
+        "meeting_uri": event.get("hangoutLink"),
+        "meeting_code": _meeting_code(event),
+    }
+
+
+def _get_or_create_booking_client(advisor_id: int, booking: BookingCreate) -> int:
+    with get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT id, advisor_id FROM clients WHERE lower(email) = lower(%s)",
+            (booking.email,),
+        )
+        row = cur.fetchone()
+        if row is not None:
+            if row[1] != advisor_id:
+                # Deliberately vague: don't reveal who another advisor's clients are
+                raise HTTPException(
+                    status_code=409,
+                    detail="This email can't be used to book with this advisor.",
+                )
+            return row[0]
+
+        try:
+            cur.execute(
+                """
+                    INSERT INTO clients (name, email, phone_number, advisor_id)
+                    VALUES (%s, %s, %s, %s)
+                    RETURNING id
+                    """,
+                (booking.name, booking.email, booking.phone_number, advisor_id),
+            )
+        except UniqueViolation:
+            raise HTTPException(
+                status_code=409,
+                detail="This phone number can't be used to book with this advisor.",
+            ) from None
+        client_id = cur.fetchone()[0]
+        conn.commit()
+
+    return client_id
+
+
+def _build_event_body(
+    title: str,
+    start: datetime,
+    duration_minutes: int,
+    attendees: list[dict] | None = None,
+) -> dict:
+    end = start + timedelta(minutes=duration_minutes)
+    event_body = {
+        "summary": title,
+        "start": {"dateTime": start.isoformat()},
+        "end": {"dateTime": end.isoformat()},
+        "conferenceData": {
+            "createRequest": {
+                # Unique per request so Google doesn't dedupe separate meetings
+                "requestId": str(uuid.uuid4()),
+                "conferenceSolutionKey": {"type": "hangoutsMeet"},
+            }
+        },
+    }
+    if attendees:
+        event_body["attendees"] = attendees
+    return event_body
+
+
+def _meeting_code(event: dict) -> str | None:
+    # The Meet code, e.g. abc-defg-hij
+    return event.get("conferenceData", {}).get("conferenceId")
 
 
 def _schedule_calendar_event(
@@ -221,11 +330,19 @@ def _schedule_calendar_event(
     with get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             """
-                INSERT INTO meetings (advisor_id, client_id, meeting_date)
-                VALUES (%s, %s, %s)
+                INSERT INTO meetings (
+                    advisor_id, client_id, meeting_date, meeting_uri, meeting_code
+                )
+                VALUES (%s, %s, %s, %s, %s)
                 RETURNING id
                 """,
-            (advisor_id, client_id, meeting_date),
+            (
+                advisor_id,
+                client_id,
+                meeting_date,
+                event.get("hangoutLink"),
+                _meeting_code(event),
+            ),
         )
         meeting_id = cur.fetchone()[0]
         conn.commit()
@@ -236,7 +353,13 @@ def _schedule_calendar_event(
 def _insert_event(calendar, calendar_id: str, event_body: dict) -> dict:
     return (
         calendar.events()
-        .insert(calendarId=calendar_id, body=event_body, conferenceDataVersion=1)
+        .insert(
+            calendarId=calendar_id,
+            body=event_body,
+            conferenceDataVersion=1,
+            # Email invites to any attendees (bookings add the user)
+            sendUpdates="all",
+        )
         .execute()
     )
 
