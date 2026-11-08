@@ -63,8 +63,7 @@ function ForgotPassword() {
           <h1 id="forgot-password-title">Forgot your password?</h1>
           <p>
             Enter your email and we'll send you
-            <br />
-            a link to reset it.
+            <br />a link to reset it.
           </p>
         </div>
 

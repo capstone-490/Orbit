@@ -6,9 +6,8 @@ from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI, Header, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
+
 from app.api.v1.routers import password_reset
-
-
 from app.api.v1.routers.advisor_registration import (
     router as advisor_registration_router,
 )
