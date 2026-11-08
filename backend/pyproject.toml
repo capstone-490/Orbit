@@ -77,6 +77,10 @@ mypy_path = "."
 packages = ["app", "scripts", "tests"]
 exclude = ["^.venv/"]
 
+[[tool.mypy.overrides]]
+module = ["google_auth_oauthlib.*", "googleapiclient.*", "httplib2"]
+ignore_missing_imports = true
+
 [tool.ruff.lint.isort]
 known-first-party = ["app", "scripts"]
 
