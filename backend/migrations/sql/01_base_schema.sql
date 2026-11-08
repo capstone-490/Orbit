@@ -133,9 +133,12 @@ FOR EACH ROW EXECUTE FUNCTION trigger_set_updated_at();
 -- google oauth credentials for the google meet integration
 -- one google account per advisor; credentials holds google Credentials.to_json()
 -- advisor_id is the app's advisors.id; no FK until the app moves to advisor_profiles
+-- calendar_id is the secondary calendar Orbit creates for meetings (calendar.app.created
+-- scope cannot write to the primary calendar); NULL until the first meeting is scheduled
 CREATE TABLE google_oauth_credentials (
     advisor_id BIGINT PRIMARY KEY,
     credentials JSONB NOT NULL,
+    calendar_id TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );

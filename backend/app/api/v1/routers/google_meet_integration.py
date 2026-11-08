@@ -1,5 +1,7 @@
 # Below 50% AI-generated
 import os
+import uuid
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException
 from fastapi.responses import RedirectResponse
@@ -9,6 +11,9 @@ from google.auth.exceptions import RefreshError
 from google.auth.transport.requests import Request as GoogleRequest
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+from pydantic import AwareDatetime, BaseModel, Field
 
 from app.auth import get_current_advisor
 from app.core.config import settings
@@ -18,16 +23,32 @@ from app.logging_config import get_logger
 logger = get_logger("google_meet_integration")
 
 # If modifying these scopes, every advisor must reconnect their Google account.
-SCOPES = ["https://www.googleapis.com/auth/meetings.space.created"]
+SCOPES = [
+    "https://www.googleapis.com/auth/meetings.space.created",
+    # Scheduled meetings are Calendar events with a Meet link attached. This
+    # scope only covers calendars Orbit creates, so meetings go on a dedicated
+    # secondary calendar and Orbit never sees the advisor's other events.
+    "https://www.googleapis.com/auth/calendar.app.created",
+]
 
 OAUTH_STATE_COOKIE = "google_oauth_state"
 OAUTH_STATE_MAX_AGE = 600
+
+ORBIT_CALENDAR_NAME = "Orbit Meetings"
 
 router = APIRouter(
     prefix="/google-meet-integration",
     tags=["Google Meet Integration"],
     dependencies=[Depends(get_current_advisor)],
 )
+
+
+class MeetingCreate(BaseModel):
+    client_id: int = Field(gt=0)
+    title: str = Field(default="Meeting", min_length=1, max_length=200)
+    # Must include a UTC offset, e.g. 2026-11-10T14:00:00-05:00
+    start: AwareDatetime
+    duration_minutes: int = Field(default=60, ge=1, le=24 * 60)
 
 
 @router.get("/authorize")
@@ -105,19 +126,7 @@ def connection_status(advisor: dict[str, int] = Depends(get_current_advisor)):
 
 @router.post("/spaces", status_code=201)
 def create_space(advisor: dict[str, int] = Depends(get_current_advisor)):
-    creds = _load_credentials(advisor["id"])
-    if creds is None:
-        raise HTTPException(status_code=409, detail="Google account not connected.")
-
-    if not creds.valid:
-        try:
-            creds.refresh(GoogleRequest())
-        except RefreshError:
-            # Refresh token was revoked or expired; the advisor must reconnect.
-            raise HTTPException(
-                status_code=409, detail="Google account must be reconnected."
-            ) from None
-        _save_credentials(advisor["id"], creds)
+    creds = _get_valid_credentials(advisor["id"])
 
     try:
         client = meet_v2.SpacesServiceClient(credentials=creds)
@@ -133,6 +142,147 @@ def create_space(advisor: dict[str, int] = Depends(get_current_advisor)):
         "meeting_uri": space.meeting_uri,
         "meeting_code": space.meeting_code,
     }
+
+
+@router.post("/meetings", status_code=201)
+def create_meeting(
+    meeting: MeetingCreate, advisor: dict[str, int] = Depends(get_current_advisor)
+):
+    creds = _get_valid_credentials(advisor["id"])
+    end = meeting.start + timedelta(minutes=meeting.duration_minutes)
+
+    event_body = {
+        "summary": meeting.title,
+        "start": {"dateTime": meeting.start.isoformat()},
+        "end": {"dateTime": end.isoformat()},
+        "conferenceData": {
+            "createRequest": {
+                # Unique per request so Google doesn't dedupe separate meetings
+                "requestId": str(uuid.uuid4()),
+                "conferenceSolutionKey": {"type": "hangoutsMeet"},
+            }
+        },
+    }
+
+    meeting_id, event = _schedule_calendar_event(
+        creds, advisor["id"], meeting.client_id, meeting.start, event_body
+    )
+
+    return {
+        "meeting_id": meeting_id,
+        "client_id": meeting.client_id,
+        "event_id": event["id"],
+        "title": event.get("summary"),
+        "start": event["start"]["dateTime"],
+        "end": event["end"]["dateTime"],
+        "meeting_uri": event.get("hangoutLink"),
+        "calendar_link": event.get("htmlLink"),
+    }
+
+
+def _schedule_calendar_event(
+    creds: Credentials,
+    advisor_id: int,
+    client_id: int,
+    meeting_date: datetime,
+    event_body: dict,
+) -> tuple[int, dict]:
+    # Check the client first so no Google event is created for a client that
+    # isn't this advisor's.
+    with get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT 1 FROM clients WHERE id = %s AND advisor_id = %s",
+            (client_id, advisor_id),
+        )
+        if cur.fetchone() is None:
+            raise HTTPException(status_code=404, detail="Client not found.")
+
+    try:
+        calendar = build("calendar", "v3", credentials=creds, cache_discovery=False)
+        calendar_id = _load_calendar_id(advisor_id)
+        if calendar_id is None:
+            calendar_id = _create_orbit_calendar(calendar, advisor_id)
+
+        try:
+            event = _insert_event(calendar, calendar_id, event_body)
+        except HttpError as error:
+            if error.resp.status != 404:
+                raise
+            # The advisor deleted the Orbit calendar in Google; make a new one.
+            calendar_id = _create_orbit_calendar(calendar, advisor_id)
+            event = _insert_event(calendar, calendar_id, event_body)
+    except HttpError:
+        logger.exception("Google Calendar meeting creation failed")
+        raise HTTPException(
+            status_code=502, detail="Could not create Google Meet meeting."
+        ) from None
+
+    # Only record the meeting in Orbit once Google has created it.
+    with get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+                INSERT INTO meetings (advisor_id, client_id, meeting_date)
+                VALUES (%s, %s, %s)
+                RETURNING id
+                """,
+            (advisor_id, client_id, meeting_date),
+        )
+        meeting_id = cur.fetchone()[0]
+        conn.commit()
+
+    return meeting_id, event
+
+
+def _insert_event(calendar, calendar_id: str, event_body: dict) -> dict:
+    return (
+        calendar.events()
+        .insert(calendarId=calendar_id, body=event_body, conferenceDataVersion=1)
+        .execute()
+    )
+
+
+def _create_orbit_calendar(calendar, advisor_id: int) -> str:
+    created = (
+        calendar.calendars().insert(body={"summary": ORBIT_CALENDAR_NAME}).execute()
+    )
+
+    with get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE google_oauth_credentials SET calendar_id = %s WHERE advisor_id = %s",
+            (created["id"], advisor_id),
+        )
+        conn.commit()
+
+    return created["id"]
+
+
+def _load_calendar_id(advisor_id: int) -> str | None:
+    with get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT calendar_id FROM google_oauth_credentials WHERE advisor_id = %s",
+            (advisor_id,),
+        )
+        row = cur.fetchone()
+
+    return row[0] if row else None
+
+
+def _get_valid_credentials(advisor_id: int) -> Credentials:
+    creds = _load_credentials(advisor_id)
+    if creds is None:
+        raise HTTPException(status_code=409, detail="Google account not connected.")
+
+    if not creds.valid:
+        try:
+            creds.refresh(GoogleRequest())
+        except RefreshError:
+            # Refresh token was revoked or expired; the advisor must reconnect.
+            raise HTTPException(
+                status_code=409, detail="Google account must be reconnected."
+            ) from None
+        _save_credentials(advisor_id, creds)
+
+    return creds
 
 
 def _build_flow(state: str | None = None, code_verifier: str | None = None) -> Flow:
