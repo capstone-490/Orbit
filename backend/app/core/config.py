@@ -23,6 +23,20 @@ class Settings(BaseSettings):
     ORBIT_ANONYMIZATION_SECRET: str = INSECURE_DEFAULT_ANONYMIZATION_SECRET
     VITE_API_URL: str = "http://localhost:8001"
 
+    # Frontend
+    FRONTEND_URL: str = "http://localhost:5173"
+
+    # Email configuration
+    RESEND_API_KEY: str | None = None
+    RESEND_FROM_EMAIL: str = "Orbit <onboarding@resend.dev>"
+
+    # SMTP configuration
+    SMTP_HOST: str | None = None
+    SMTP_PORT: int = 587
+    SMTP_FROM: str = "no-reply@orbit.local"
+    SMTP_USERNAME: str | None = None
+    SMTP_PASSWORD: str | None = None
+
     DB_HOST: str = "127.0.0.1"
     DB_PORT: int = 5432
     DB_USER: str

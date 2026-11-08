@@ -1,11 +1,11 @@
 import hashlib
-import os
 import secrets
 from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr, Field
 
+from app.core.config import settings
 from app.dependencies.db import get_connection
 from app.security.passwords import hash_password
 from app.services.email import send_email
@@ -13,7 +13,6 @@ from app.services.email import send_email
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 RESET_TOKEN_TTL_MINUTES = 30
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 GENERIC_FORGOT_MESSAGE = (
     "If an account exists for that email, a password reset link has been sent."
@@ -40,6 +39,7 @@ class MessageResponse(BaseModel):
 @router.post("/forgot-password", response_model=MessageResponse)
 def forgot_password(payload: ForgotPasswordRequest):
     email = str(payload.email).lower()
+    email_details = None
 
     with get_connection() as conn, conn.cursor() as cur:
         cur.execute("SELECT id, username FROM advisors WHERE email = %s", (email,))
@@ -69,20 +69,24 @@ def forgot_password(payload: ForgotPasswordRequest):
                 (advisor_id, _hash_token(token), expires_at),
             )
 
-            reset_link = f"{FRONTEND_URL}/reset-password?token={token}"
-            send_email(
-                to=email,
-                subject="Reset your Orbit password",
-                body=(
+            reset_link = f"{settings.FRONTEND_URL}/reset-password?token={token}"
+
+            email_details = {
+                "to": email,
+                "subject": "Reset your Orbit password",
+                "body": (
                     f"Hi {username},\n\n"
                     "We received a request to reset your Orbit password. "
                     f"Use the link below within {RESET_TOKEN_TTL_MINUTES} minutes:\n\n"
                     f"{reset_link}\n\n"
                     "If you did not request this, you can safely ignore this email."
                 ),
-            )
+            }
 
-    # Same response whether or not the account exists (no account enumeration).
+    # Send the email only after the database transaction has completed.
+    if email_details is not None:
+        send_email(**email_details)
+
     return {"message": GENERIC_FORGOT_MESSAGE}
 
 
