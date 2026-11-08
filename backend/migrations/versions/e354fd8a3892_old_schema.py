@@ -274,8 +274,16 @@ def upgrade() -> None:
     """)
 
     # ---------------------------------------------------------
-    # 11. Audit log
+    # 11. Audit log + function to block modification and deletion of logs
     # ---------------------------------------------------------
+    op.execute("""
+    create function abort_action() returns trigger language plpgsql as
+        $$
+        begin
+                return null;
+        end;
+        $$;
+    """)
 
     op.execute("""
         CREATE TABLE IF NOT EXISTS audit_log (
@@ -286,6 +294,12 @@ def upgrade() -> None:
             new_value JSONB NOT NULL,
             changed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         );
+    """)
+
+    op.execute("""
+    CREATE TRIGGER no_update_or_delete_audit_logs
+    BEFORE UPDATE OR DELETE ON audit_log
+    FOR EACH ROW EXECUTE FUNCTION abort_tf();
     """)
 
     # ---------------------------------------------------------
