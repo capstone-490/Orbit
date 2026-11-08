@@ -1,4 +1,3 @@
-
 """Tests for the email delivery service."""
 
 from unittest.mock import MagicMock
@@ -19,9 +18,7 @@ def email_settings(monkeypatch):
     )
     monkeypatch.setattr(email_service.settings, "SMTP_HOST", None)
     monkeypatch.setattr(email_service.settings, "SMTP_PORT", 587)
-    monkeypatch.setattr(
-        email_service.settings, "SMTP_FROM", "no-reply@example.com"
-    )
+    monkeypatch.setattr(email_service.settings, "SMTP_FROM", "no-reply@example.com")
     monkeypatch.setattr(email_service.settings, "SMTP_USERNAME", None)
     monkeypatch.setattr(email_service.settings, "SMTP_PASSWORD", None)
 
@@ -46,9 +43,7 @@ def test_send_email_uses_resend(email_settings, monkeypatch):
 
 def test_send_email_logs_resend_success(email_settings, monkeypatch, caplog):
     monkeypatch.setattr(email_service.settings, "RESEND_API_KEY", "test-key")
-    monkeypatch.setattr(
-        email_service.resend.Emails, "send", MagicMock()
-    )
+    monkeypatch.setattr(email_service.resend.Emails, "send", MagicMock())
 
     with caplog.at_level("INFO"):
         email_service.send_email("user@example.com", "Subject", "Body")
@@ -56,9 +51,7 @@ def test_send_email_logs_resend_success(email_settings, monkeypatch, caplog):
     assert "Email accepted by Resend" in caplog.text
 
 
-def test_send_email_handles_resend_failure(
-    email_settings, monkeypatch, caplog
-):
+def test_send_email_handles_resend_failure(email_settings, monkeypatch, caplog):
     monkeypatch.setattr(email_service.settings, "RESEND_API_KEY", "test-key")
     send = MagicMock(side_effect=RuntimeError("Resend unavailable"))
     monkeypatch.setattr(email_service.resend.Emails, "send", send)
@@ -69,9 +62,7 @@ def test_send_email_handles_resend_failure(
     assert "Failed to send email through Resend" in caplog.text
 
 
-def test_send_email_uses_smtp_with_authentication(
-    email_settings, monkeypatch
-):
+def test_send_email_uses_smtp_with_authentication(email_settings, monkeypatch):
     monkeypatch.setattr(email_service.settings, "SMTP_HOST", "smtp.example.com")
     monkeypatch.setattr(email_service.settings, "SMTP_USERNAME", "test-user")
     monkeypatch.setattr(email_service.settings, "SMTP_PASSWORD", "test-password")
@@ -85,9 +76,7 @@ def test_send_email_uses_smtp_with_authentication(
 
     email_service.send_email("user@example.com", "Subject", "Body")
 
-    smtp_constructor.assert_called_once_with(
-        "smtp.example.com", 587, timeout=10
-    )
+    smtp_constructor.assert_called_once_with("smtp.example.com", 587, timeout=10)
     smtp_context.starttls.assert_called_once()
     smtp_context.login.assert_called_once_with("test-user", "test-password")
     smtp_context.send_message.assert_called_once()
@@ -98,18 +87,14 @@ def test_send_email_uses_smtp_with_authentication(
     assert message.get_content().strip() == "Body"
 
 
-def test_send_email_uses_smtp_without_authentication(
-    email_settings, monkeypatch
-):
+def test_send_email_uses_smtp_without_authentication(email_settings, monkeypatch):
     monkeypatch.setattr(email_service.settings, "SMTP_HOST", "smtp.example.com")
 
     smtp = MagicMock()
     smtp_context = MagicMock()
     smtp.__enter__.return_value = smtp_context
 
-    monkeypatch.setattr(
-        email_service.smtplib, "SMTP", MagicMock(return_value=smtp)
-    )
+    monkeypatch.setattr(email_service.smtplib, "SMTP", MagicMock(return_value=smtp))
 
     email_service.send_email("user@example.com", "Subject", "Body")
 
@@ -118,17 +103,13 @@ def test_send_email_uses_smtp_without_authentication(
     smtp_context.send_message.assert_called_once()
 
 
-def test_send_email_handles_smtp_failure(
-    email_settings, monkeypatch, caplog
-):
+def test_send_email_handles_smtp_failure(email_settings, monkeypatch, caplog):
     monkeypatch.setattr(email_service.settings, "SMTP_HOST", "smtp.example.com")
 
     smtp = MagicMock()
     smtp.__enter__.side_effect = RuntimeError("SMTP unavailable")
 
-    monkeypatch.setattr(
-        email_service.smtplib, "SMTP", MagicMock(return_value=smtp)
-    )
+    monkeypatch.setattr(email_service.smtplib, "SMTP", MagicMock(return_value=smtp))
 
     with caplog.at_level("ERROR"):
         email_service.send_email("user@example.com", "Subject", "Body")
@@ -146,9 +127,7 @@ def test_send_email_uses_local_fallback(email_settings, caplog):
     assert "Body" in caplog.text
 
 
-def test_send_email_prefers_resend_over_smtp(
-    email_settings, monkeypatch
-):
+def test_send_email_prefers_resend_over_smtp(email_settings, monkeypatch):
     monkeypatch.setattr(email_service.settings, "RESEND_API_KEY", "test-key")
     monkeypatch.setattr(email_service.settings, "SMTP_HOST", "smtp.example.com")
 
