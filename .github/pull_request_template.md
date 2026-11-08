@@ -1,22 +1,29 @@
-# PR Rules
+## 🧠 Life-Long Learning Log
 
-A review must provide sufficient technical evidence:
+### The Architectural Roadblock
 
-- At least 1 technical question, concern, suggestion **OR**
-- A requested change on correctness, testing, security, error handling, architecture, maintainability, or another relevant property
-- A reviewer approves and leaves a comment describing >=1 aspect checked, even when no change is required
+Describe the unexpected limitation, framework deprecation, or edge-case conflict encountered in your module.
+
+### Information Synthesis
+
+List the diverse sources parsed to find a solution (e.g., repository issue boards, developer forums, engine APIs).
+
+### The Engineering Adaptation
+
+Detail how you modified or customized the external information to fit your specific system constraints without compromising security or performance.
+
+**DELETE ME!**: ADD [LLL] Prefix in PR title & tag, else remove this section if not relevant to LLL.
+
+---
 
 ## Traceability & Related Issue
 
-<!-- Link the GitHub Issue that this PR addresses. -->
 Closes / Fixes #
 
 Contributors: @
 
 ## Description & Changes
 
-<!-- Briefly describe what this PR does, why, and the main components modified. -->
-- 
 - 
 
 ## Substantive Feature Classification
@@ -52,13 +59,11 @@ Contributors: @
 
 **AI-Assisted source files:**
 
-- `none` <!-- or list files, e.g., src/auth/service.ts -->
+- `none`
 
 **AI Compliance Checklist:**
 
 - [ ] Every modified source file contains the required AI-contribution declaration header at the top of the file.
-- [ ] If substantial AI assistance was used, updated `AI_USAGE.md` with the feature, and includes evidence showing how the AI code was verified (test/substantive review comment), and any corrections made to AI output
+- [ ] If substantial AI assistance was used, updated `AI_USAGE.md` with the feature, and includes evidence showing how the AI code was verified (test/substantive review comment), and any corrections made to AI output.
 
 ## Notes for Reviewers
-
-<!-- Mention anything specific that reviewers should pay attention to. -->
