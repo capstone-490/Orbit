@@ -1,7 +1,7 @@
 name: User Story
 description: Submit a new user story with tracking, estimations, and criteria
 title: "[LLL] [Architecture: <Subsystem/Module Name>] Spike - <Technical Unknown>"
-labels: ["spike", "[LLL]", "NeedsStakeholderReview"]
+labels: ["spike", "[LLL]"]
 type: Story
 projects:
   - "capstone-490/Orbit"
