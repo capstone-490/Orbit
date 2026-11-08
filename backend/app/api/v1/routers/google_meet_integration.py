@@ -2,6 +2,7 @@
 import os
 import uuid
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException
 from fastapi.responses import RedirectResponse
@@ -267,7 +268,7 @@ def _build_event_body(
     attendees: list[dict] | None = None,
 ) -> dict:
     end = start + timedelta(minutes=duration_minutes)
-    event_body = {
+    event_body: dict[str, Any] = {
         "summary": title,
         "start": {"dateTime": start.isoformat()},
         "end": {"dateTime": end.isoformat()},
