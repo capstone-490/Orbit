@@ -70,7 +70,9 @@ class FakeCursor:
                 if advisor["email"] == params[0]:
                     self._row = (advisor["id"], advisor["username"])
 
-        elif sql.startswith("UPDATE password_reset_tokens SET used_at = now() WHERE advisor_id"):
+        elif sql.startswith(
+            "UPDATE password_reset_tokens SET used_at = now() WHERE advisor_id"
+        ):
             for token in self.db.tokens:
                 if token["advisor_id"] == params[0] and token["used_at"] is None:
                     token["used_at"] = now
@@ -97,7 +99,9 @@ class FakeCursor:
                 ):
                     self._row = (1,)
 
-        elif sql.startswith("UPDATE password_reset_tokens SET used_at = now() WHERE token_hash"):
+        elif sql.startswith(
+            "UPDATE password_reset_tokens SET used_at = now() WHERE token_hash"
+        ):
             for token in self.db.tokens:
                 if (
                     token["token_hash"] == params[0]
@@ -131,7 +135,9 @@ def sent_emails(monkeypatch):
     monkeypatch.setattr(
         password_reset,
         "send_email",
-        lambda to, subject, body: sent.append({"to": to, "subject": subject, "body": body}),
+        lambda to, subject, body: sent.append(
+            {"to": to, "subject": subject, "body": body}
+        ),
     )
     return sent
 
@@ -168,7 +174,9 @@ def test_forgot_password_sends_reset_link_to_registered_email(client, sent_email
 
 
 def test_forgot_password_is_case_insensitive(client, sent_emails):
-    response = client.post("/auth/forgot-password", json={"email": "Advisor@Example.COM"})
+    response = client.post(
+        "/auth/forgot-password", json={"email": "Advisor@Example.COM"}
+    )
 
     assert response.status_code == 200
     assert len(sent_emails) == 1
@@ -185,7 +193,9 @@ def test_forgot_password_gives_same_response_for_unknown_email(client, sent_emai
     assert len(db.tokens) == 1
 
 
-@pytest.mark.parametrize("bad_email", ["", "not-an-email", "missing@tld", "@example.com"])
+@pytest.mark.parametrize(
+    "bad_email", ["", "not-an-email", "missing@tld", "@example.com"]
+)
 def test_forgot_password_rejects_invalid_email(client, sent_emails, bad_email):
     response = client.post("/auth/forgot-password", json={"email": bad_email})
 
@@ -207,8 +217,16 @@ def test_new_request_invalidates_previous_link(client, sent_emails):
     second = extract_token(request_reset(client, sent_emails))
 
     assert first != second
-    assert client.get("/auth/reset-password/validate", params={"token": first}).status_code == 400
-    assert client.get("/auth/reset-password/validate", params={"token": second}).status_code == 200
+    assert (
+        client.get("/auth/reset-password/validate", params={"token": first}).status_code
+        == 400
+    )
+    assert (
+        client.get(
+            "/auth/reset-password/validate", params={"token": second}
+        ).status_code
+        == 200
+    )
 
 
 # ---------- validate ----------
@@ -257,7 +275,9 @@ def test_reset_password_updates_password_so_new_one_works(client, sent_emails, d
 def test_reset_token_cannot_be_used_twice(client, sent_emails, db):
     token = extract_token(request_reset(client, sent_emails))
 
-    first = client.post("/auth/reset-password", json={"token": token, "password": NEW_PASSWORD})
+    first = client.post(
+        "/auth/reset-password", json={"token": token, "password": NEW_PASSWORD}
+    )
     second = client.post(
         "/auth/reset-password", json={"token": token, "password": "AnotherPass789!!"}
     )
