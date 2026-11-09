@@ -175,7 +175,6 @@ function FollowUps() {
     } catch {
       setContactNotice(`Unable to copy the ${label.toLowerCase()}.`)
     }
-
   }
 
   async function saveDiscussionNotes() {
@@ -392,11 +391,7 @@ function FollowUps() {
                           type="date"
                           value={followUp.due_date}
                           onChange={(event) =>
-                            void handleFollowUpFieldChange(
-                              followUp,
-                              'due_date',
-                              event.target.value,
-                            )
+                            void handleFollowUpFieldChange(followUp, 'due_date', event.target.value)
                           }
                         />
                       </td>
@@ -674,17 +669,15 @@ function FollowUps() {
               </button>
             </div>
             {emailDraft.contactMethod === 'email' && (
-              <>
-                <label>
-                  Subject
-                  <input
-                    value={emailDraft.subject}
-                    onChange={(event) =>
-                      setEmailDraft({ ...emailDraft, subject: event.target.value })
-                    }
-                  />
-                </label>
-              </>
+              <label>
+                Subject
+                <input
+                  value={emailDraft.subject}
+                  onChange={(event) =>
+                    setEmailDraft({ ...emailDraft, subject: event.target.value })
+                  }
+                />
+              </label>
             )}
             <label>
               Discussion notes

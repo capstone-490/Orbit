@@ -149,7 +149,9 @@ describe('FollowUps', () => {
       'Discussion notes saved.',
     )
     await waitFor(() =>
-      expect(screen.queryByRole('dialog', { name: 'Send follow-up email' })).not.toBeInTheDocument(),
+      expect(
+        screen.queryByRole('dialog', { name: 'Send follow-up email' }),
+      ).not.toBeInTheDocument(),
     )
     expect(screen.queryByText('Discussion notes saved.')).not.toBeInTheDocument()
 
@@ -301,9 +303,12 @@ describe('FollowUps', () => {
     await renderLoaded()
     updateFollowUp.mockResolvedValue({})
 
-    fireEvent.change(screen.getAllByRole('combobox', { name: 'Planning stage for Alice Smith' })[0], {
-      target: { value: 'Tax Education' },
-    })
+    fireEvent.change(
+      screen.getAllByRole('combobox', { name: 'Planning stage for Alice Smith' })[0],
+      {
+        target: { value: 'Tax Education' },
+      },
+    )
     fireEvent.change(screen.getAllByLabelText('Due date for Alice Smith')[0], {
       target: { value: addDays(2) },
     })
