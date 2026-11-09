@@ -136,6 +136,16 @@ describe('FollowUps', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Phone' }))
     expect(screen.getByText('416-555-0101')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Email' }))
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    })
+    fireEvent.change(screen.getByLabelText('Subject'), {
+      target: { value: 'Updated follow-up subject' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Copy' }))
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith('alice@example.com'))
     fireEvent.change(screen.getByLabelText('Discussion notes'), {
       target: { value: 'Discussed next steps.' },
     })
@@ -319,6 +329,20 @@ describe('FollowUps', () => {
       })
       expect(updateFollowUp).toHaveBeenCalledWith(1, { due_date: addDays(2) })
     })
+  })
+
+  it('displays an error when discussion notes cannot be saved', async () => {
+    await renderLoaded()
+    fireEvent.click(screen.getAllByRole('button', { name: 'Contact info for Alice Smith' })[0])
+    fireEvent.change(screen.getByLabelText('Discussion notes'), {
+      target: { value: 'Notes that fail to save.' },
+    })
+    updateFollowUp.mockRejectedValueOnce(new Error('Unable to save discussion notes.'))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save discussion' }))
+
+    expect(await screen.findByText('Unable to save discussion notes.')).toBeInTheDocument()
+    expect(screen.getByRole('dialog', { name: 'Send follow-up email' })).toBeInTheDocument()
   })
 
   it('displays save errors for create and prevents blank required submissions', async () => {
