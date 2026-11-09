@@ -46,7 +46,6 @@ def test_create_follow_up_requires_assigned_client(mock_db, client):
 
 def test_create_follow_up_returns_record(mock_db, client):
     mock_db.fetchone.side_effect = [
-        (1,),
         {
             "id": 3,
             "advisor_id": 7,
@@ -73,7 +72,7 @@ def test_create_follow_up_returns_record(mock_db, client):
     assert response.status_code == 201
     assert response.json()["id"] == 3
     assert response.json()["priority"] == "High"
-    assert mock_db.execute.call_count == 2
+    assert mock_db.execute.call_count == 1
 
 
 def test_list_follow_ups_is_scoped_to_current_advisor(mock_db, client):
