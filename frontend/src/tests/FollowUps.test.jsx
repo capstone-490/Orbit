@@ -151,7 +151,7 @@ describe('FollowUps', () => {
     await waitFor(() =>
       expect(screen.queryByRole('dialog', { name: 'Send follow-up email' })).not.toBeInTheDocument(),
     )
-    expect(screen.getByRole('status')).toHaveTextContent('Discussion notes saved.')
+    expect(screen.queryByText('Discussion notes saved.')).not.toBeInTheDocument()
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0])
     expect(screen.getByRole('region', { name: 'Client contact information' })).toHaveTextContent(
@@ -295,6 +295,25 @@ describe('FollowUps', () => {
 
     await waitFor(() => expect(updateFollowUp).toHaveBeenCalledWith(1, { priority: 'Low' }))
     expect(prioritySelect).toHaveValue('Low')
+  })
+
+  it('updates stage and due date from the table', async () => {
+    await renderLoaded()
+    updateFollowUp.mockResolvedValue({})
+
+    fireEvent.change(screen.getAllByRole('combobox', { name: 'Planning stage for Alice Smith' })[0], {
+      target: { value: 'Tax Education' },
+    })
+    fireEvent.change(screen.getAllByLabelText('Due date for Alice Smith')[0], {
+      target: { value: addDays(2) },
+    })
+
+    await waitFor(() => {
+      expect(updateFollowUp).toHaveBeenCalledWith(1, {
+        financial_planning_stage: 'Tax Education',
+      })
+      expect(updateFollowUp).toHaveBeenCalledWith(1, { due_date: addDays(2) })
+    })
   })
 
   it('displays save errors for create and prevents blank required submissions', async () => {
