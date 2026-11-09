@@ -67,6 +67,7 @@ def test_create_client_success(mock_db):
     assert params["name"] == "Alice Smith"
     assert params["email"] == "alice@example.com"
     assert params["phone_number"] == "514-555-1234"
+    assert params["advisor_id"] == 1
     assert params["age"] == date.today().year - 1988 - (
         (date.today().month, date.today().day) < (4, 12)
     )

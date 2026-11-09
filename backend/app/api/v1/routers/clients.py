@@ -96,12 +96,12 @@ def create_client(
                 """
                 INSERT INTO clients (
                     name, email, phone_number, address,
-                    age, occupation, timeline
+                    age, occupation, timeline, advisor_id
                 )
                 VALUES (
                     %(name)s, %(email)s, %(phone_number)s,
                     %(address)s, %(age)s, %(occupation)s,
-                    %(timeline)s
+                    %(timeline)s, %(advisor_id)s
                 )
                 RETURNING id
                 """,
