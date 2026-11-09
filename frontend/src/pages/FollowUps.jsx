@@ -46,12 +46,6 @@ function isTerminalStatus(status) {
   return status === 'Completed' || status === 'Cancelled'
 }
 
-function formatDate(value) {
-  return new Intl.DateTimeFormat('en-CA', { dateStyle: 'medium' }).format(
-    new Date(`${value}T00:00:00`),
-  )
-}
-
 function getLocalDateKey() {
   const now = new Date()
   const month = String(now.getMonth() + 1).padStart(2, '0')
@@ -79,7 +73,6 @@ function FollowUps() {
   const [form, setForm] = useState(emptyForm)
   const [emailDraft, setEmailDraft] = useState(null)
   const [contactNotice, setContactNotice] = useState('')
-  const [successNotice, setSuccessNotice] = useState('')
 
   const clientById = useMemo(() => new Map(clients.map((client) => [client.id, client])), [clients])
   const selectedClient = editing
@@ -209,7 +202,6 @@ function FollowUps() {
       setContactNotice('Discussion notes saved.')
       window.setTimeout(() => {
         setEmailDraft(null)
-        setSuccessNotice('Discussion notes saved.')
       }, 1000)
     } catch (notesError) {
       setContactNotice(notesError.message)
@@ -264,6 +256,17 @@ function FollowUps() {
     }
   }
 
+  async function handleFollowUpFieldChange(followUp, field, value) {
+    try {
+      await updateFollowUp(followUp.id, { [field]: value })
+      setFollowUps((current) =>
+        current.map((item) => (item.id === followUp.id ? { ...item, [field]: value } : item)),
+      )
+    } catch (fieldError) {
+      setError(fieldError.message)
+    }
+  }
+
   return (
     <main className="follow-ups-page">
       <header className="follow-ups-header">
@@ -298,11 +301,6 @@ function FollowUps() {
       {error && (
         <p className="feedback error" role="alert">
           {error}
-        </p>
-      )}
-      {successNotice && (
-        <p className="feedback success" role="status">
-          {successNotice}
         </p>
       )}
 
@@ -368,11 +366,40 @@ function FollowUps() {
                       </td>
                       <td>{followUp.reason}</td>
                       <td>
-                        <span className="stage-pill">
-                          {stageShortName(followUp.financial_planning_stage)}
-                        </span>
+                        <select
+                          className="inline-field-select stage-select"
+                          aria-label={`Planning stage for ${client?.name || followUp.client_id}`}
+                          value={followUp.financial_planning_stage}
+                          onChange={(event) =>
+                            void handleFollowUpFieldChange(
+                              followUp,
+                              'financial_planning_stage',
+                              event.target.value,
+                            )
+                          }
+                        >
+                          {stages.map((stage) => (
+                            <option key={stage} value={stage}>
+                              {stageShortName(stage)}
+                            </option>
+                          ))}
+                        </select>
                       </td>
-                      <td>{formatDate(followUp.due_date)}</td>
+                      <td>
+                        <input
+                          className="inline-date-input"
+                          aria-label={`Due date for ${client?.name || followUp.client_id}`}
+                          type="date"
+                          value={followUp.due_date}
+                          onChange={(event) =>
+                            void handleFollowUpFieldChange(
+                              followUp,
+                              'due_date',
+                              event.target.value,
+                            )
+                          }
+                        />
+                      </td>
                       <td>
                         <select
                           className={`priority-pill ${followUp.priority.toLowerCase()}`}

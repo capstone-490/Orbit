@@ -116,10 +116,6 @@
   background: #fff0f0;
   color: #b3261e;
 }
-.feedback.success {
-  background: #edf8f2;
-  color: #24744d;
-}
 .follow-up-records {
   background: white;
   border: 1px solid #e0e6f0;
@@ -209,6 +205,30 @@
   border-radius: 12px;
   font-size: 10px;
   padding: 4px 8px;
+}
+.inline-field-select,
+.inline-date-input {
+  background: white;
+  border: 1px solid #dce3ee;
+  border-radius: 6px;
+  color: #53637b;
+  font: inherit;
+  font-size: 11px;
+  padding: 6px 7px;
+}
+.inline-field-select {
+  max-width: 130px;
+}
+.inline-date-input {
+  color-scheme: light;
+  max-width: 132px;
+}
+.inline-field-select:focus,
+.inline-date-input:focus,
+.priority-pill:focus,
+.status-select:focus {
+  border-color: #2874e8;
+  outline: 2px solid rgba(40, 116, 232, 0.16);
 }
 .stage-pill {
   background: #edf2f8;
