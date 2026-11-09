@@ -1,13 +1,13 @@
 //Below 50% AI generated
 import { useEffect, useMemo, useState } from 'react'
 import { FiAlertTriangle, FiCalendar, FiCheck, FiPlus, FiSearch } from 'react-icons/fi'
+import { withAuthCredentials } from '../services/AuthApi'
 import {
-  getFollowUps,
   createFollowUp,
+  getFollowUps,
   updateFollowUp,
   updateFollowUpStatus,
 } from '../services/FollowUpsApi'
-import { withAuthCredentials } from '../services/AuthApi'
 import '../styles/FollowUps.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001'
