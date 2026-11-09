@@ -120,9 +120,24 @@ def test_update_status_is_scoped_and_persisted(mock_db, client):
 @pytest.mark.parametrize(
     "payload",
     [
-        {"client_id": 1, "reason": " ", "financial_planning_stage": "Financial Plan", "due_date": "2026-12-01"},
-        {"client_id": 1, "reason": "Valid", "financial_planning_stage": "Unknown", "due_date": "2026-12-01"},
-        {"client_id": 1, "reason": "Valid", "financial_planning_stage": "Financial Plan", "due_date": "not-a-date"},
+        {
+            "client_id": 1,
+            "reason": " ",
+            "financial_planning_stage": "Financial Plan",
+            "due_date": "2026-12-01",
+        },
+        {
+            "client_id": 1,
+            "reason": "Valid",
+            "financial_planning_stage": "Unknown",
+            "due_date": "2026-12-01",
+        },
+        {
+            "client_id": 1,
+            "reason": "Valid",
+            "financial_planning_stage": "Financial Plan",
+            "due_date": "not-a-date",
+        },
     ],
 )
 def test_create_follow_up_validates_input(mock_db, client, payload):
