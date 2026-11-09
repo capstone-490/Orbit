@@ -68,7 +68,7 @@ describe('Navbar', () => {
       </MemoryRouter>,
     )
 
-    fireEvent.click(screen.getByRole('button', { name: 'Sign out' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Logout' }))
 
     await waitFor(() => expect(logoutAdvisor).toHaveBeenCalledOnce())
     expect(await screen.findByTestId('current-path')).toHaveTextContent('/login')
