@@ -83,6 +83,8 @@ function FollowUps() {
   }
 
   useEffect(() => {
+    // The effect loads external API data and updates the page state when it resolves.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadData()
   }, [])
 
