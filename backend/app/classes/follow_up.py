@@ -47,7 +47,9 @@ class FollowUpUpdate(BaseModel):
     @classmethod
     def reject_null_values(cls, value: object) -> object:
         if isinstance(value, dict):
-            null_fields = [field for field, field_value in value.items() if field_value is None]
+            null_fields = [
+                field for field, field_value in value.items() if field_value is None
+            ]
             if null_fields:
                 fields = ", ".join(sorted(null_fields))
                 raise ValueError(f"{fields} cannot be null.")
