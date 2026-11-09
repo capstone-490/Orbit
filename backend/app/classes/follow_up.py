@@ -1,7 +1,7 @@
 from datetime import date
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 FollowUpPriority = Literal["Low", "Medium", "High"]
 FollowUpStatus = Literal["Pending", "In Progress", "Completed", "Cancelled"]
@@ -42,6 +42,16 @@ class FollowUpUpdate(BaseModel):
     due_date: date | None = None
     priority: FollowUpPriority | None = None
     status: FollowUpStatus | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def reject_null_values(cls, value: object) -> object:
+        if isinstance(value, dict):
+            null_fields = [field for field, field_value in value.items() if field_value is None]
+            if null_fields:
+                fields = ", ".join(sorted(null_fields))
+                raise ValueError(f"{fields} cannot be null.")
+        return value
 
     @field_validator("reason")
     @classmethod

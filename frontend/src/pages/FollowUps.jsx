@@ -31,6 +31,10 @@ const emptyForm = {
   status: 'Pending',
 }
 
+function isTerminalStatus(status) {
+  return status === 'Completed' || status === 'Cancelled'
+}
+
 function formatDate(value) {
   return new Intl.DateTimeFormat('en-CA', { dateStyle: 'medium' }).format(
     new Date(`${value}T00:00:00`),
@@ -100,20 +104,20 @@ function FollowUps() {
           .some((value) => value.toLowerCase().includes(term))
       const matchesFilter =
         filter === 'All' ||
-        (filter === 'Overdue' && followUp.status !== 'Completed' && followUp.due_date < today) ||
+        (filter === 'Overdue' && !isTerminalStatus(followUp.status) && followUp.due_date < today) ||
         (filter === 'Due Today' && followUp.due_date === today) ||
-        (filter === 'Upcoming' && followUp.status !== 'Completed' && followUp.due_date > today)
+        (filter === 'Upcoming' && !isTerminalStatus(followUp.status) && followUp.due_date > today)
       return matchesSearch && matchesFilter
     })
   }, [clientById, filter, followUps, search])
 
   const today = getLocalDateKey()
   const overdueCount = followUps.filter(
-    (item) => item.status !== 'Completed' && item.due_date < today,
+    (item) => !isTerminalStatus(item.status) && item.due_date < today,
   ).length
   const dueTodayCount = followUps.filter((item) => item.due_date === today).length
   const upcomingCount = followUps.filter(
-    (item) => item.status !== 'Completed' && item.due_date > today,
+    (item) => !isTerminalStatus(item.status) && item.due_date > today,
   ).length
 
   function openCreate() {

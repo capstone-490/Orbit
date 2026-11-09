@@ -116,6 +116,14 @@ def test_update_status_is_scoped_and_persisted(mock_db, client):
     assert params["advisor_id"] == 7
 
 
+@pytest.mark.parametrize("field", ["due_date", "priority", "status"])
+def test_update_follow_up_rejects_null_non_nullable_fields(mock_db, client, field):
+    response = client.patch("/follow-ups/3", json={field: None})
+
+    assert response.status_code == 422
+    mock_db.execute.assert_not_called()
+
+
 @pytest.mark.parametrize(
     "payload",
     [
