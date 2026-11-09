@@ -134,6 +134,27 @@ describe('FollowUps', () => {
     expect(screen.queryByText(hidden)).not.toBeInTheDocument()
   })
 
+  it('excludes cancelled follow-ups from overdue and upcoming filters and counts', async () => {
+    const cancelledFollowUps = [
+      { ...followUps[0], id: 4, reason: 'Cancelled overdue', status: 'Cancelled' },
+      { ...followUps[2], id: 5, reason: 'Cancelled upcoming', status: 'Cancelled' },
+    ]
+    getFollowUps.mockResolvedValue(cancelledFollowUps)
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(clientResponse()))
+    render(<FollowUps />)
+    await screen.findByText('Cancelled overdue')
+
+    const summary = screen.getByRole('region', { name: 'Follow-up summary' })
+    expect(within(summary).getByText('Overdue outreach').parentElement).toHaveTextContent('0')
+    expect(within(summary).getByText('Upcoming').parentElement).toHaveTextContent('0')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Overdue' }))
+    expect(screen.getByText('No follow-ups match your filters.')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Upcoming' }))
+    expect(screen.getByText('No follow-ups match your filters.')).toBeInTheDocument()
+  })
+
   it('shows empty and loading error states', async () => {
     getFollowUps.mockResolvedValue([])
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(clientResponse()))
