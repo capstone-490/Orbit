@@ -42,8 +42,9 @@ function Navbar({ user }) {
         <span className="profile-avatar">
           <FiUser size={18} />
         </span>
-        <button type="button" aria-label="Sign out" onClick={handleSignOut}>
+        <button type="button" className="logout-button" aria-label="Logout" onClick={handleSignOut}>
           <FiLogOut aria-hidden="true" />
+          <span>Logout</span>
         </button>
       </div>
     </nav>
