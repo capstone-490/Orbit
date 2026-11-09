@@ -1,6 +1,17 @@
 //Below 50% AI generated
 import { useEffect, useMemo, useState } from 'react'
-import { FiAlertTriangle, FiCalendar, FiCheck, FiPlus, FiSearch } from 'react-icons/fi'
+import {
+  FiAlertTriangle,
+  FiCalendar,
+  FiCheck,
+  FiCopy,
+  FiEdit2,
+  FiMail,
+  FiPhone,
+  FiPlus,
+  FiSearch,
+  FiUsers,
+} from 'react-icons/fi'
 import { withAuthCredentials } from '../services/AuthApi'
 import {
   createFollowUp,
@@ -66,8 +77,14 @@ function FollowUps() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState(emptyForm)
+  const [emailDraft, setEmailDraft] = useState(null)
+  const [contactNotice, setContactNotice] = useState('')
+  const [successNotice, setSuccessNotice] = useState('')
 
   const clientById = useMemo(() => new Map(clients.map((client) => [client.id, client])), [clients])
+  const selectedClient = editing
+    ? clientById.get(editing.client_id)
+    : clientById.get(Number(form.client_id))
 
   async function loadData() {
     setError('')
@@ -141,6 +158,64 @@ function FollowUps() {
     setIsModalOpen(true)
   }
 
+  function openEmailComposer(followUp, client) {
+    if (!client?.email) {
+      setError('This client does not have an email address on file.')
+      return
+    }
+
+    setEmailDraft({
+      client,
+      followUp,
+      contactMethod: 'email',
+      subject: `Follow-up: ${followUp.reason}`,
+      body: `Hello ${client.name},\n\nI am following up regarding ${followUp.reason.toLowerCase()}.\n\nBest regards`,
+      discussionNotes: followUp.discussion_notes || '',
+    })
+    setContactNotice('')
+  }
+
+  async function copyContactValue(value, label) {
+    try {
+      await navigator.clipboard.writeText(value)
+      setContactNotice(`${label} copied to clipboard.`)
+    } catch {
+      setContactNotice(`Unable to copy the ${label.toLowerCase()}.`)
+    }
+
+  }
+
+  async function saveDiscussionNotes() {
+    if (!emailDraft) return
+    try {
+      await updateFollowUp(emailDraft.followUp.id, {
+        discussion_notes: emailDraft.discussionNotes.trim(),
+      })
+      setFollowUps((current) =>
+        current.map((item) =>
+          item.id === emailDraft.followUp.id
+            ? { ...item, discussion_notes: emailDraft.discussionNotes.trim() }
+            : item,
+        ),
+      )
+      setEmailDraft({
+        ...emailDraft,
+        followUp: {
+          ...emailDraft.followUp,
+          discussion_notes: emailDraft.discussionNotes.trim(),
+        },
+        discussionNotes: emailDraft.discussionNotes.trim(),
+      })
+      setContactNotice('Discussion notes saved.')
+      window.setTimeout(() => {
+        setEmailDraft(null)
+        setSuccessNotice('Discussion notes saved.')
+      }, 1000)
+    } catch (notesError) {
+      setContactNotice(notesError.message)
+    }
+  }
+
   async function handleSubmit(event) {
     event.preventDefault()
     setSaving(true)
@@ -178,6 +253,17 @@ function FollowUps() {
     }
   }
 
+  async function handlePriorityChange(followUp, priority) {
+    try {
+      await updateFollowUp(followUp.id, { priority })
+      setFollowUps((current) =>
+        current.map((item) => (item.id === followUp.id ? { ...item, priority } : item)),
+      )
+    } catch (priorityError) {
+      setError(priorityError.message)
+    }
+  }
+
   return (
     <main className="follow-ups-page">
       <header className="follow-ups-header">
@@ -212,6 +298,11 @@ function FollowUps() {
       {error && (
         <p className="feedback error" role="alert">
           {error}
+        </p>
+      )}
+      {successNotice && (
+        <p className="feedback success" role="status">
+          {successNotice}
         </p>
       )}
 
@@ -260,6 +351,7 @@ function FollowUps() {
                   <th>Due date</th>
                   <th>Priority</th>
                   <th>Status</th>
+                  <th>Contact</th>
                   <th>
                     <span className="sr-only">Actions</span>
                   </th>
@@ -272,7 +364,7 @@ function FollowUps() {
                     <tr key={followUp.id}>
                       <td>
                         <strong>{client?.name || `Client #${followUp.client_id}`}</strong>
-                        <small>{client?.email || 'Advisor client'}</small>
+                        <small>{client?.email || 'No email on file'}</small>
                       </td>
                       <td>{followUp.reason}</td>
                       <td>
@@ -282,9 +374,18 @@ function FollowUps() {
                       </td>
                       <td>{formatDate(followUp.due_date)}</td>
                       <td>
-                        <span className={`priority-pill ${followUp.priority.toLowerCase()}`}>
-                          {followUp.priority}
-                        </span>
+                        <select
+                          className={`priority-pill ${followUp.priority.toLowerCase()}`}
+                          aria-label={`Priority for ${client?.name || followUp.client_id}`}
+                          value={followUp.priority}
+                          onChange={(event) =>
+                            void handlePriorityChange(followUp, event.target.value)
+                          }
+                        >
+                          {priorities.map((priority) => (
+                            <option key={priority}>{priority}</option>
+                          ))}
+                        </select>
                       </td>
                       <td>
                         <select
@@ -301,12 +402,26 @@ function FollowUps() {
                         </select>
                       </td>
                       <td>
+                        {client?.email ? (
+                          <button
+                            className="email-button"
+                            type="button"
+                            onClick={() => openEmailComposer(followUp, client)}
+                            aria-label={`Contact info for ${client.name}`}
+                          >
+                            <FiUsers aria-hidden="true" /> Contact info
+                          </button>
+                        ) : (
+                          <span className="contact-missing">No email</span>
+                        )}
+                      </td>
+                      <td>
                         <button
-                          className="text-button"
+                          className="edit-button"
                           type="button"
                           onClick={() => openEdit(followUp)}
                         >
-                          Edit
+                          <FiEdit2 aria-hidden="true" /> Edit
                         </button>
                       </td>
                     </tr>
@@ -351,6 +466,27 @@ function FollowUps() {
                   ))}
                 </select>
               </label>
+            )}
+
+            {selectedClient && (
+              <section className="client-contact-card" aria-label="Client contact information">
+                <div>
+                  <strong>{selectedClient.name}</strong>
+                  <small>Client contact information</small>
+                </div>
+                <div className="client-contact-links">
+                  {selectedClient.email && (
+                    <a href={`mailto:${selectedClient.email}`}>
+                      <FiMail aria-hidden="true" /> {selectedClient.email}
+                    </a>
+                  )}
+                  {selectedClient.phone_number && (
+                    <a href={`tel:${selectedClient.phone_number}`}>
+                      <FiPhone aria-hidden="true" /> {selectedClient.phone_number}
+                    </a>
+                  )}
+                </div>
+              </section>
             )}
             <label>
               Reason
@@ -427,6 +563,131 @@ function FollowUps() {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {emailDraft && (
+        <div className="modal-backdrop email-composer-backdrop" role="presentation">
+          <section
+            className="email-composer"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="email-composer-title"
+          >
+            <div className="modal-heading">
+              <div>
+                <p className="eyebrow">Client engagement</p>
+                <h2 id="email-composer-title">Send follow-up email</h2>
+              </div>
+              <button
+                type="button"
+                className="modal-close"
+                onClick={() => setEmailDraft(null)}
+                aria-label="Close email composer"
+              >
+                ×
+              </button>
+            </div>
+            <div className="email-recipient">
+              <span className="client-avatar">{emailDraft.client.name.charAt(0)}</span>
+              <div>
+                <strong>{emailDraft.client.name}</strong>
+                <div className="contact-values">
+                  <button
+                    type="button"
+                    className={`contact-method-button ${
+                      emailDraft.contactMethod === 'email' ? 'selected' : ''
+                    }`}
+                    onClick={() => {
+                      setEmailDraft({ ...emailDraft, contactMethod: 'email' })
+                      setContactNotice('')
+                    }}
+                  >
+                    <FiMail aria-hidden="true" /> Email
+                  </button>
+                  {emailDraft.client.phone_number ? (
+                    <button
+                      type="button"
+                      className={`contact-method-button ${
+                        emailDraft.contactMethod === 'phone' ? 'selected' : ''
+                      }`}
+                      onClick={() => {
+                        setEmailDraft({ ...emailDraft, contactMethod: 'phone' })
+                        setContactNotice('')
+                      }}
+                    >
+                      <FiPhone aria-hidden="true" /> Phone
+                    </button>
+                  ) : (
+                    <small>Phone not provided</small>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="selected-contact">
+              <span>{emailDraft.contactMethod === 'email' ? 'Email address' : 'Phone number'}</span>
+              <strong>
+                {emailDraft.contactMethod === 'email'
+                  ? emailDraft.client.email
+                  : emailDraft.client.phone_number}
+              </strong>
+              <button
+                type="button"
+                className="copy-contact-button"
+                onClick={() =>
+                  void copyContactValue(
+                    emailDraft.contactMethod === 'email'
+                      ? emailDraft.client.email
+                      : emailDraft.client.phone_number,
+                    emailDraft.contactMethod === 'email' ? 'Email' : 'Phone number',
+                  )
+                }
+              >
+                <FiCopy aria-hidden="true" /> Copy
+              </button>
+            </div>
+            {emailDraft.contactMethod === 'email' && (
+              <>
+                <label>
+                  Subject
+                  <input
+                    value={emailDraft.subject}
+                    onChange={(event) =>
+                      setEmailDraft({ ...emailDraft, subject: event.target.value })
+                    }
+                  />
+                </label>
+              </>
+            )}
+            <label>
+              Discussion notes
+              <textarea
+                className="email-message"
+                value={emailDraft.discussionNotes}
+                placeholder="Record the outcome of your conversation with this client..."
+                onChange={(event) =>
+                  setEmailDraft({ ...emailDraft, discussionNotes: event.target.value })
+                }
+              />
+            </label>
+            <button
+              type="button"
+              className="save-notes-button"
+              onClick={() => void saveDiscussionNotes()}
+            >
+              Save discussion
+            </button>
+            {contactNotice && <p className="contact-notice">{contactNotice}</p>}
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => setEmailDraft(null)}
+              >
+                Cancel
+              </button>
+            </div>
+          </section>
         </div>
       )}
     </main>

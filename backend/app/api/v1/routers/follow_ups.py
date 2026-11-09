@@ -23,7 +23,7 @@ def _follow_up_or_404(follow_up_id: int, advisor_id: int) -> dict:
                 SELECT id, advisor_id, client_id, reason,
                        financial_planning_stage::text AS financial_planning_stage,
                        due_date, priority::text AS priority,
-                       status::text AS status, created_at, updated_at
+                       status::text AS status, discussion_notes, created_at, updated_at
                 FROM follow_ups
                 WHERE id = %s AND advisor_id = %s
                 """,
@@ -63,7 +63,7 @@ def create_follow_up(
                 RETURNING id, advisor_id, client_id, reason,
                           financial_planning_stage::text AS financial_planning_stage,
                           due_date, priority::text AS priority,
-                          status::text AS status, created_at, updated_at
+                          status::text AS status, discussion_notes, created_at, updated_at
                 """,
                 (
                     advisor["id"],
@@ -104,7 +104,7 @@ def list_follow_ups(advisor: dict[str, int] = Depends(get_current_advisor)):
                 SELECT id, advisor_id, client_id, reason,
                        financial_planning_stage::text AS financial_planning_stage,
                        due_date, priority::text AS priority,
-                       status::text AS status, created_at, updated_at
+                       status::text AS status, discussion_notes, created_at, updated_at
                 FROM follow_ups
                 WHERE advisor_id = %s
                 ORDER BY due_date ASC, id ASC
@@ -169,7 +169,7 @@ def _update_follow_up(
                 RETURNING id, advisor_id, client_id, reason,
                           financial_planning_stage::text AS financial_planning_stage,
                           due_date, priority::text AS priority,
-                          status::text AS status, created_at, updated_at
+                          status::text AS status, discussion_notes, created_at, updated_at
                 """,
                 values,
             )

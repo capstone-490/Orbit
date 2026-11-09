@@ -42,6 +42,7 @@ class FollowUpUpdate(BaseModel):
     due_date: date | None = None
     priority: FollowUpPriority | None = None
     status: FollowUpStatus | None = None
+    discussion_notes: str | None = Field(default=None, max_length=5000)
 
     @model_validator(mode="before")
     @classmethod
@@ -64,6 +65,13 @@ class FollowUpUpdate(BaseModel):
         if not reason:
             raise ValueError("Reason cannot be blank.")
         return reason
+
+    @field_validator("discussion_notes")
+    @classmethod
+    def validate_discussion_notes(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return value.strip()
 
 
 class FollowUpStatusUpdate(BaseModel):
