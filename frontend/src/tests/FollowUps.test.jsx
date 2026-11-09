@@ -28,8 +28,8 @@ const addDays = (days) => {
   return date.toISOString().slice(0, 10)
 }
 const clients = [
-  { id: 1, name: 'Alice Smith', email: 'alice@example.com' },
-  { id: 2, name: 'Bob Jones', email: 'bob@example.com' },
+  { id: 1, name: 'Alice Smith', email: 'alice@example.com', phone_number: '416-555-0101' },
+  { id: 2, name: 'Bob Jones', email: 'bob@example.com', phone_number: '416-555-0102' },
 ]
 const followUps = [
   {
@@ -119,6 +119,48 @@ describe('FollowUps', () => {
 
     expect(screen.getByText('Send meeting summary')).toBeInTheDocument()
     expect(screen.queryByText('Review overdue proposal')).not.toBeInTheDocument()
+  })
+
+  it('shows client contact information and provides a prefilled email action', async () => {
+    await renderLoaded()
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Contact info for Alice Smith' })[0])
+
+    expect(screen.getByRole('dialog', { name: 'Send follow-up email' })).toHaveTextContent(
+      'alice@example.com',
+    )
+    expect(screen.getByLabelText('Subject')).toHaveValue('Follow-up: Review overdue proposal')
+    expect(screen.getByRole('button', { name: 'Email' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Phone' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Copy' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Phone' }))
+    expect(screen.getByText('416-555-0101')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Email' }))
+    fireEvent.change(screen.getByLabelText('Discussion notes'), {
+      target: { value: 'Discussed next steps.' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Save discussion' }))
+    await waitFor(() =>
+      expect(updateFollowUp).toHaveBeenCalledWith(1, {
+        discussion_notes: 'Discussed next steps.',
+      }),
+    )
+    expect(screen.getByRole('dialog', { name: 'Send follow-up email' })).toHaveTextContent(
+      'Discussion notes saved.',
+    )
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: 'Send follow-up email' })).not.toBeInTheDocument(),
+    )
+    expect(screen.getByRole('status')).toHaveTextContent('Discussion notes saved.')
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0])
+    expect(screen.getByRole('region', { name: 'Client contact information' })).toHaveTextContent(
+      'alice@example.com',
+    )
+    expect(screen.getByRole('link', { name: /416-555-0101/ })).toHaveAttribute(
+      'href',
+      'tel:416-555-0101',
+    )
   })
 
   it.each([
@@ -238,6 +280,21 @@ describe('FollowUps', () => {
       target: { value: 'Cancelled' },
     })
     expect(await screen.findByRole('alert')).toHaveTextContent('Status update failed.')
+  })
+
+  it('updates a record priority from the table', async () => {
+    await renderLoaded()
+    updateFollowUp.mockResolvedValue({})
+
+    const prioritySelect = screen.getAllByRole('combobox', {
+      name: 'Priority for Alice Smith',
+    })[0]
+    fireEvent.change(prioritySelect, {
+      target: { value: 'Low' },
+    })
+
+    await waitFor(() => expect(updateFollowUp).toHaveBeenCalledWith(1, { priority: 'Low' }))
+    expect(prioritySelect).toHaveValue('Low')
   })
 
   it('displays save errors for create and prevents blank required submissions', async () => {
