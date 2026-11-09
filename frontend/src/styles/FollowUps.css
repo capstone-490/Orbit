@@ -107,8 +107,9 @@
 .priority-pill.medium { background: #eef5ff; color: #2766bd; }
 .priority-pill.low { background: #edf8f2; color: #24744d; }
 .status-select { border: 1px solid #dce3ee; color: #53637b; }
-.status-select.completed { background: #edf8f2; }
-.status-select.pending, .status-select.in-progress { background: #fff8df; }
+.status-select.completed { background: #edf8f2; color: #24744d; }
+.status-select.pending { background: #fff8df; color: #9a6a00; }
+.status-select.in-progress { background: #eef5ff; color: #2766bd; }
 .status-select.cancelled { background: #f2f3f5; }
 .text-button { background: transparent; color: #1468d9; font-size: 12px; }
 .empty-state { color: #738096; padding: 28px 0; text-align: center; }
