@@ -29,6 +29,13 @@ function formatDate(value) {
   return new Intl.DateTimeFormat('en-CA', { dateStyle: 'medium' }).format(new Date(`${value}T00:00:00`))
 }
 
+function getLocalDateKey() {
+  const now = new Date()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return `${now.getFullYear()}-${month}-${day}`
+}
+
 function stageShortName(stage) {
   return { 'Corporate Introduction': 'Corporate', 'Financial Needs Analysis': 'FNA' }[stage] || stage
 }
@@ -74,6 +81,7 @@ function FollowUps() {
 
   const visibleFollowUps = useMemo(() => {
     const term = search.trim().toLowerCase()
+    const today = getLocalDateKey()
     return followUps.filter((followUp) => {
       const client = clientById.get(followUp.client_id)
       const matchesSearch =
@@ -83,16 +91,17 @@ function FollowUps() {
           .some((value) => value.toLowerCase().includes(term))
       const matchesFilter =
         filter === 'All' ||
-        (filter === 'Overdue' && followUp.status !== 'Completed' && followUp.due_date < new Date().toISOString().slice(0, 10)) ||
-        (filter === 'Due Today' && followUp.due_date === new Date().toISOString().slice(0, 10)) ||
-        (filter === 'Upcoming' && followUp.status !== 'Completed' && followUp.due_date > new Date().toISOString().slice(0, 10))
+        (filter === 'Overdue' && followUp.status !== 'Completed' && followUp.due_date < today) ||
+        (filter === 'Due Today' && followUp.due_date === today) ||
+        (filter === 'Upcoming' && followUp.status !== 'Completed' && followUp.due_date > today)
       return matchesSearch && matchesFilter
     })
   }, [clientById, filter, followUps, search])
 
-  const overdueCount = followUps.filter((item) => item.status !== 'Completed' && item.due_date < new Date().toISOString().slice(0, 10)).length
-  const dueTodayCount = followUps.filter((item) => item.due_date === new Date().toISOString().slice(0, 10)).length
-  const upcomingCount = followUps.filter((item) => item.status !== 'Completed' && item.due_date > new Date().toISOString().slice(0, 10)).length
+  const today = getLocalDateKey()
+  const overdueCount = followUps.filter((item) => item.status !== 'Completed' && item.due_date < today).length
+  const dueTodayCount = followUps.filter((item) => item.due_date === today).length
+  const upcomingCount = followUps.filter((item) => item.status !== 'Completed' && item.due_date > today).length
 
   function openCreate() {
     setEditing(null)
