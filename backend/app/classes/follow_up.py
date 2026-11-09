@@ -1,0 +1,58 @@
+from datetime import date
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+FollowUpPriority = Literal["Low", "Medium", "High"]
+FollowUpStatus = Literal["Pending", "In Progress", "Completed", "Cancelled"]
+FinancialPlanningStage = Literal[
+    "Corporate Introduction",
+    "Investment Education",
+    "Tax Education",
+    "Insurance Education",
+    "Financial Needs Analysis",
+    "Financial Plan",
+]
+
+
+class FollowUpCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    client_id: int = Field(gt=0)
+    reason: str = Field(min_length=1, max_length=2000)
+    financial_planning_stage: FinancialPlanningStage
+    due_date: date
+    priority: FollowUpPriority = "Medium"
+    status: FollowUpStatus = "Pending"
+
+    @field_validator("reason")
+    @classmethod
+    def validate_reason(cls, value: str) -> str:
+        reason = value.strip()
+        if not reason:
+            raise ValueError("Reason cannot be blank.")
+        return reason
+
+
+class FollowUpUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    reason: str | None = Field(default=None, min_length=1, max_length=2000)
+    financial_planning_stage: FinancialPlanningStage | None = None
+    due_date: date | None = None
+    priority: FollowUpPriority | None = None
+    status: FollowUpStatus | None = None
+
+    @field_validator("reason")
+    @classmethod
+    def validate_reason(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        reason = value.strip()
+        if not reason:
+            raise ValueError("Reason cannot be blank.")
+        return reason
+
+
+class FollowUpStatusUpdate(BaseModel):
+    status: FollowUpStatus
