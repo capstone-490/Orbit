@@ -67,7 +67,6 @@ def create_follow_up(
                 """,
                 (
                     advisor["id"],
-                    follow_up.client_id,
                     follow_up.reason,
                     follow_up.financial_planning_stage,
                     follow_up.due_date,
