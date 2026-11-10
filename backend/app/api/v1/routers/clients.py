@@ -74,7 +74,7 @@ def list_clients(advisor: dict[str, int] = Depends(get_current_advisor)):
                    address, age, occupation,
                    timeline, created_at
             FROM t_clients
-                 WHERE advisor_id = %(advisor_id)s
+            WHERE advisor_id = %(advisor_id)s
             ORDER BY created_at DESC, id DESC
                  """,
             {"advisor_id": advisor["id"]},

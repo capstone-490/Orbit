@@ -14,9 +14,12 @@ services:
     build:
       target: dev
     command: ["fastapi", "dev", "app/main.py", "--host", "0.0.0.0", "--port", "8001"]
+    env_file:
+      - .env
     environment:
       ENVIRONMENT: dev
       DEBUG: "true"
+      DB_HOST: db
     ports:
       - "127.0.0.1:8001:8001"
     volumes:

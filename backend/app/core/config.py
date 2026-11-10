@@ -40,8 +40,6 @@ class Settings(BaseSettings):
 
     VITE_API_URL: str = "/api/v1"
     FRONTEND_URL: str = "http://127.0.0.1:5173"
-
-    # Public URL of this FastAPI backend, used to build absolute URLs to its routes
     BACKEND_URL: str
 
     # OAuth client downloaded from Google Cloud Console (never commit this file)
@@ -80,6 +78,14 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def enforce_production_secrets(self) -> Settings:
+        if (
+            not self.ORBIT_ANONYMIZATION_SECRET.strip()
+            or len(self.ORBIT_ANONYMIZATION_SECRET.encode("utf-8")) < 32
+        ):
+            raise ValueError(
+                "ORBIT_ANONYMIZATION_SECRET must contain at least 32 bytes"
+            )
+
         if self.ENVIRONMENT in ("staging", "production") and (
             self.SECRET_KEY == INSECURE_DEFAULT_SECRET
             or not self.ORBIT_AUTH_SECRET

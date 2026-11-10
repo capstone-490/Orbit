@@ -1661,7 +1661,7 @@ $$;
 --
 -- usage in python middleware per request transaction:
 --   set local app.current_org_id = '<uuid>';
---   or for background outbox/reaper workers: set local app.bypass_rls = 'on';
+--   or for background workers: set local app.bypass_rls = 'on';
 
 
 DO $$

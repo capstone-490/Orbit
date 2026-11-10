@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.router import api_router
+from app.api.v1.routers.public_booking import register_booking_exception_handlers
 from app.core.config import settings
 from app.health.router import health_router
 from app.lifecycle.lifespan import lifespan
@@ -31,7 +32,7 @@ def create_application() -> FastAPI:
         redoc_url=None if is_prod else "/redoc",
         openapi_url=None if is_prod else "/openapi.json",
     )
-
+    register_booking_exception_handlers(application)
     register_middleware(application)
     register_routers(application)
 
