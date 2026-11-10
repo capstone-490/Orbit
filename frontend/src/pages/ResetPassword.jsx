@@ -5,6 +5,7 @@ import orbitLogo from '../assets/orbit-logo.png'
 import { resetPassword, validateResetToken } from '../services/AuthApi.passwordReset'
 import '../styles/Login.css'
 import '../styles/CreateAccount.css'
+import AnimatedOrbitBackground from '../components/AnimatedOrbitBackground/AnimatedOrbitBackground'
 
 function ResetPassword() {
   const navigate = useNavigate()
@@ -201,12 +202,7 @@ function ResetPassword() {
 
   return (
     <main className="login-page">
-      <div className="login-orbit login-orbit-one" />
-      <div className="login-orbit login-orbit-two" />
-      <span className="login-dot login-dot-one" />
-      <span className="login-dot login-dot-two" />
-      <span className="login-dot login-dot-three" />
-
+      <AnimatedOrbitBackground />
       <section className="login-shell" aria-labelledby="reset-password-title">
         <div className="login-brand">
           <div className="login-logo-frame">
