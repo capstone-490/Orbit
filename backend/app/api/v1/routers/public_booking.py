@@ -1,6 +1,9 @@
+# Below 50% AI-generated code
+
 from __future__ import annotations
 
 from datetime import date, datetime
+from typing import Annotated
 from uuid import UUID
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -38,10 +41,6 @@ from app.services.public_booking import PublicBookingService
 
 router = APIRouter(prefix="/public/booking-links", tags=["Public Client Booking"])
 
-# =============================================================================
-# Domain Exception -> HTTP Status Code Registration
-# =============================================================================
-
 
 def register_booking_exception_handlers(app: FastAPI) -> None:
     """Maps pure Domain Exceptions to standard REST HTTP status codes."""
@@ -74,11 +73,6 @@ def register_booking_exception_handlers(app: FastAPI) -> None:
         )
 
 
-# =============================================================================
-# Public Endpoints
-# =============================================================================
-
-
 @router.get(
     "/{public_token}/availability/weekly",
     response_model=WeeklyAvailabilityResponse,
@@ -86,12 +80,19 @@ def register_booking_exception_handlers(app: FastAPI) -> None:
 )
 async def get_weekly_availability(
     public_token: str,
-    start_date: date = Query(
-        ..., description="Start date of the weekly view (YYYY-MM-DD)"
-    ),
-    end_date: date = Query(..., description="End date of the weekly view (YYYY-MM-DD)"),
-    service: PublicBookingService = Depends(get_public_booking_service),
-    now: datetime = Depends(get_clock),
+    start_date: Annotated[
+        date,
+        Query(description="Start date of the weekly view (YYYY-MM-DD)"),
+    ],
+    end_date: Annotated[
+        date,
+        Query(description="End date of the weekly view (YYYY-MM-DD)"),
+    ],
+    service: Annotated[
+        PublicBookingService,
+        Depends(get_public_booking_service),
+    ],
+    now: Annotated[datetime, Depends(get_clock)],
 ) -> WeeklyAvailabilityResponse:
     result = await service.get_weekly_availability(
         public_token=public_token,
