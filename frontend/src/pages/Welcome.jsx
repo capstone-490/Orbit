@@ -60,7 +60,7 @@ function Welcome() {
             organize meetings, and streamline everyday workflows for financial advisors.
           </p>
         </section>
-        
+
         {/* Why Orbit section */}
         <WhyOrbit />
 
