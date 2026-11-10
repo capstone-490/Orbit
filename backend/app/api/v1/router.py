@@ -11,6 +11,7 @@ from app.api.v1.routers import (
     meetings,
     password_reset,
     priority_actions,
+    public_booking,
     sessions,
     tasks,
 )
@@ -28,5 +29,6 @@ router.include_router(follow_ups.router)
 router.include_router(meetings.router)
 router.include_router(password_reset.router)
 router.include_router(priority_actions.router)
+router.include_router(public_booking.router)
 router.include_router(sessions.router)
 router.include_router(tasks.router)

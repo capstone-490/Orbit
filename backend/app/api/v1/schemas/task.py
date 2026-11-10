@@ -1,9 +1,8 @@
 from datetime import datetime
 from enum import Enum
 
-from pydantic import BaseModel
-
 from app.services.sla_cal import UrgencyState
+from pydantic import BaseModel
 
 
 class TaskStatus(Enum):

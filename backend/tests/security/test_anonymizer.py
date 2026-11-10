@@ -28,17 +28,27 @@ def client_payload():
     }
 
 
+TEST_SECRET = b"test-secret-for-anonymization-32"
+
+
 def test_masking_is_deterministic_for_same_id_and_secret():
     payload = client_payload()
 
-    first = mask_for_ai(payload, TokenStore(secret=b"test-secret"))
-    second = mask_for_ai(payload, TokenStore(secret=b"test-secret"))
+    first = mask_for_ai(
+        payload,
+        TokenStore(secret=TEST_SECRET),
+    )
+
+    second = mask_for_ai(
+        payload,
+        TokenStore(secret=TEST_SECRET),
+    )
 
     assert first == second
 
 
 def test_masking_differs_for_different_ids():
-    store = TokenStore(secret=b"test-secret")
+    store = TokenStore(secret=TEST_SECRET)
 
     first = mask_for_ai(client_payload(), store)
     second = mask_for_ai({**client_payload(), "id": 43}, store)
@@ -52,7 +62,7 @@ def test_masking_does_not_mutate_input_or_expose_pii():
     payload = client_payload()
     original = payload.copy()
 
-    masked = mask_for_ai(payload, TokenStore(secret=b"test-secret"))
+    masked = mask_for_ai(payload, TokenStore(secret=TEST_SECRET))
 
     assert payload == original
     assert "Alice Smith" not in repr(masked)
@@ -64,7 +74,7 @@ def test_masking_does_not_mutate_input_or_expose_pii():
 
 
 def test_masked_phone_passes_client_validation():
-    masked = mask_for_ai(client_payload(), TokenStore(secret=b"test-secret"))
+    masked = mask_for_ai(client_payload(), TokenStore(secret=TEST_SECRET))
 
     validated = ClientCreate(
         name=masked["name"],
@@ -78,7 +88,7 @@ def test_masked_phone_passes_client_validation():
 def test_empty_optional_values_are_none():
     payload = {**client_payload(), "address": "", "occupation": None}
 
-    masked = mask_for_ai(payload, TokenStore(secret=b"test-secret"))
+    masked = mask_for_ai(payload, TokenStore(secret=TEST_SECRET))
 
     assert masked["address"] is None
     assert masked["occupation"] is None
@@ -95,4 +105,7 @@ def test_valid_environment_secret_allows_token_store(monkeypatch):
 
 def test_masking_requires_stable_client_id():
     with pytest.raises(ValueError, match="stable id"):
-        mask_for_ai({"name": "Alice Smith"}, TokenStore(secret=b"test-secret"))
+        mask_for_ai(
+            {"name": "Alice Smith"},
+            TokenStore(secret=TEST_SECRET),
+        )

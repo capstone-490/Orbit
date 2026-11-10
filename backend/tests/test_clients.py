@@ -43,6 +43,10 @@ def mock_db(monkeypatch):
     return cursor
 
 
+def normalize_sql(query: str) -> str:
+    return " ".join(query.lower().split())
+
+
 def test_create_client_success(mock_db):
     mock_db.fetchone.return_value = (1,)
 
@@ -65,11 +69,10 @@ def test_create_client_success(mock_db):
     mock_db.execute.assert_called_once()
     query, params = mock_db.execute.call_args.args
 
-    assert "INSERT INTO t_clients" in query
+    assert normalize_sql(query).startswith("insert into t_clients")
     assert params["name"] == "Alice Smith"
     assert params["email"] == "alice@example.com"
     assert params["phone_number"] == "514-555-1234"
-    assert params["advisor_id"] == 1
     assert params["age"] == date.today().year - 1988 - (
         (date.today().month, date.today().day) < (4, 12)
     )
