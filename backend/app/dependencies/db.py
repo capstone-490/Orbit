@@ -15,9 +15,21 @@ engine = create_engine(
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-def get_connection():
-    """Application connection, subject to PostgreSQL RLS."""
-    return psycopg.connect(settings.psycopg_database_uri)
+def get_connection(user_id: str | None = None, user_type: str = "System"):
+
+    conn = psycopg.connect(settings.psycopg_database_uri)
+
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                set_config('audit.user_id', %s, true),
+                set_config('audit.user_type', %s, true)
+            """,
+            (str(user_id) if user_id else '', user_type)
+        )
+
+    return conn
 
 
 def get_admin_connection():

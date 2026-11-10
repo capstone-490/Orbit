@@ -31,7 +31,7 @@ def get_advisor_tasks(advisor_id: int):
         ORDER BY t.due_date ASC;
     """
     try:
-        with get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
+        with get_connection(advisor_id, "Advisor") as conn, conn.cursor(row_factory=dict_row) as cur:
             cur.execute(query, (advisor_id,))
             return cur.fetchall()
     except PsycopgError as e:
