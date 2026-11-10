@@ -2,8 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from psycopg import Error as PsycopgError
 from psycopg.rows import dict_row
 
+from app.api.v1.schemas.follow_up import (
+    FollowUpCreate,
+    FollowUpStatusUpdate,
+    FollowUpUpdate,
+)
 from app.auth import get_current_advisor
-from app.classes.follow_up import FollowUpCreate, FollowUpStatusUpdate, FollowUpUpdate
 from app.dependencies.db import get_connection
 from app.observability.logging_config import get_logger
 

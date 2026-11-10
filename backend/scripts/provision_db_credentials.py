@@ -7,8 +7,14 @@ ALLOWED_ROLES = {"orbit_app", "orbit_test"}
 
 
 def provision_credentials(
-    username: str | None = None, password: str | None = None
+    username: str | None = None,
+    password: str | None = None,
 ) -> None:
+    """
+    One-shot Docker/CLI initialization script.
+    Uses the privileged admin connection (`get_admin_connection`) to set the login
+    password for the unprivileged application role (`orbit_app` or `orbit_test`).
+    """
     username = settings.DB_USER if username is None else username
     password = settings.DB_PASSWORD if password is None else password
 
@@ -40,7 +46,6 @@ def provision_credentials(
                 sql.Literal(password),
             )
         )
-
         conn.commit()
 
     print(f"Successfully provisioned credentials for {username}.")
