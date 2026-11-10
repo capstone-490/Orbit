@@ -12,9 +12,13 @@ from googleapiclient.errors import HttpError
 
 from app.api.v1.routers import google_meet_integration as gmi
 from app.auth import create_access_token
+from app.core.security.token_cipher import decrypt_token, encrypt_token
 from app.main import app
 
 PREFIX = "/google-meet-integration"
+
+# Stored credentials are encrypted at rest
+CREDS_ROW = (encrypt_token(json.dumps({"token": "t"})),)
 
 client = TestClient(
     app,
@@ -145,7 +149,11 @@ def test_callback_stores_credentials(mock_flow, mock_db):
 
     query, params = mock_db.execute.call_args.args
     assert "INSERT INTO google_oauth_credentials" in query
-    assert params == (1, json.dumps({"token": "t"}))
+    advisor_id, stored = params
+    assert advisor_id == 1
+    # Tokens are stored encrypted, never as plain JSON
+    assert '"token"' not in stored
+    assert decrypt_token(stored) == json.dumps({"token": "t"})
 
 
 def test_callback_rejects_mismatched_state(mock_flow, mock_db):
@@ -209,13 +217,27 @@ def test_status_not_connected(mock_db):
 
 
 def test_status_connected(mock_db, stored_creds):
-    mock_db.fetchone.return_value = ({"token": "t"},)
+    mock_db.fetchone.return_value = CREDS_ROW
 
     response = client.get(f"{PREFIX}/status")
 
     assert response.json() == {"connected": True}
     _, params = mock_db.execute.call_args.args
     assert params == (1,)
+    # The stored value is decrypted before Google's Credentials are built
+    info, _ = gmi.Credentials.from_authorized_user_info.call_args.args
+    assert info == {"token": "t"}
+
+
+def test_credentials_encrypted_with_another_key_count_as_disconnected(mock_db):
+    other_key = "b3RoZXIta2V5LWZvci10ZXN0aW5nLW9ubHktMzJieXQ="
+    mock_db.fetchone.return_value = (
+        encrypt_token(json.dumps({"token": "t"}), key=other_key),
+    )
+
+    response = client.get(f"{PREFIX}/status")
+
+    assert response.json() == {"connected": False}
 
 
 def test_create_space_without_connection_returns_409(mock_db):
@@ -227,7 +249,7 @@ def test_create_space_without_connection_returns_409(mock_db):
 
 
 def test_create_space_returns_meeting_details(mock_db, stored_creds, mock_meet):
-    mock_db.fetchone.return_value = ({"token": "t"},)
+    mock_db.fetchone.return_value = CREDS_ROW
 
     response = client.post(f"{PREFIX}/spaces")
 
@@ -244,7 +266,7 @@ def test_create_space_returns_meeting_details(mock_db, stored_creds, mock_meet):
 def test_create_space_refreshes_and_saves_expired_credentials(
     mock_db, stored_creds, mock_meet
 ):
-    mock_db.fetchone.return_value = ({"token": "t"},)
+    mock_db.fetchone.return_value = CREDS_ROW
     stored_creds.valid = False
 
     response = client.post(f"{PREFIX}/spaces")
@@ -253,11 +275,12 @@ def test_create_space_refreshes_and_saves_expired_credentials(
     stored_creds.refresh.assert_called_once()
     query, params = mock_db.execute.call_args.args
     assert "INSERT INTO google_oauth_credentials" in query
-    assert params == (1, json.dumps({"token": "refreshed"}))
+    assert params[0] == 1
+    assert decrypt_token(params[1]) == json.dumps({"token": "refreshed"})
 
 
 def test_create_space_with_revoked_token_returns_409(mock_db, stored_creds, mock_meet):
-    mock_db.fetchone.return_value = ({"token": "t"},)
+    mock_db.fetchone.return_value = CREDS_ROW
     stored_creds.valid = False
     stored_creds.refresh.side_effect = RefreshError("revoked")
 
@@ -268,7 +291,7 @@ def test_create_space_with_revoked_token_returns_409(mock_db, stored_creds, mock
 
 
 def test_create_space_meet_api_error_returns_502(mock_db, stored_creds, mock_meet):
-    mock_db.fetchone.return_value = ({"token": "t"},)
+    mock_db.fetchone.return_value = CREDS_ROW
     mock_meet.create_space.side_effect = PermissionDenied("nope")
 
     response = client.post(f"{PREFIX}/spaces")
@@ -276,7 +299,6 @@ def test_create_space_meet_api_error_returns_502(mock_db, stored_creds, mock_mee
     assert response.status_code == 502
 
 
-CREDS_ROW = ({"token": "t"},)
 CLIENT_ROW = (1,)
 MEETING_ROW = (42,)
 
