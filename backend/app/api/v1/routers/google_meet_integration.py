@@ -1,4 +1,5 @@
 # Below 50% AI-generated
+import json
 import os
 import uuid
 from datetime import UTC, datetime, timedelta
@@ -19,6 +20,11 @@ from pydantic import AwareDatetime, BaseModel, EmailStr, Field
 
 from app.auth import get_current_advisor
 from app.core.config import settings
+from app.core.security.token_cipher import (
+    InvalidToken,
+    decrypt_token,
+    encrypt_token,
+)
 from app.dependencies.db import get_connection
 from app.logging_config import get_logger
 
@@ -440,7 +446,15 @@ def _load_credentials(advisor_id: int) -> Credentials | None:
 
     if row is None:
         return None
-    return Credentials.from_authorized_user_info(row[0], SCOPES)
+
+    try:
+        info = json.loads(decrypt_token(row[0]))
+    except InvalidToken:
+        # Encrypted with a different key (e.g. it was rotated); treat the
+        # account as disconnected so the advisor reconnects and overwrites it.
+        logger.warning("Stored Google credentials could not be decrypted")
+        return None
+    return Credentials.from_authorized_user_info(info, SCOPES)
 
 
 def _save_credentials(advisor_id: int, creds: Credentials) -> None:
@@ -448,10 +462,10 @@ def _save_credentials(advisor_id: int, creds: Credentials) -> None:
         cur.execute(
             """
                 INSERT INTO google_oauth_credentials (advisor_id, credentials)
-                VALUES (%s, %s::jsonb)
+                VALUES (%s, %s)
                 ON CONFLICT (advisor_id) DO UPDATE
                 SET credentials = EXCLUDED.credentials, updated_at = NOW()
                 """,
-            (advisor_id, creds.to_json()),
+            (advisor_id, encrypt_token(creds.to_json())),
         )
         conn.commit()

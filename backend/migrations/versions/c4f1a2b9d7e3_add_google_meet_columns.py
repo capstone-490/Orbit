@@ -25,13 +25,14 @@ def upgrade() -> None:
             ADD COLUMN IF NOT EXISTS meeting_code TEXT;
     """)
 
-    # One Google account per advisor; credentials holds Credentials.to_json().
+    # One Google account per advisor. credentials holds Credentials.to_json()
+    # encrypted with GOOGLE_TOKEN_ENCRYPTION_KEY (Fernet), never plain text.
     # calendar_id is the secondary calendar Orbit creates for meetings; NULL
     # until the first meeting is scheduled.
     op.execute("""
         CREATE TABLE IF NOT EXISTS google_oauth_credentials (
             advisor_id BIGINT PRIMARY KEY,
-            credentials JSONB NOT NULL,
+            credentials TEXT NOT NULL,
             calendar_id TEXT,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
