@@ -1,7 +1,7 @@
 """add google meet columns and google oauth credentials
 
 Revision ID: c4f1a2b9d7e3
-Revises: bdacab6a88f6
+Revises: c8d4e6f1a2b3
 Create Date: 2026-11-08 00:00:00.000000
 
 """
@@ -12,7 +12,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "c4f1a2b9d7e3"
-down_revision: str | Sequence[str] | None = "bdacab6a88f6"
+down_revision: str | Sequence[str] | None = "c8d4e6f1a2b3"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
