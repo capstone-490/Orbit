@@ -154,7 +154,7 @@ def list_meetings(
     advisor_id: int, advisor: dict[str, int] = Depends(get_current_advisor)
 ):
     _require_matching_advisor(advisor_id, advisor)
-    with get_connection() as conn, conn.cursor() as cur:
+    with get_connection(advisor["id"], "Advisor") as conn, conn.cursor() as cur:
         cur.execute(
             """
             SELECT
@@ -188,7 +188,7 @@ def list_scheduled_meetings(
     advisor: dict[str, int] = Depends(get_current_advisor),
 ):
     _require_matching_advisor(advisor_id, advisor)
-    with get_connection() as conn, conn.cursor() as cur:
+    with get_connection(advisor["id"], "Advisor") as conn, conn.cursor() as cur:
         cur.execute(
             """
                 SELECT id, client_id, advisor_id, meeting_date, completion_status,
@@ -212,7 +212,7 @@ def list_completed_meetings(
     advisor: dict[str, int] = Depends(get_current_advisor),
 ):
     _require_matching_advisor(advisor_id, advisor)
-    with get_connection() as conn, conn.cursor() as cur:
+    with get_connection(advisor["id"], "Advisor") as conn, conn.cursor() as cur:
         cur.execute(
             """
                 SELECT id, client_id, advisor_id, meeting_date, completion_status,
@@ -237,7 +237,7 @@ def list_meetings_for_client(
     advisor: dict[str, int] = Depends(get_current_advisor),
 ):
     _require_matching_advisor(advisor_id, advisor)
-    with get_connection() as conn, conn.cursor() as cur:
+    with get_connection(advisor["id"], "Advisor") as conn, conn.cursor() as cur:
         cur.execute(
             """
                 SELECT id, client_id, advisor_id, meeting_date, completion_status,

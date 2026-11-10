@@ -91,7 +91,7 @@ def create_client(
             data[field] = None
 
     try:
-        with get_connection() as conn, conn.cursor() as cur:
+        with get_connection(advisor["id"], "Advisor") as conn, conn.cursor() as cur:
             cur.execute(
                 """
                 INSERT INTO clients (
@@ -124,7 +124,7 @@ def create_client(
 # Retrieve all existing clients
 @router.get("")
 def list_clients(advisor: dict[str, int] = Depends(get_current_advisor)):
-    with get_connection() as conn, conn.cursor() as cur:
+    with get_connection(advisor["id"], "Advisor") as conn, conn.cursor() as cur:
         cur.execute(
             """
             SELECT id, name, email, phone_number,
