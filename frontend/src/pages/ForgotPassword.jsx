@@ -48,9 +48,12 @@ function ForgotPassword() {
   }
 
   return (
-    <main className="login-page forgot-password-page">  
+    <main className="login-page forgot-password-page">
       <AnimatedOrbitBackground />
-      <section className="login-shell forgot-password-shell" aria-labelledby="forgot-password-title">
+      <section
+        className="login-shell forgot-password-shell"
+        aria-labelledby="forgot-password-title"
+      >
         <div className="login-brand">
           <div className="login-logo-frame">
             <img src={orbitLogo} alt="Orbit" />
