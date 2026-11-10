@@ -1,0 +1,59 @@
+@startuml Advisor_Agent_Approval_Flow
+
+skinparam style strictuml
+skinparam Shadowing false
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+title Agent Request Flow: Delegation & Approval
+
+actor "AI Agent" as Agent
+actor "Approving Advisor" as Advisor
+participant "App / API" as API
+database "PostgreSQL\n(RLS Enforced)" as DB
+participant "OpenFGA\nEngine" as FGA
+
+== 1. Agent Action Request & Delegation Check ==
+
+Agent -> API : Request Action (agent_id, delegation_id, action_type, target_resource)
+API -> DB : BEGIN;\nSET LOCAL app.current_org_id = '{org_id}';\nValidate agent_delegations (status='active', expires_at > now())
+DB --> API : Delegation Valid (capabilities: ['view', 'propose'])
+
+API -> FGA : Check(user="agent:{agent_id}", relation="view_or_propose", object="{type}:{id}")
+FGA --> API : { allowed: true }
+
+alt Action is Read-Only ('view')
+    API -> DB : SELECT target resource + INSERT INTO audit_log (outcome='success');\nCOMMIT;
+    API --> Agent : 200 OK (Resource Data)
+
+else Action is High-Risk / Mutation ('propose')
+    == 2. Stage Approval Request (No Direct Mutation) ==
+
+    API -> DB : INSERT INTO approval_requests\n(status='pending', requesting_agent_id, delegation_id, action_payload)
+    API -> DB : INSERT INTO audit_log\n(actor_type='agent', authorization_decision='allow', outcome='pending_approval')
+    API -> DB : COMMIT;
+    API --> Agent : 202 Accepted (Pending Human Approval)
+
+    == 3. Human Advisor Review & Execution ==
+
+    Advisor -> API : Approve Request (approval_request_id)
+    API -> FGA : Check(user="membership:{approver_id}", relation="{required_capability}", object="{type}:{id}")
+    FGA --> API : { allowed: true }
+
+    API -> DB : BEGIN;\nSET LOCAL app.current_org_id = '{org_id}';
+    API -> DB : UPDATE approval_requests\nSET status='approved', approver_membership_id='{approver_id}', approved_at=now()
+    note right of DB
+      DB enforces chk_approval_requests_no_self_approval
+      and chk_approval_requests_status_invariants
+    end note
+
+    API -> DB : Execute Staged Action Payload on Target Resource
+    API -> DB : UPDATE approval_requests SET status='executed', executed_at=now()
+    API -> DB : INSERT INTO outbox_events & audit_log (outcome='success')
+    API -> DB : COMMIT;
+
+    API --> Advisor : 200 OK (Approved & Executed)
+end
+
+@enduml

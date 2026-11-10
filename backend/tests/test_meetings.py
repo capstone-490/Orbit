@@ -42,7 +42,7 @@ def mock_db(monkeypatch):
 def test_list_meetings_empty(mock_db):
     mock_db.fetchall.return_value = []
 
-    response = client.get("/meetings/1")
+    response = client.get("/api/v1/meetings/1")
 
     assert response.status_code == 200
     assert response.json() == []
@@ -69,7 +69,7 @@ def test_create_continuing_session_for_existing_client(mock_db):
     ]
 
     response = client.post(
-        "/meetings/continuing-session",
+        "/api/v1/meetings/continuing-session",
         json={"client_id": 7, "meeting_date": "2026-12-01T10:00:00Z"},
     )
 
@@ -83,7 +83,7 @@ def test_create_continuing_session_for_existing_client(mock_db):
     }
     assert mock_db.execute.call_count == 4
     insert_query, insert_params = mock_db.execute.call_args.args
-    assert "INSERT INTO meetings" in insert_query
+    assert "INSERT INTO t_meetings" in insert_query
     assert insert_params["advisor_id"] == 1
     assert insert_params["client_id"] == 7
 
@@ -92,7 +92,7 @@ def test_continuing_session_requires_client_belonging_to_advisor(mock_db):
     mock_db.fetchone.return_value = None
 
     response = client.post(
-        "/meetings/continuing-session",
+        "/api/v1/meetings/continuing-session",
         json={"client_id": 7, "meeting_date": "2026-12-01T10:00:00Z"},
     )
 
@@ -121,8 +121,8 @@ def test_continuing_session_rejects_unavailable_time_slot(mock_db):
         "meeting_date": "2026-12-01T10:00:00Z",
     }
 
-    first_response = client.post("/meetings/continuing-session", json=request)
-    second_response = client.post("/meetings/continuing-session", json=request)
+    first_response = client.post("/api/v1/meetings/continuing-session", json=request)
+    second_response = client.post("/api/v1/meetings/continuing-session", json=request)
 
     assert first_response.status_code == 201
     assert second_response.status_code == 409
@@ -134,7 +134,7 @@ def test_continuing_session_rejects_overlapping_one_hour_meeting(mock_db):
     mock_db.fetchone.side_effect = [(7,), (11,)]
 
     response = client.post(
-        "/meetings/continuing-session",
+        "/api/v1/meetings/continuing-session",
         json={"client_id": 7, "meeting_date": "2026-11-07T10:30:00Z"},
     )
 
@@ -149,7 +149,7 @@ def test_continuing_session_rejects_overlapping_one_hour_meeting(mock_db):
 
 def test_continuing_session_requires_timezone(mock_db):
     response = client.post(
-        "/meetings/continuing-session",
+        "/api/v1/meetings/continuing-session",
         json={"client_id": 7, "meeting_date": "2026-12-01T10:00:00"},
     )
 
@@ -158,7 +158,7 @@ def test_continuing_session_requires_timezone(mock_db):
 
 
 def test_cannot_read_another_advisors_meetings(mock_db):
-    response = client.get("/meetings/2")
+    response = client.get("/api/v1/meetings/2")
 
     assert response.status_code == 403
     mock_db.execute.assert_not_called()
@@ -177,7 +177,7 @@ def test_list_meetings_with_data(mock_db):
         SimpleNamespace(name="completion_status"),
     ]
 
-    response = client.get("/meetings/1")
+    response = client.get("/api/v1/meetings/1")
 
     assert response.status_code == 200
     assert response.json() == [
@@ -216,7 +216,7 @@ def test_list_scheduled_meetings(mock_db):
         SimpleNamespace(name="completion_status"),
     ]
 
-    response = client.get("/meetings/scheduled/1")
+    response = client.get("/api/v1/meetings/scheduled/1")
 
     assert response.status_code == 200
     assert response.json() == [
@@ -248,7 +248,7 @@ def test_list_completed_meetings(mock_db):
         SimpleNamespace(name="completion_status"),
     ]
 
-    response = client.get("/meetings/completed/1")
+    response = client.get("/api/v1/meetings/completed/1")
 
     assert response.status_code == 200
     assert response.json() == [
@@ -281,7 +281,7 @@ def test_list_meetings_for_client(mock_db):
         SimpleNamespace(name="completion_status"),
     ]
 
-    response = client.get("/meetings/1/1")
+    response = client.get("/api/v1/meetings/1/1")
 
     assert response.status_code == 200
     assert response.json() == [

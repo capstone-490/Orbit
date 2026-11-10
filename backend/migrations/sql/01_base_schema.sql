@@ -1415,6 +1415,7 @@ CREATE INDEX idx_approval_requests_pending
     ON approval_requests (organization_id, subscription_id, status, expires_at)
     WHERE status = 'pending';
 
+
 CREATE TABLE audit_log (
     id UUID PRIMARY KEY DEFAULT uuidv7(),
     -- nullable for platform events (global feature flag changes)
@@ -1455,7 +1456,7 @@ CREATE INDEX idx_audit_log_platform_time
 --
 -- usage in python middleware per request transaction:
 --   set local app.current_org_id = '<uuid>';
---   or for background outbox/reaper workers: set local app.bypass_rls = 'on';
+--   or for background workers: set local app.bypass_rls = 'on';
 
 CREATE OR REPLACE FUNCTION current_tenant_org_id()
 RETURNS UUID LANGUAGE sql STABLE PARALLEL SAFE AS $$

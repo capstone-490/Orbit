@@ -1,0 +1,43 @@
+@startuml Advisor_OpenFGA_Sync_Flow
+
+skinparam style strictuml
+skinparam Shadowing false
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+title Asynchronous Authorization Projection & OpenFGA Sync Flow
+
+actor "Advisor / Admin" as Admin
+participant "App / API" as API
+database "PostgreSQL\n(RLS Enforced)" as DB
+participant "Outbox / Auth\nWorker" as Worker
+participant "OpenFGA\nEngine" as FGA
+
+== 1. Source Grant or Hierarchy Mutation (Transactional) ==
+
+Admin -> API : Grant Role / Add Group Member / Create Folder
+API -> FGA : Check(user="membership:{admin_id}", relation="manage_access", object="{scope}:{id}")
+FGA --> API : { allowed: true }
+
+API -> DB : BEGIN;\nSET LOCAL app.current_org_id = '{org_id}';
+API -> DB : INSERT INTO role_assignments (or group_members / folders)
+API -> DB : INSERT INTO outbox_events (event_type='auth.grant_created', status='pending')
+API -> DB : INSERT INTO audit_log (action='grant_role', outcome='success')
+API -> DB : COMMIT;
+API --> Admin : 201 Created
+
+== 2. Outbox Processing & OpenFGA Tuple Projection ==
+
+Worker -> DB : BEGIN;\nSET LOCAL app.bypass_rls = 'on';\nSELECT * FROM outbox_events WHERE status IN ('pending', 'failed') FOR UPDATE SKIP LOCKED;
+DB --> Worker : Outbox Event Batch
+
+Worker -> Worker : Map Source Entity to OpenFGA Tuple\n(user_key, relation, object_key)
+
+Worker -> FGA : WriteTuples(writes: [{ user, relation, object }])
+FGA --> Worker : 200 OK
+
+Worker -> DB : INSERT INTO authorization_projections\n(tuple_key, user_key, relation, object_key, source_entity_id, status='active')\nON CONFLICT DO UPDATE SET last_reconciled_at = now()
+Worker -> DB : UPDATE outbox_events SET status = 'processed', processed_at = now();\nCOMMIT;
+
+@enduml

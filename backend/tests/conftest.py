@@ -1,52 +1,36 @@
 # No substantial AI-generated code
+
+pytest_plugins = [
+    "tests.fixtures.database",
+    "tests.fixtures.auth",
+]
+
+
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
 
-from app.core.config import settings
 from app.dependencies.deps import get_db
-from app.main import app
+from app.main import create_application
 
 
-@pytest.fixture(scope="session")
-def db_engine():
-    """Single engine connection to the already-migrated & seeded test DB."""
+@pytest.fixture
+def app(db_session):
+    application = create_application()
 
-    engine = create_engine(
-        settings.sqlalchemy_database_uri,
-        pool_pre_ping=True,
-    )
-
-    yield engine
-    engine.dispose()
-
-
-@pytest.fixture(scope="function")
-def db_session(db_engine):
-    connection = db_engine.connect()
-    transaction = connection.begin()
-    session = Session(bind=connection, join_transaction_mode="create_savepoint")
-
-    try:
-        yield session
-    finally:
-        session.close()
-        transaction.rollback()
-        connection.close()
-
-
-@pytest.fixture(scope="function")
-def client(db_session):
-    """FastAPI TestClient wired to the isolated per-test database session."""
+    original_overrides = application.dependency_overrides.copy()
 
     def override_get_db():
         yield db_session
 
-    app.dependency_overrides[get_db] = override_get_db
+    application.dependency_overrides[get_db] = override_get_db
 
-    try:
-        with TestClient(app) as test_client:
-            yield test_client
-    finally:
-        app.dependency_overrides.pop(get_db, None)
+    yield application
+
+    application.dependency_overrides.clear()
+    application.dependency_overrides.update(original_overrides)
+
+
+@pytest.fixture
+def client(app):
+    with TestClient(app) as test_client:
+        yield test_client

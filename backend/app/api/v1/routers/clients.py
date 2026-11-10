@@ -1,4 +1,3 @@
-# Substantial AI assistance used; verified with backend tests and livetime import date
 import re
 from datetime import date
 from typing import Literal
@@ -28,7 +27,6 @@ def calculate_age(birth_date: date | None, today: date | None = None) -> int | N
     )
 
 
-# Client data model and validation
 class ClientCreate(BaseModel):
     name: str = Field(min_length=1)
     email: EmailStr
@@ -52,12 +50,10 @@ class ClientCreate(BaseModel):
     @classmethod
     def validate_phone_number(cls, value: str) -> str:
         phone = value.strip()
-
         if not re.fullmatch(r"\+?[\d\s().-]+", phone):
             raise ValueError("Please enter a valid Canadian or US phone number.")
 
         digits = re.sub(r"\D", "", phone)
-
         if len(digits) == 11 and digits.startswith("1"):
             digits = digits[1:]
         elif len(digits) != 10:
@@ -69,7 +65,50 @@ class ClientCreate(BaseModel):
         return phone
 
 
-# Create a new client
+@router.get("")
+def list_clients(advisor: dict[str, int] = Depends(get_current_advisor)):
+    with get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, name, email, phone_number,
+                   address, age, occupation,
+                   timeline, created_at
+            FROM t_clients
+            WHERE advisor_id = %(advisor_id)s
+            ORDER BY created_at DESC, id DESC
+            """,
+            {"advisor_id": advisor["id"]},
+        )
+        columns = [column.name for column in cur.description]
+        rows = cur.fetchall()
+
+    return [dict(zip(columns, row)) for row in rows]
+
+
+@router.get("/{client_id}")
+def get_client(
+    client_id: int,
+    advisor: dict[str, int] = Depends(get_current_advisor),
+):
+    with get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, name, email, phone_number,
+                   address, age, occupation,
+                   timeline, created_at
+            FROM t_clients
+            WHERE id = %(client_id)s AND advisor_id = %(advisor_id)s
+            """,
+            {"client_id": client_id, "advisor_id": advisor["id"]},
+        )
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Client not found")
+
+        columns = [column.name for column in cur.description]
+        return dict(zip(columns, row))
+
+
 @router.post("", status_code=201)
 def create_client(
     client: ClientCreate,
@@ -80,13 +119,7 @@ def create_client(
     data["age"] = calculate_age(client.date_of_birth)
     data.pop("date_of_birth", None)
 
-    # Convert optional blank fields to SQL NULL
-    for field in (
-        "address",
-        "age",
-        "occupation",
-        "timeline",
-    ):
+    for field in ("address", "age", "occupation", "timeline"):
         if data[field] == "":
             data[field] = None
 
@@ -94,14 +127,13 @@ def create_client(
         with get_connection() as conn, conn.cursor() as cur:
             cur.execute(
                 """
-                INSERT INTO clients (
-                    name, email, phone_number, address,
-                    age, occupation, timeline, advisor_id
+                INSERT INTO t_clients (
+                    advisor_id, name, email, phone_number,
+                    address, age, occupation, timeline
                 )
                 VALUES (
-                    %(name)s, %(email)s, %(phone_number)s,
-                    %(address)s, %(age)s, %(occupation)s,
-                    %(timeline)s, %(advisor_id)s
+                    %(advisor_id)s, %(name)s, %(email)s, %(phone_number)s,
+                    %(address)s, %(age)s, %(occupation)s, %(timeline)s
                 )
                 RETURNING id
                 """,
@@ -117,27 +149,5 @@ def create_client(
     except UniqueViolation:
         raise HTTPException(
             status_code=409,
-            detail=("A client with this email or phone number already exists."),
+            detail="A client with this email or phone number already exists.",
         )
-
-
-# Retrieve all existing clients
-@router.get("")
-def list_clients(advisor: dict[str, int] = Depends(get_current_advisor)):
-    with get_connection() as conn, conn.cursor() as cur:
-        cur.execute(
-            """
-            SELECT id, name, email, phone_number,
-                   address, age, occupation,
-                   timeline, created_at
-            FROM clients
-                 WHERE advisor_id = %(advisor_id)s
-            ORDER BY created_at DESC, id DESC
-                 """,
-            {"advisor_id": advisor["id"]},
-        )
-
-        columns = [column.name for column in cur.description]
-        rows = cur.fetchall()
-
-    return [dict(zip(columns, row)) for row in rows]

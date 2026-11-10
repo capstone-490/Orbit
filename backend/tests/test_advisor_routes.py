@@ -21,6 +21,10 @@ def mock_db(monkeypatch):
     return connection, cursor
 
 
+def normalize_sql(query: str) -> str:
+    return " ".join(query.lower().split())
+
+
 def test_list_advisor_tasks_returns_client_names(mock_db):
     _, cursor = mock_db
     cursor.fetchall.return_value = [
@@ -36,7 +40,7 @@ def test_list_advisor_tasks_returns_client_names(mock_db):
         }
     ]
 
-    response = client.get("/advisors/2/tasks")
+    response = client.get("/api/v1/advisors/2/tasks")
 
     assert response.status_code == 200
     assert response.json()[0]["clientName"] == "Sarah Smith"
@@ -64,7 +68,7 @@ def test_list_advisor_schedule_returns_dict_rows(mock_db):
         }
     ]
 
-    response = client.get("/advisors/2/schedule")
+    response = client.get("/api/v1/advisors/2/schedule")
 
     assert response.status_code == 200
     assert response.json()[0]["time"] == "2026-10-28T14:00:00"
@@ -90,7 +94,7 @@ def test_list_advisor_clients_returns_rows(mock_db):
         }
     ]
 
-    response = client.get("/advisors/2/clients")
+    response = client.get("/api/v1/advisors/2/clients")
 
     assert response.status_code == 200
     assert response.json() == [
@@ -113,12 +117,12 @@ def test_update_task_completion_persists_and_returns_updated_task(mock_db):
     connection, cursor = mock_db
     cursor.fetchone.return_value = {"id": 1, "completed": True}
 
-    response = client.patch("/advisors/tasks/1", json={"completed": True})
+    response = client.patch("/api/v1/advisors/tasks/1", json={"completed": True})
 
     assert response.status_code == 200
     assert response.json() == {"id": 1, "completed": True}
     query, params = cursor.execute.call_args.args
-    assert "UPDATE tasks" in query
+    assert normalize_sql(query).startswith("update t_tasks")
     assert params == (True, 1)
     connection.commit.assert_called_once()
 
@@ -127,14 +131,14 @@ def test_update_task_completion_returns_404_for_missing_task(mock_db):
     _, cursor = mock_db
     cursor.fetchone.return_value = None
 
-    response = client.patch("/advisors/tasks/999", json={"completed": True})
+    response = client.patch("/api/v1/advisors/tasks/999", json={"completed": True})
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Task not found"}
 
 
 def test_update_task_completion_requires_boolean(mock_db):
-    response = client.patch("/advisors/tasks/1", json={"completed": "yes"})
+    response = client.patch("/api/v1/advisors/tasks/1", json={"completed": "yes"})
 
     assert response.status_code == 422
 
@@ -143,7 +147,7 @@ def test_update_task_completion_reports_database_errors(mock_db):
     _, cursor = mock_db
     cursor.execute.side_effect = OperationalError("database unavailable")
 
-    response = client.patch("/advisors/tasks/1", json={"completed": True})
+    response = client.patch("/api/v1/advisors/tasks/1", json={"completed": True})
 
     assert response.status_code == 500
     assert response.json() == {"detail": "database unavailable"}
@@ -152,9 +156,9 @@ def test_update_task_completion_reports_database_errors(mock_db):
 @pytest.mark.parametrize(
     ("path", "method"),
     [
-        ("/advisors/1/tasks", "get"),
-        ("/advisors/1/schedule", "get"),
-        ("/advisors/1/clients", "get"),
+        ("/api/v1/advisors/1/tasks", "get"),
+        ("/api/v1/advisors/1/schedule", "get"),
+        ("/api/v1/advisors/1/clients", "get"),
     ],
 )
 def test_advisor_routes_report_database_errors(mock_db, path, method):

@@ -1,0 +1,111 @@
+@startuml Advisor_Platform_Operations_Audit_Model
+
+skinparam style strictuml
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam Shadowing false
+skinparam classAttributeIconSize 0
+skinparam nodesep 60
+skinparam ranksep 70
+
+top to bottom direction
+
+title Orbit- Outbox, Authorization Projections and Audit Model
+
+package "Global Platform Configuration" {
+
+    entity FeatureFlag {
+        name : Varchar(127)
+        enabled : Boolean
+        rollout_percent : Integer
+    }
+}
+
+package "Tenant & Governance Sources" {
+
+    entity Organization {
+        id : UUID
+        name : Text
+        status : Text
+    }
+
+    entity Subscription {
+        id : UUID
+        name : Text
+        purpose : Text
+    }
+
+    entity RoleAssignment {
+        id : UUID
+        scope_type : Text
+        scope_id : UUID
+        status : Text
+    }
+
+    entity GroupMember {
+        id : UUID
+        status : Text
+    }
+
+    entity AgentDelegation {
+        id : UUID
+        target_resource_type : Text
+        target_resource_id : UUID
+        status : Text
+    }
+
+    Organization ||--o{ Subscription : has
+}
+
+package "Transactional Outbox & Auth Projection Ledger" {
+
+    entity OutboxEvent {
+        id : UUID
+        event_type : Text
+        aggregate_type : Text
+        aggregate_id : UUID
+        status : Text
+        retry_count : Integer
+    }
+
+    entity AuthorizationProjection {
+        id : UUID
+        tuple_key : Text
+        user_key : Text
+        relation : Text
+        object_key : Text
+        source_entity_type : Text
+        source_entity_id : UUID
+        status : Text
+    }
+
+    Organization ||--o{ OutboxEvent : emits
+    Organization ||--o{ AuthorizationProjection : scopes
+
+    RoleAssignment ||..o{ AuthorizationProjection : projects to
+    GroupMember ||..o{ AuthorizationProjection : projects to
+    AgentDelegation ||..o{ AuthorizationProjection : projects to
+}
+
+package "Immutable Audit Trail" {
+
+    entity AuditLog {
+        id : UUID
+        actor_type : Text
+        actor_id : Text
+        effective_subject_id : Text
+        action : Text
+        target_type : Text
+        target_id : Text
+        authorization_decision : Text
+        outcome : Text
+        occurred_at : Timestamp
+    }
+
+    Organization |o--o{ AuditLog : logs tenant events
+    Subscription |o..o{ AuditLog : scopes
+    AgentDelegation |o..o{ AuditLog : tracks authority
+    FeatureFlag |o..o{ AuditLog : logs platform changes
+}
+
+@enduml

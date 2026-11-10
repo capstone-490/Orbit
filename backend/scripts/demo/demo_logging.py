@@ -7,8 +7,8 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.api.v1.routers.debug import router as debug_router
-from app.logging_config import configure_logging
 from app.middleware.request_logging import RequestLoggingMiddleware
+from app.observability.logging_config import configure_logging
 
 FAKE_CLIENT = {
     "email": "jane.doe@example.com",

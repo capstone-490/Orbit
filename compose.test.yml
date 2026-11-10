@@ -19,7 +19,7 @@ x-test-env: &test-env
   ENABLE_DEBUG_ROUTES: ${ENABLE_DEBUG_ROUTES:-false}
   METRICS_ENABLED: ${METRICS_ENABLED:-1}
 
-  VITE_API_URL: http://localhost:8001
+  VITE_API_URL: http://127.0.0.1:8001/api/v1
 
 x-backend-bind: &backend-bind
   type: bind
@@ -35,10 +35,21 @@ services:
       POSTGRES_DB: test_db
       POSTGRES_USER: ${POSTGRES_USER-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-test_admin_password}
-      
+      POSTGRES_INITDB_ARGS: "--nosync"
     # Run Postgres entirely in RAM for faster migrations/tests and zero leftover state
-    tmpfs:
-      - /var/lib/postgresql
+    volumes: []
+    command: >
+      postgres 
+      -c fsync=off 
+      -c synchronous_commit=off 
+      -c full_page_writes=off 
+      -c wal_level=minimal 
+      -c max_wal_senders=0
+      -c io_method=worker
+      -c effective_io_concurrency=0
+      -c shared_buffers=512MB
+      -c work_mem=64MB
+      -c maintenance_work_mem=128MB
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d test_db"]
       interval: 2s
@@ -123,7 +134,7 @@ services:
       target: dev
     environment:
       CI: "true"
-      VITE_API_URL: http://localhost:8001
+      VITE_API_URL: http://localhost:8001/api/v1
     volumes:
       - type: bind
         source: ./frontend

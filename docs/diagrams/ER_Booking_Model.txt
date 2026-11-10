@@ -1,0 +1,118 @@
+@startuml Advisor_Booking_Model
+
+skinparam style strictuml
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam Shadowing false
+skinparam classAttributeIconSize 0
+skinparam nodesep 60
+skinparam ranksep 70
+
+top to bottom direction
+
+title Orbit - Booking and Availability Model
+
+package "Availability Management" {
+
+    entity Membership {
+        id : UUID
+        status : Text
+    }
+
+    entity AvailabilityRule {
+        id : UUID
+        day_of_week : SmallInt
+        start_time : Time
+        end_time : Time
+        is_active : Boolean
+    }
+
+    entity AvailabilityOverride {
+        id : UUID
+        override_date : Date
+        is_available : Boolean
+        custom_window : TSTZRANGE
+    }
+
+    Membership ||--o{ AvailabilityRule : sets >
+    Membership ||--o{ AvailabilityOverride : sets >
+}
+
+package "Public Booking Configuration" {
+
+    entity Subscription {
+        id : UUID
+        name : Text
+        purpose : Text
+    }
+
+    entity MeetingType {
+        id : UUID
+        slug : Text
+        title : Text
+        duration_minutes : Integer
+        meeting_mode : Text
+    }
+
+    entity PublicBookingLink {
+        id : UUID
+        public_token : Text
+        is_active : Boolean
+        expires_at : Timestamp
+    }
+
+    Subscription ||--o{ MeetingType : has >
+    Membership ||--o{ MeetingType : owns >
+
+    Subscription ||--o{ PublicBookingLink : has >
+    Membership ||--o{ PublicBookingLink : organizes > 
+    Membership |o--o{ PublicBookingLink : advises for >
+    MeetingType |o--o{ PublicBookingLink : uses <
+}
+
+package "Booking Lifecycle" {
+
+    entity PublicProspect {
+        id : UUID
+        email : Text
+        full_name : Text
+    }
+
+    entity Booking {
+        id : UUID
+        status : Text
+        slot_range : TSTZRANGE
+        reserved_range : TSTZRANGE
+        hold_expires_at : Timestamp
+    }
+
+    entity Client {
+        id : UUID
+        display_name : Text
+        email : Text
+        status : Text
+    }
+
+    entity Meeting {
+        id : UUID
+        title : Text
+        scheduled_range : TSTZRANGE
+        status : Text
+    }
+
+    Subscription ||--o{ PublicProspect : has >
+    Subscription ||--o{ Booking : has >
+
+    PublicBookingLink ||--o{ Booking : creates >
+    MeetingType ||--o{ Booking : uses < 
+    Membership ||--o{ Booking : advises >
+
+    PublicProspect |o--o{ Booking : makes >
+    Client |o--o{ Booking : books >
+    Booking |o--o{ Booking : rescheduled from
+
+    PublicProspect |o--o{ Client : converts to >
+    Booking |o--o{ Meeting : creates >
+}
+
+@enduml

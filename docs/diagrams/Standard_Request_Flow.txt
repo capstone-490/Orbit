@@ -1,0 +1,61 @@
+@startuml Advisor_Standard_Request_Flow
+
+skinparam style strictuml
+skinparam Shadowing false
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+autonumber
+
+title End-to-End Request Flow: Human Actor (AuthN -> OpenFGA -> RLS DB)
+
+actor "Advisor / Staff" as User
+participant "App / API Gateway" as API
+participant "Identity Provider\n(OIDC / JWT)" as IdP
+database "PostgreSQL\n(RLS Enforced)" as DB
+participant "OpenFGA\nEngine" as FGA
+
+== 1. Authentication & Tenant Context Resolution ==
+
+User -> API : Request Action (JWT + X-Org-Id + Resource ID)
+API -> IdP : Validate JWT Signature & Claims
+IdP --> API : Verified (issuer, subject)
+
+API -> DB : Lookup active Identity & Membership\n(issuer, subject, organization_id)
+note right of DB
+  Uses idx_memberships_identity_active
+  Verifies identity.status = 'active'
+  and membership.status = 'active'
+end note
+DB --> API : Resolved (identity_id, membership_id, organization_id)
+
+== 2. Fine-Grained Authorization (OpenFGA) ==
+
+API -> FGA : Check(\n  user = "membership:{membership_id}",\n  relation = "{capability}",\n  object = "{scope_type}:{scope_id}"\n)
+
+alt Authorization Denied
+    FGA --> API : { allowed: false }
+    API -> DB : BEGIN;\nSET LOCAL app.current_org_id = '{org_id}';\nINSERT INTO audit_log (authorization_decision='deny', outcome='denied');\nCOMMIT;
+    API --> User : 403 Forbidden
+else Authorization Allowed
+    FGA --> API : { allowed: true }
+
+    == 3. RLS-Fenced Execution, Outbox & Audit ==
+
+    API -> DB : BEGIN;\nSET LOCAL app.current_org_id = '{org_id}';
+    note right of DB
+      tenant_isolation_fence RLS policy
+      automatically filters and checks
+      organization_id on all tenant tables
+    end note
+
+    API -> DB : Execute Business Mutation\n(e.g., UPDATE documents / INSERT clients)
+    DB --> API : Mutation OK
+
+    API -> DB : INSERT INTO outbox_events\n(aggregate_type, aggregate_id, payload)
+    API -> DB : INSERT INTO audit_log\n(actor_type='user', authorization_decision='allow', outcome='success')
+    API -> DB : COMMIT;
+
+    API --> User : 200 OK (Action Completed)
+end
+
+@enduml

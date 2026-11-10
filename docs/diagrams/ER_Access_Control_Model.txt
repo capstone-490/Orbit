@@ -1,0 +1,113 @@
+@startuml Advisor_Access_Control_Model
+
+skinparam style strictuml
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam Shadowing false
+skinparam classAttributeIconSize 0
+skinparam nodesep 60
+skinparam ranksep 70
+
+top to bottom direction
+
+title Orbit - Access Control and Governance Model
+
+package "Tenancy and Principals" {
+
+    entity Organization {
+        id : UUID
+        name : Text
+        status : Text
+    }
+
+    entity Subscription {
+        id : UUID
+        name : Text
+        purpose : Text
+    }
+
+    entity Membership {
+        id : UUID
+        status : Text
+    }
+
+    entity Group {
+        id : UUID
+        name : Text
+        status : Text
+    }
+
+    entity Agent {
+        id : UUID
+        name : Text
+        agent_type : Text
+        status : Text
+    }
+
+    Organization ||--o{ Subscription : has >
+    Organization ||--o{ Membership : has >
+    Organization ||--o{ Group : has >
+    Subscription ||--o{ Agent : home for >
+}
+
+package "Role Management (RBAC)" {
+
+    entity RoleDefinition {
+        id : UUID
+        name : Text
+        resource_scope_type : Text
+        capabilities : Text[]
+    }
+
+    entity RoleAssignment {
+        id : UUID
+        scope_type : Text
+        scope_id : UUID
+        status : Text
+        expires_at : Timestamp
+    }
+
+    Organization ||--o{ RoleDefinition : defines >
+    Membership |o--o{ RoleDefinition : creates >
+
+    RoleDefinition ||--o{ RoleAssignment : used in >
+    Subscription |o--o{ RoleAssignment : scopes >
+
+    Membership |o--o{ RoleAssignment : receives >
+    Group |o--o{ RoleAssignment : receives >
+    Agent |o--o{ RoleAssignment : receives >
+    Membership ||--o{ RoleAssignment : grants >
+}
+
+package "Agent Governance and Approvals" {
+
+    entity AgentDelegation {
+        id : UUID
+        target_resource_type : Text
+        target_resource_id : UUID
+        capabilities : Text[]
+        status : Text
+        expires_at : Timestamp
+    }
+
+    entity ApprovalRequest {
+        id : UUID
+        action_type : Text
+        target_resource_type : Text
+        target_resource_id : UUID
+        status : Text
+        expires_at : Timestamp
+    }
+
+    Agent ||--o{ AgentDelegation : receives >
+    Subscription ||--o{ AgentDelegation : targets <
+    Membership ||--o{ AgentDelegation : grants >
+
+    Subscription ||--o{ ApprovalRequest : scopes >
+    AgentDelegation |o--o{ ApprovalRequest : governs >
+    Agent |o--o{ ApprovalRequest : requests >
+    Membership |o--o{ ApprovalRequest : requests >
+    Membership |o--o{ ApprovalRequest : approves >
+}
+
+@enduml

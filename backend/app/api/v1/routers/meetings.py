@@ -11,7 +11,7 @@ CONTINUING_SESSION_DURATION = timedelta(hours=1)
 
 router = APIRouter(
     prefix="/meetings",
-    tags=["Meetings"],
+    tags=["meetings"],
     dependencies=[Depends(get_current_advisor)],
 )
 
@@ -51,7 +51,7 @@ def create_continuing_session(
 
         cur.execute(
             """
-                SELECT id FROM meetings
+                SELECT id FROM t_meetings
                 WHERE advisor_id = %(advisor_id)s
                   AND completion_status = 'Scheduled'
                   AND meeting_date < %(meeting_end)s
@@ -70,7 +70,7 @@ def create_continuing_session(
 
         cur.execute(
             """
-                INSERT INTO meetings (advisor_id, client_id, meeting_date)
+                INSERT INTO t_meetings (advisor_id, client_id, meeting_date)
                 VALUES (%(advisor_id)s, %(client_id)s, %(meeting_date)s)
                 RETURNING id, client_id, advisor_id, meeting_date, completion_status
                 """,
@@ -95,7 +95,7 @@ def list_meetings(
         cur.execute(
             """
                 SELECT id, client_id, advisor_id, meeting_date, completion_status
-                FROM meetings
+                FROM t_meetings
                 WHERE advisor_id = %(advisor_id)s
                 ORDER BY meeting_date DESC, id DESC
                 """,
@@ -118,7 +118,7 @@ def list_scheduled_meetings(
         cur.execute(
             """
                 SELECT id, client_id, advisor_id, meeting_date, completion_status
-                FROM meetings
+                FROM t_meetings
                 WHERE advisor_id = %(advisor_id)s AND completion_status = 'Scheduled'
                 ORDER BY meeting_date DESC, id DESC
                 """,
@@ -141,7 +141,7 @@ def list_completed_meetings(
         cur.execute(
             """
                 SELECT id, client_id, advisor_id, meeting_date, completion_status
-                FROM meetings
+                FROM t_meetings
                 WHERE advisor_id = %(advisor_id)s AND completion_status = 'Completed'
                 ORDER BY meeting_date DESC, id DESC
                 """,
@@ -165,7 +165,7 @@ def list_meetings_for_client(
         cur.execute(
             """
                 SELECT id, client_id, advisor_id, meeting_date, completion_status
-                FROM meetings
+                FROM t_meetings
                 WHERE advisor_id = %(advisor_id)s AND client_id = %(client_id)s
                 ORDER BY meeting_date DESC, id DESC
                 """,
@@ -179,5 +179,5 @@ def list_meetings_for_client(
 
 
 def _require_matching_advisor(advisor_id: int, advisor: dict[str, int]) -> None:
-    if advisor_id != advisor["id"]:
+    if int(advisor_id) != int(advisor["id"]):
         raise HTTPException(status_code=403, detail="Not authorized for this advisor.")

@@ -14,7 +14,7 @@ dependencies = [
     "pydantic>=2.14.1",
     "pydantic-settings>=2.15.0",
     "resend>=2.52.0",
-    "sqlalchemy>=2.1.4",
+    "sqlalchemy[asyncio]>=2.1.4",
 ]
 
 [dependency-groups]
