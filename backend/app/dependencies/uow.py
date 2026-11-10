@@ -1,10 +1,11 @@
 # No substantial AI-generated code
 from datetime import UTC, datetime
 
-from fastapi import Request
+from fastapi import Depends, Request
 
 from app.domain.uow import AbstractUnitOfWork
 from app.infrastructure.uow import SqlAlchemyUnitOfWork
+from app.services.public_booking import PublicBookingService
 
 
 def get_clock() -> datetime:
@@ -24,3 +25,10 @@ def get_uow(request: Request) -> AbstractUnitOfWork:
             "Ensure FastAPI lifespan is active or override 'get_uow' in tests."
         )
     return SqlAlchemyUnitOfWork(session_factory)
+
+
+def get_public_booking_service(
+    uow: AbstractUnitOfWork = Depends(get_uow),
+) -> PublicBookingService:
+    """Injects the UnitOfWork into PublicBookingService for FastAPI routers."""
+    return PublicBookingService(uow)

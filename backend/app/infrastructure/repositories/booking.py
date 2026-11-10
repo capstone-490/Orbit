@@ -444,7 +444,7 @@ class SqlAlchemyBookingRepository(AbstractBookingRepository):
 
         return prospect_id, client_id
 
-    async def create_internal_meeting_and_agent_task(
+    async def create_internal_meeting(
         self,
         *,
         booking: Booking,
@@ -582,7 +582,7 @@ class SqlAlchemyBookingRepository(AbstractBookingRepository):
                 ) from exc
             raise
 
-    async def cancel_internal_meeting_and_tasks(
+    async def cancel_internal_meeting(
         self,
         *,
         organization_id: UUID,
@@ -597,23 +597,6 @@ class SqlAlchemyBookingRepository(AbstractBookingRepository):
                 WHERE organization_id = :org_id
                   AND subscription_id = :sub_id
                   AND id = :meeting_id
-                """
-            ),
-            {
-                "org_id": organization_id,
-                "sub_id": subscription_id,
-                "meeting_id": internal_meeting_id,
-            },
-        )
-        await self._session.execute(
-            text(
-                """
-                UPDATE tasks
-                SET task_status = 'cancelled'
-                WHERE organization_id = :org_id
-                  AND subscription_id = :sub_id
-                  AND meeting_id = :meeting_id
-                  AND task_status IN ('todo', 'in_progress')
                 """
             ),
             {
