@@ -1,3 +1,5 @@
+# No Substantial AI-generated code
+
 import pytest
 
 from app.auth import create_access_token
