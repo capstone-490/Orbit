@@ -670,8 +670,8 @@ async def test_hold_and_confirm_booking_persists_all_aggregates(
             now=now + timedelta(seconds=30),
         )
 
-        # 4. Create internal meeting + agent pre-meeting dossier task
-        internal_meeting_id = await uow.bookings.create_internal_meeting_and_agent_task(
+        # 4. Create internal meeting
+        internal_meeting_id = await uow.bookings.create_internal_meeting(
             booking=booking,
             meeting_type=meeting_type,
             prospect_full_name="Alex Prospect",
@@ -735,23 +735,6 @@ async def test_hold_and_confirm_booking_persists_all_aggregates(
         assert meeting_row["agenda"] == "Retirement Rollover"
         assert meeting_row["duration_minutes"] == 30
         assert meeting_row["scheduled_at"] == slot.start_at
-
-        task_row = (
-            (
-                await session.execute(
-                    text(
-                        "SELECT task_status, status, description "
-                        "FROM tasks WHERE meeting_id = :meeting_id"
-                    ),
-                    {"meeting_id": internal_meeting_id},
-                )
-            )
-            .mappings()
-            .one()
-        )
-        assert task_row["task_status"] == "todo"
-        assert task_row["status"] == "active"
-        assert "Topic: Retirement Rollover." in task_row["description"]
 
 
 # =============================================================================
@@ -1257,7 +1240,7 @@ async def test_reschedule_and_cancel_booking_updates_internal_meeting_and_tasks(
             prospect_notes=None,
             now=now + timedelta(seconds=10),
         )
-        internal_meeting_id = await uow.bookings.create_internal_meeting_and_agent_task(
+        internal_meeting_id = await uow.bookings.create_internal_meeting(
             booking=booking,
             meeting_type=meeting_type,
             prospect_full_name="Morgan Client",
@@ -1307,7 +1290,7 @@ async def test_reschedule_and_cancel_booking_updates_internal_meeting_and_tasks(
             now=now + timedelta(minutes=2),
         )
         await uow.bookings.save(saved)
-        await uow.bookings.cancel_internal_meeting_and_tasks(
+        await uow.bookings.cancel_internal_meeting(
             organization_id=org_id,
             subscription_id=link.subscription_id,
             internal_meeting_id=internal_meeting_id,
