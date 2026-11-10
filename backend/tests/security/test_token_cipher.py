@@ -18,7 +18,9 @@ def test_ciphertext_does_not_contain_the_token():
 
 
 def test_same_token_encrypts_differently_each_time():
-    assert encrypt_token(TOKEN_JSON) != encrypt_token(TOKEN_JSON)
+    encrypted1 = encrypt_token(TOKEN_JSON)
+    encrypted2 = encrypt_token(TOKEN_JSON)
+    assert encrypted1 != encrypted2
 
 
 def test_wrong_key_is_rejected():
