@@ -279,9 +279,11 @@ class PublicBookingService:
         5. Generates a cryptographic cancel_token (storing only its SHA-256 hash on bookings).
         """
         async with self._uow as uow:
-            link, meeting_type, advisor_name = await self._resolve_link_and_lock_tenant(
-                uow, public_token, now
-            )
+            (
+                link,
+                meeting_type,
+                _advisor_name,
+            ) = await self._resolve_link_and_lock_tenant(uow, public_token, now)
 
             booking = await uow.bookings.get_by_id(
                 link.organization_id,
