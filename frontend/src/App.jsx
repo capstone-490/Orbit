@@ -9,7 +9,9 @@ import Clients from './pages/Clients'
 import CreateAccount from './pages/CreateAccount'
 import Documents from './pages/Documents'
 import FollowUps from './pages/FollowUps'
+import ForgotPassword from './pages/ForgotPassword'
 import Login from './pages/Login'
+import ResetPassword from './pages/ResetPassword'
 import Tasks from './pages/Tasks'
 import Welcome from './pages/Welcome'
 
@@ -19,6 +21,8 @@ function App() {
       <Routes>
         <Route path="/" element={<Welcome />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/create-account" element={<CreateAccount />} />
         <Route path="/book-meeting" element={<BookMeeting />} />
         <Route element={<AdvisorLayout />}>

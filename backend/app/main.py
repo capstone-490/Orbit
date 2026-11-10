@@ -7,11 +7,13 @@ from fastapi import Depends, FastAPI, Header, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
+from app.api.v1.routers import password_reset
 from app.api.v1.routers.advisor_registration import (
     router as advisor_registration_router,
 )
 from app.api.v1.routers.advisors import router as advisor_router
 from app.api.v1.routers.clients import router as clients_router
+from app.api.v1.routers.follow_ups import router as follow_ups_router
 from app.api.v1.routers.meetings import router as meetings_router
 from app.api.v1.routers.sessions import router as sessions_router
 from app.core.feature_flags import get_variant
@@ -34,6 +36,17 @@ app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(RequestLoggingMiddleware)
 
+if os.getenv("METRICS_ENABLED", "1") == "1":
+    app.add_middleware(MetricsMiddleware)
+
+    @app.get("/metrics", include_in_schema=False)
+    def metrics():
+        return Response(
+            generate_latest(),
+            media_type=CONTENT_TYPE_LATEST,
+        )
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -46,22 +59,14 @@ app.add_middleware(
     expose_headers=["x-request-id"],
 )
 
-if os.getenv("METRICS_ENABLED", "1") == "1":
-    app.add_middleware(MetricsMiddleware)
-
-    @app.get("/metrics", include_in_schema=False)
-    def metrics():
-        return Response(
-            generate_latest(),
-            media_type=CONTENT_TYPE_LATEST,
-        )
-
 
 app.include_router(sessions_router)
 app.include_router(clients_router)
 app.include_router(advisor_router)
 app.include_router(advisor_registration_router)
 app.include_router(meetings_router)
+app.include_router(password_reset.router)
+app.include_router(follow_ups_router)
 
 
 if os.getenv("ENABLE_DEBUG_ROUTES", "").lower() in {"1", "true", "yes"}:
