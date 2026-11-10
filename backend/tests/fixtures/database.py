@@ -1,3 +1,4 @@
+# Below 50% AI-generated code
 from collections.abc import AsyncGenerator
 
 import pytest

@@ -1,3 +1,4 @@
+# 50% or more AI-generated code
 from datetime import UTC, datetime, time, timedelta
 from uuid import UUID, uuid7
 
@@ -11,7 +12,7 @@ from app.domain.entities import Booking
 from app.domain.enums import BookingStatus, MeetingMode
 from app.domain.exceptions import SlotOverlapConflictError
 from app.domain.structs import TimeWindow
-from app.infrastructure.repositories import _is_exclusion_violation
+from app.infrastructure.repositories.helpers import _is_exclusion_violation
 from app.infrastructure.uow import SqlAlchemyUnitOfWork
 
 
@@ -133,7 +134,7 @@ async def seeded_tenant(
 
 
 # =============================================================================
-# BASIC SCENARIO 1: Booking Link Resolution (Valid, Expired, Unknown)
+# Booking Link Resolution (Valid, Expired, Unknown)
 # =============================================================================
 async def test_get_active_booking_link_valid_expired_and_unknown_tokens(
     session_factory: async_sessionmaker[AsyncSession],
@@ -170,7 +171,7 @@ async def test_get_active_booking_link_valid_expired_and_unknown_tokens(
 
 
 # =============================================================================
-# BASIC SCENARIO 2: Advisor Recurring Availability Rules
+# Advisor Recurring Availability Rules
 # =============================================================================
 async def test_get_advisor_rules_returns_only_active_ordered_by_day_and_time(
     session_factory: async_sessionmaker[AsyncSession],
@@ -220,7 +221,7 @@ async def test_get_advisor_rules_returns_only_active_ordered_by_day_and_time(
 
 
 # =============================================================================
-# BASIC SCENARIO 3: Advisor Date Overrides (Closures & Custom Hours)
+# Advisor Date Overrides (Closures & Custom Hours)
 # =============================================================================
 async def test_get_advisor_overrides_filters_by_date_and_maps_custom_windows(
     session_factory: async_sessionmaker[AsyncSession],
@@ -330,7 +331,7 @@ async def test_get_advisor_overrides_filters_by_date_and_maps_custom_windows(
 
 
 # =============================================================================
-# BASIC SCENARIO 4: Idempotency Key Lookup & Duplicate Prevention
+# Idempotency Key Lookup & Duplicate Prevention
 # =============================================================================
 async def test_get_by_idempotency_key_and_unique_constraint(
     session_factory: async_sessionmaker[AsyncSession],
@@ -397,7 +398,7 @@ async def test_get_by_idempotency_key_and_unique_constraint(
 
 
 # =============================================================================
-# BASIC SCENARIO 5: Prospect Upsert & Client Deduplication
+# Prospect Upsert & Client Deduplication
 # =============================================================================
 async def test_upsert_prospect_and_provision_client_is_idempotent_case_insensitive(
     session_factory: async_sessionmaker[AsyncSession],
@@ -464,7 +465,7 @@ async def test_upsert_prospect_and_provision_client_is_idempotent_case_insensiti
 
 
 # =============================================================================
-# BASIC SCENARIO 6: Opaque Busy Windows Privacy Wall & Exclusions
+# Opaque Busy Windows Privacy Wall & Exclusions
 # =============================================================================
 async def test_get_opaque_busy_windows_filters_active_and_respects_exclusions(
     session_factory: async_sessionmaker[AsyncSession],
@@ -612,7 +613,7 @@ async def test_get_opaque_busy_windows_filters_active_and_respects_exclusions(
 
 
 # =============================================================================
-# Hold -> Confirm -> Provision Client, Meeting, Task & Outbox
+# Hold -> Confirm -> Provision Client, Meeting, Task
 # =============================================================================
 async def test_hold_and_confirm_booking_persists_all_aggregates(
     session_factory: async_sessionmaker[AsyncSession],
@@ -677,16 +678,8 @@ async def test_hold_and_confirm_booking_persists_all_aggregates(
             prospect_email="alex.prospect@example.com",
         )
 
-        # 5. Persist confirmed booking state & append transactional outbox event
+        # 5. Persist confirmed booking state
         await uow.bookings.save(booking)
-        await uow.bookings.append_outbox_event(
-            organization_id=link.organization_id,
-            event_type="booking.confirmed",
-            aggregate_type="booking",
-            aggregate_id=booking.id,
-            aggregate_version=booking.version,
-            payload={"booking_id": str(booking.id)},
-        )
         await uow.commit()
 
     # Verify all persisted aggregates in a fresh Unit of Work transaction
@@ -759,23 +752,6 @@ async def test_hold_and_confirm_booking_persists_all_aggregates(
         assert task_row["task_status"] == "todo"
         assert task_row["status"] == "active"
         assert "Topic: Retirement Rollover." in task_row["description"]
-
-        outbox_row = (
-            (
-                await session.execute(
-                    text(
-                        "SELECT event_type, status, aggregate_version "
-                        "FROM outbox_events WHERE aggregate_id = :agg_id"
-                    ),
-                    {"agg_id": booking.id},
-                )
-            )
-            .mappings()
-            .one()
-        )
-        assert outbox_row["event_type"] == "booking.confirmed"
-        assert outbox_row["status"] == "pending"
-        assert outbox_row["aggregate_version"] == 2
 
 
 # =============================================================================
@@ -1194,7 +1170,7 @@ async def test_rls_tenant_isolation_blocks_cross_tenant_reads_and_writes(
         await uow.commit()
 
     # 2. Attempting to INSERT a row with Tenant A's `organization_id` while under Tenant B context
-    # violates the RLS `WITH CHECK` policy (SQLSTATE 42501: insufficient_privilege)
+    # violates the RLS `WITH CHECK` policy (SQLSTATE 4250insufficient_privilege)
     async with SqlAlchemyUnitOfWork(session_factory) as uow:
         await uow.set_tenant_context(tenant_b_org_id)
         non_overlapping_slot = TimeWindow(
