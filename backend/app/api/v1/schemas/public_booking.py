@@ -1,3 +1,5 @@
+# 50% or more AI-generated code
+
 from __future__ import annotations
 
 from datetime import date, datetime

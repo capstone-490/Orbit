@@ -125,7 +125,7 @@ class AbstractBookingRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def create_internal_meeting_and_agent_task(
+    async def create_internal_meeting(
         self,
         *,
         booking: Booking,
@@ -149,7 +149,7 @@ class AbstractBookingRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def cancel_internal_meeting_and_tasks(
+    async def cancel_internal_meeting(
         self,
         *,
         organization_id: UUID,
