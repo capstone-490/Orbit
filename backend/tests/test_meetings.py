@@ -169,8 +169,18 @@ def test_cannot_read_another_advisors_meetings(mock_db):
 
 def test_list_meetings_with_data(mock_db):
     mock_db.fetchall.return_value = [
-        (1, 1, 1, "2024-06-01T10:00:00Z", 30, "Scheduled", "Sarah Smith"),
-        (2, 2, 1, "2024-06-02T11:00:00Z", 45, "Completed", "John Doe"),
+        (
+            1,
+            1,
+            1,
+            "2024-06-01T10:00:00Z",
+            30,
+            "Scheduled",
+            "https://meet.google.com/abc-defg-hij",
+            "abc-defg-hij",
+            "Sarah Smith",
+        ),
+        (2, 2, 1, "2024-06-02T11:00:00Z", 45, "Completed", None, None, "John Doe"),
     ]
     mock_db.description = [
         SimpleNamespace(name="id"),
@@ -179,6 +189,8 @@ def test_list_meetings_with_data(mock_db):
         SimpleNamespace(name="meeting_date"),
         SimpleNamespace(name="duration_minutes"),
         SimpleNamespace(name="completion_status"),
+        SimpleNamespace(name="meeting_uri"),
+        SimpleNamespace(name="meeting_code"),
         SimpleNamespace(name="client_name"),
     ]
 
@@ -193,6 +205,8 @@ def test_list_meetings_with_data(mock_db):
             "meeting_date": "2024-06-01T10:00:00Z",
             "duration_minutes": 30,
             "completion_status": "Scheduled",
+            "meeting_uri": "https://meet.google.com/abc-defg-hij",
+            "meeting_code": "abc-defg-hij",
             "client_name": "Sarah Smith",
         },
         {
@@ -202,6 +216,8 @@ def test_list_meetings_with_data(mock_db):
             "meeting_date": "2024-06-02T11:00:00Z",
             "duration_minutes": 45,
             "completion_status": "Completed",
+            "meeting_uri": None,
+            "meeting_code": None,
             "client_name": "John Doe",
         },
     ]
@@ -213,6 +229,8 @@ def test_list_meetings_with_data(mock_db):
     assert "JOIN clients c ON c.id = m.client_id" in query
     assert "m.duration_minutes" in query
     assert "c.name AS client_name" in query
+    assert "m.meeting_uri" in query
+    assert "m.meeting_code" in query
     assert params["advisor_id"] == 1
 
 

@@ -404,8 +404,9 @@ def test_create_meeting_saves_orbit_meeting(mock_db, stored_creds, mock_calendar
     assert client_params == (7, 1)
 
     [(_, params)] = _insert_calls(mock_db)
-    advisor_id, client_id, meeting_date, meeting_uri, meeting_code = params
+    advisor_id, client_id, meeting_date, meeting_uri, meeting_code, duration = params
     assert (advisor_id, client_id) == (1, 7)
+    assert duration == 60
     assert meeting_date.isoformat() == "2026-11-10T14:00:00-05:00"
     # The Meet link and code from Google are stored with the meeting
     assert meeting_uri == "https://meet.google.com/abc-defg-hij"
@@ -586,7 +587,7 @@ def test_book_meeting_for_existing_client(mock_db, stored_creds, mock_calendar):
     assert _executed(mock_db, "INSERT INTO clients") == []
     [(_, params)] = _insert_calls(mock_db)
     assert params[:2] == (1, 7)
-    assert params[3:] == ("https://meet.google.com/abc-defg-hij", "abc-defg-hij")
+    assert params[3:] == ("https://meet.google.com/abc-defg-hij", "abc-defg-hij", 60)
 
 
 def test_book_meeting_creates_new_client(mock_db, stored_creds, mock_calendar):
@@ -626,6 +627,9 @@ def test_book_meeting_uses_title_and_duration(mock_db, stored_creds, mock_calend
     body = mock_calendar.events.return_value.insert.call_args.kwargs["body"]
     assert body["summary"] == "Retirement planning"
     assert body["end"] == {"dateTime": "2030-01-15T14:30:00-05:00"}
+    # The duration is also saved on the Orbit meeting
+    [(_, params)] = _insert_calls(mock_db)
+    assert params[5] == 30
 
 
 def test_book_meeting_in_the_past_returns_422(mock_db, mock_calendar):
