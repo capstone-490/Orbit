@@ -231,5 +231,4 @@ describe('AdvisorDashboard', () => {
     })
 
     expect(getAdvisorMeetings).toHaveBeenLastCalledWith(1)
-  })
 })
