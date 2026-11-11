@@ -5,7 +5,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import orbitLogo from '../assets/orbit-logo.png'
 import { loginAdvisor } from '../services/AuthApi'
 import '../styles/Login.css'
-import AnimatedOrbitBackground from '../components/AnimatedOrbitBackground'
+import AnimatedOrbitBackground from '../components/AnimatedOrbitBackground/AnimatedOrbitBackground'
 
 function Login() {
   const navigate = useNavigate()
@@ -90,9 +90,9 @@ function Login() {
             <div className="login-field">
               <div className="login-label-row">
                 <label htmlFor="password">Password</label>
-                <button type="button" className="forgot-password">
+                <Link to="/forgot-password" className="forgot-password">
                   Forgot?
-                </button>
+                </Link>
               </div>
               <div className="login-input-wrap">
                 <FiLock aria-hidden="true" />
