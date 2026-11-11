@@ -5,7 +5,6 @@ import { Link } from 'react-router-dom'
 import { isTaskCompleted, TASK_STATUSES } from '../../data/taskStatuses'
 import { API_BASE_URL } from '../../services/AuthApi'
 
-export const API_BASE_URL = import.meta.env.VITE_API_URL
 
 function DashboardTasks({ priorityTasks, onTaskUpdated }) {
   const [updatingTaskIds, setUpdatingTaskIds] = useState(() => new Set())
