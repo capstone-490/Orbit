@@ -4,9 +4,8 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import DashboardAiCopilot from '../components/dashboard/DashboardAiCopilot'
-import DashboardPriorityActions, {
-  getDueBadge,
-} from '../components/dashboard/DashboardPriorityActions'
+import DashboardPriorityActions from '../components/dashboard/DashboardPriorityActions'
+import { getDueBadge } from '../utils/dueBadge'
 import {SUGGESTION_CACHE_KEY, SUGGESTION_CACHE_TTL_MS, usePriorityActions } from '../hooks/usePriorityActions'
 import { updateFollowUp, updateFollowUpStatus } from '../services/FollowUpsApi'
 import {

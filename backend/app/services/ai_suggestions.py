@@ -70,7 +70,7 @@ def _parse_suggestions(content: str) -> list[dict]:
         raise ValueError("AI response did not contain JSON.")
     suggestions = json.loads(content[start : end + 1]).get("suggestions", [])
     if not isinstance(suggestions, list):
-        raise ValueError("AI response 'suggestions' is not a list.")
+        raise TypeError("AI response 'suggestions' is not a list.")
     return suggestions
 
 
@@ -102,9 +102,7 @@ def _to_prompt_item(action: dict) -> dict:
     }
 
 
-def get_suggestions(
-    actions: list[dict], provider: SuggestionProvider | None
-) -> dict:
+def get_suggestions(actions: list[dict], provider: SuggestionProvider | None) -> dict:
     """Return {"status": ..., "suggestions": [...]} and never raise."""
     if provider is None:
         return {"status": "disabled", "suggestions": []}
@@ -116,7 +114,7 @@ def get_suggestions(
 
     try:
         raw_suggestions = provider.suggest(items)
-    except Exception:  # noqa: BLE001 - any AI failure must degrade gracefully
+    except Exception:
         logger.warning("AI suggestions unavailable", exc_info=True)
         return {"status": "unavailable", "suggestions": []}
 
