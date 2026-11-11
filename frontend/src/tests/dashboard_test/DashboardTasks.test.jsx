@@ -77,6 +77,20 @@ describe('DashboardTasks Component', () => {
     expect(screen.getByText('No client assigned')).toBeInTheDocument()
   })
 
+  test('displays the task workflow status', () => {
+    renderDashboardTasks({
+      priorityTasks: [
+        { ...mockTasks[0], status: 'TO_DO' },
+        { ...mockTasks[1], status: 'IN_PROGRESS' },
+        { ...mockTasks[2], status: 'IN_REVIEW' },
+      ],
+    })
+
+    expect(screen.getByText('To do')).toBeInTheDocument()
+    expect(screen.getByText('In progress')).toBeInTheDocument()
+    expect(screen.getByText('In review')).toBeInTheDocument()
+  })
+
   test('flags past due incomplete tasks as overdue', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-10-16T12:00:00'))
