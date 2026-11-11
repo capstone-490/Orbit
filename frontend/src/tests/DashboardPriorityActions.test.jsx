@@ -5,14 +5,18 @@ import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import DashboardAiCopilot from '../components/dashboard/DashboardAiCopilot'
 import DashboardPriorityActions from '../components/dashboard/DashboardPriorityActions'
-import { getDueBadge } from '../utils/dueBadge'
-import {SUGGESTION_CACHE_KEY, SUGGESTION_CACHE_TTL_MS, usePriorityActions } from '../hooks/usePriorityActions'
+import {
+  SUGGESTION_CACHE_KEY,
+  SUGGESTION_CACHE_TTL_MS,
+  usePriorityActions,
+} from '../hooks/usePriorityActions'
 import { updateFollowUp, updateFollowUpStatus } from '../services/FollowUpsApi'
 import {
   getFollowUp,
   getPriorityActionSuggestions,
   getPriorityActions,
 } from '../services/PriorityActionsApi'
+import { getDueBadge } from '../utils/dueBadge'
 
 vi.mock('../services/PriorityActionsApi', () => ({
   getFollowUp: vi.fn(),
@@ -97,7 +101,9 @@ describe('DashboardPriorityActions', () => {
 
     const items = screen.getAllByRole('listitem')
     expect(items).toHaveLength(3)
-    expect(within(items[0]).getByText('Missing signature on compliance document')).toBeInTheDocument()
+    expect(
+      within(items[0]).getByText('Missing signature on compliance document'),
+    ).toBeInTheDocument()
     expect(within(items[0]).getByText('OVERDUE')).toBeInTheDocument()
     expect(items[0]).toHaveClass('urgency-overdue')
     expect(within(items[1]).getByText('TOMORROW')).toBeInTheDocument()
@@ -190,10 +196,12 @@ describe('DashboardPriorityActions', () => {
   })
 
   it('labels follow-ups due today', () => {
-    expect(getDueBadge({ urgency: 'due_soon', days_until_due: 0, due_date: '2026-11-10' })).toEqual({
-      label: 'TODAY',
-      tone: 'danger',
-    })
+    expect(getDueBadge({ urgency: 'due_soon', days_until_due: 0, due_date: '2026-11-10' })).toEqual(
+      {
+        label: 'TODAY',
+        tone: 'danger',
+      },
+    )
   })
 })
 
@@ -427,7 +435,10 @@ describe('usePriorityActions', () => {
 
   it('approves a suggestion by appending it to the follow-up notes', async () => {
     getPriorityActions.mockResolvedValue({ items: ACTIONS, total: 3 })
-    getPriorityActionSuggestions.mockResolvedValue({ status: 'available', suggestions: [SUGGESTION] })
+    getPriorityActionSuggestions.mockResolvedValue({
+      status: 'available',
+      suggestions: [SUGGESTION],
+    })
     getFollowUp.mockResolvedValue({ id: 2, discussion_notes: 'Called client on Monday.' })
     updateFollowUp.mockResolvedValue({ id: 2 })
 
@@ -446,7 +457,10 @@ describe('usePriorityActions', () => {
 
   it('approves a suggestion on a follow-up with no notes yet', async () => {
     getPriorityActions.mockResolvedValue({ items: ACTIONS, total: 3 })
-    getPriorityActionSuggestions.mockResolvedValue({ status: 'available', suggestions: [SUGGESTION] })
+    getPriorityActionSuggestions.mockResolvedValue({
+      status: 'available',
+      suggestions: [SUGGESTION],
+    })
     getFollowUp.mockResolvedValue({ id: 2, discussion_notes: null })
     updateFollowUp.mockResolvedValue({ id: 2 })
 
@@ -462,7 +476,10 @@ describe('usePriorityActions', () => {
 
   it('does not mark a suggestion approved when saving fails', async () => {
     getPriorityActions.mockResolvedValue({ items: ACTIONS, total: 3 })
-    getPriorityActionSuggestions.mockResolvedValue({ status: 'available', suggestions: [SUGGESTION] })
+    getPriorityActionSuggestions.mockResolvedValue({
+      status: 'available',
+      suggestions: [SUGGESTION],
+    })
     getFollowUp.mockResolvedValue({ id: 2, discussion_notes: '' })
     updateFollowUp.mockRejectedValue(new Error('Server error'))
 
@@ -477,7 +494,10 @@ describe('usePriorityActions', () => {
 
   it('dismisses a suggestion without calling the API', async () => {
     getPriorityActions.mockResolvedValue({ items: ACTIONS, total: 3 })
-    getPriorityActionSuggestions.mockResolvedValue({ status: 'available', suggestions: [SUGGESTION] })
+    getPriorityActionSuggestions.mockResolvedValue({
+      status: 'available',
+      suggestions: [SUGGESTION],
+    })
 
     const { result } = renderHook(() => usePriorityActions())
     await waitFor(() => expect(result.current.suggestions).toHaveLength(1))
@@ -490,7 +510,10 @@ describe('usePriorityActions', () => {
 
   it('reuses cached suggestions when the dashboard is opened again', async () => {
     getPriorityActions.mockResolvedValue({ items: ACTIONS, total: 3 })
-    getPriorityActionSuggestions.mockResolvedValue({ status: 'available', suggestions: [SUGGESTION] })
+    getPriorityActionSuggestions.mockResolvedValue({
+      status: 'available',
+      suggestions: [SUGGESTION],
+    })
 
     const first = renderHook(() => usePriorityActions())
     await waitFor(() => expect(first.result.current.suggestions).toHaveLength(1))
@@ -505,7 +528,10 @@ describe('usePriorityActions', () => {
 
   it('regenerates suggestions once the cache is older than ten minutes', async () => {
     getPriorityActions.mockResolvedValue({ items: ACTIONS, total: 3 })
-    getPriorityActionSuggestions.mockResolvedValue({ status: 'available', suggestions: [SUGGESTION] })
+    getPriorityActionSuggestions.mockResolvedValue({
+      status: 'available',
+      suggestions: [SUGGESTION],
+    })
     const start = Date.now()
     const now = vi.spyOn(Date, 'now').mockReturnValue(start)
 
@@ -521,7 +547,10 @@ describe('usePriorityActions', () => {
 
   it('regenerates suggestions when the urgent list has changed', async () => {
     getPriorityActions.mockResolvedValueOnce({ items: ACTIONS, total: 3 })
-    getPriorityActionSuggestions.mockResolvedValue({ status: 'available', suggestions: [SUGGESTION] })
+    getPriorityActionSuggestions.mockResolvedValue({
+      status: 'available',
+      suggestions: [SUGGESTION],
+    })
 
     const first = renderHook(() => usePriorityActions())
     await waitFor(() => expect(first.result.current.suggestions).toHaveLength(1))
@@ -540,12 +569,15 @@ describe('usePriorityActions', () => {
         savedAt: Date.now(),
         actionIds: [91, 92],
         status: 'available',
-        suggestions: [{ follow_up_id: 91, text: 'Someone else\'s suggestion.' }],
+        suggestions: [{ follow_up_id: 91, text: "Someone else's suggestion." }],
         handledIds: [],
       }),
     )
     getPriorityActions.mockResolvedValue({ items: ACTIONS, total: 3 })
-    getPriorityActionSuggestions.mockResolvedValue({ status: 'available', suggestions: [SUGGESTION] })
+    getPriorityActionSuggestions.mockResolvedValue({
+      status: 'available',
+      suggestions: [SUGGESTION],
+    })
 
     const { result } = renderHook(() => usePriorityActions())
 
@@ -573,7 +605,10 @@ describe('usePriorityActions', () => {
 
   it('keeps dismissed follow-ups hidden when suggestions are regenerated', async () => {
     getPriorityActions.mockResolvedValueOnce({ items: ACTIONS, total: 3 })
-    getPriorityActionSuggestions.mockResolvedValue({ status: 'available', suggestions: [SUGGESTION] })
+    getPriorityActionSuggestions.mockResolvedValue({
+      status: 'available',
+      suggestions: [SUGGESTION],
+    })
 
     const first = renderHook(() => usePriorityActions())
     await waitFor(() => expect(first.result.current.suggestions).toHaveLength(1))
@@ -590,7 +625,10 @@ describe('usePriorityActions', () => {
 
   it('keeps an approved suggestion marked as saved when the dashboard is opened again', async () => {
     getPriorityActions.mockResolvedValue({ items: ACTIONS, total: 3 })
-    getPriorityActionSuggestions.mockResolvedValue({ status: 'available', suggestions: [SUGGESTION] })
+    getPriorityActionSuggestions.mockResolvedValue({
+      status: 'available',
+      suggestions: [SUGGESTION],
+    })
     getFollowUp.mockResolvedValue({ id: 2, discussion_notes: '' })
     updateFollowUp.mockResolvedValue({ id: 2 })
 
@@ -608,7 +646,10 @@ describe('usePriorityActions', () => {
 
   it('refresh ignores the cache and brings back dismissed follow-ups', async () => {
     getPriorityActions.mockResolvedValue({ items: ACTIONS, total: 3 })
-    getPriorityActionSuggestions.mockResolvedValue({ status: 'available', suggestions: [SUGGESTION] })
+    getPriorityActionSuggestions.mockResolvedValue({
+      status: 'available',
+      suggestions: [SUGGESTION],
+    })
 
     const { result } = renderHook(() => usePriorityActions())
     await waitFor(() => expect(result.current.suggestions).toHaveLength(1))

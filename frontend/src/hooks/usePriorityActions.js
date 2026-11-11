@@ -164,7 +164,9 @@ export function usePriorityActions(limit = 5) {
     updateCache((cached) => ({
       ...cached,
       actionIds: cached.actionIds.filter((id) => id !== followUpId),
-      suggestions: cached.suggestions.filter((suggestion) => suggestion.follow_up_id !== followUpId),
+      suggestions: cached.suggestions.filter(
+        (suggestion) => suggestion.follow_up_id !== followUpId,
+      ),
     }))
     setActions((current) => current.filter((action) => action.follow_up_id !== followUpId))
     setSuggestions((current) =>
