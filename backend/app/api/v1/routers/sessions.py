@@ -22,7 +22,7 @@ def login(credentials: LoginRequest, response: Response):
     try:
         with get_connection() as conn, conn.cursor() as cur:
             cur.execute(
-                "SELECT id, password_hash FROM advisors WHERE lower(email) = lower(%s)",
+                "SELECT id, password_hash FROM t_advisors WHERE lower(email) = lower(%s)",
                 (str(credentials.email),),
             )
             advisor = cur.fetchone()
