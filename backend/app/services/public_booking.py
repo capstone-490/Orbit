@@ -38,9 +38,35 @@ class MonthlyAvailabilityResult:
 @dataclass(frozen=True, slots=True)
 class ConfirmedBookingResult:
     booking: Booking
-    cancel_token: (
-        str  # raw token returned ONCE to the user/email; only its SHA-256 hash is in DB
-    )
+    cancel_token: str
+
+    @property
+    def booking_id(self) -> UUID:
+        return self.booking.id
+
+    @property
+    def status(self) -> BookingStatus:
+        return self.booking.status
+
+    @property
+    def start_at(self) -> datetime:
+        return self.booking.slot_window.start_at
+
+    @property
+    def end_at(self) -> datetime:
+        return self.booking.slot_window.end_at
+
+    @property
+    def prospect_timezone(self) -> str:
+        return self.booking.prospect_timezone
+
+    @property
+    def meeting_topic(self) -> str | None:
+        return self.booking.meeting_topic
+
+    @property
+    def cancelled_at(self) -> datetime | None:
+        return self.booking.cancelled_at
 
 
 def hash_cancel_token(raw_token: str) -> str:

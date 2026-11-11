@@ -5,6 +5,7 @@ from fastapi import Depends, Request
 
 from app.domain.uow import AbstractUnitOfWork
 from app.infrastructure.uow import SqlAlchemyUnitOfWork
+from app.services.clients import ClientService
 from app.services.public_booking import PublicBookingService
 
 
@@ -32,3 +33,7 @@ def get_public_booking_service(
 ) -> PublicBookingService:
     """Injects the UnitOfWork into PublicBookingService for FastAPI routers."""
     return PublicBookingService(uow)
+
+
+def get_client_service(uow: AbstractUnitOfWork = Depends(get_uow)) -> ClientService:
+    return ClientService(uow)

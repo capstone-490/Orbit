@@ -6,7 +6,6 @@ from app.api.v1.routers import (
     clients,
     feature_flags,
     meetings,
-    public_booking,
     sessions,
     tasks,
 )
@@ -20,4 +19,3 @@ router.include_router(advisor_registrations.router)
 router.include_router(meetings.router)
 router.include_router(feature_flags.router)
 router.include_router(tasks.router)
-router.include_router(public_booking.router)
