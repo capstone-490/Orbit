@@ -1,5 +1,6 @@
 # 50% or more AI-generated
 import re
+
 from fastapi.testclient import TestClient
 from prometheus_client import REGISTRY, generate_latest
 
