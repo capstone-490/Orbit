@@ -180,7 +180,12 @@ def create_meeting(
     )
 
     meeting_id, event = _schedule_calendar_event(
-        creds, advisor["id"], meeting.client_id, meeting.start, event_body
+        creds,
+        advisor["id"],
+        meeting.client_id,
+        meeting.start,
+        meeting.duration_minutes,
+        event_body,
     )
 
     return {
@@ -218,7 +223,12 @@ def book_meeting(advisor_id: int, booking: BookingCreate):
     )
 
     meeting_id, event = _schedule_calendar_event(
-        creds, advisor_id, client_id, booking.start, event_body
+        creds,
+        advisor_id,
+        client_id,
+        booking.start,
+        booking.duration_minutes,
+        event_body,
     )
 
     return {
@@ -301,6 +311,7 @@ def _schedule_calendar_event(
     advisor_id: int,
     client_id: int,
     meeting_date: datetime,
+    duration_minutes: int,
     event_body: dict,
 ) -> tuple[int, dict]:
     # Check the client first so no Google event is created for a client that
@@ -338,9 +349,14 @@ def _schedule_calendar_event(
         cur.execute(
             """
                 INSERT INTO meetings (
-                    advisor_id, client_id, meeting_date, meeting_uri, meeting_code
+                    advisor_id,
+                    client_id,
+                    meeting_date,
+                    meeting_uri,
+                    meeting_code,
+                    duration_minutes
                 )
-                VALUES (%s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s)
                 RETURNING id
                 """,
             (
@@ -349,6 +365,7 @@ def _schedule_calendar_event(
                 meeting_date,
                 event.get("hangoutLink"),
                 _meeting_code(event),
+                duration_minutes,
             ),
         )
         meeting_id = cur.fetchone()[0]
