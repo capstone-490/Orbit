@@ -26,7 +26,7 @@ def get_advisor_tasks(advisor_id: int):
             t.client_id AS "clientId",
             c.name AS "clientName"
         FROM t_tasks t
-        LEFT JOIN clients c ON t.client_id = c.id
+        LEFT JOIN t_clients c ON t.client_id = c.id
         WHERE t.advisor_id = %s
         ORDER BY t.due_date ASC;
     """

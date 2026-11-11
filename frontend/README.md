@@ -292,7 +292,7 @@ pnpm install --frozen-lockfile
 
 ```bash
 cd frontend
-VITE_API_URL=http://localhost:8001 pnpm dev
+VITE_API_URL=http://localhost:8001/api/v1 pnpm dev
 ```
 
 #### 3. Frontend Lint & Format (`biome`)

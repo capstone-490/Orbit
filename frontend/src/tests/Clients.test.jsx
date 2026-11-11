@@ -74,7 +74,7 @@ describe('US-14: Client directory', () => {
     expect(screen.getByText('Bob Jones')).toBeInTheDocument()
     expect(screen.getByText('All Clients (2)')).toBeInTheDocument()
 
-    expect(fetch).toHaveBeenCalledWith('http://localhost:8001/clients', {
+    expect(fetch).toHaveBeenCalledWith('http://localhost:8001/api/v1/clients', {
       credentials: 'include',
     })
   })

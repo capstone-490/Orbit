@@ -46,7 +46,7 @@ function DashboardTasks({ priorityTasks, onTaskUpdated }) {
     setUpdateError('')
 
     try {
-      const response = await fetch(`http://localhost:8001/advisors/tasks/${taskId}`, {
+      const response = await fetch(`http://localhost:8001/api/v1/advisors/tasks/${taskId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

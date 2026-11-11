@@ -43,7 +43,7 @@ def test_list_advisor_tasks_returns_client_names(mock_db):
     assert response.json()[0]["completed"] is False
     assert "tag" not in response.json()[0]
     query, params = cursor.execute.call_args.args
-    assert "LEFT JOIN clients" in query
+    assert "LEFT JOIN t_clients" in query
     assert "t.tag" not in query
     assert params == (2,)
 

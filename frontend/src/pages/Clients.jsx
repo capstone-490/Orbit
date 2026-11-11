@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { withAuthCredentials } from '../services/AuthApi'
 import '../styles/Clients.css'
 
-const API_URL = 'http://localhost:8001'
+const API_URL = 'http://localhost:8001/api/v1'
 
 const isValidPhoneNumber = (value) => {
   const phone = value.trim()
