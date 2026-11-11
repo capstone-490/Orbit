@@ -1,13 +1,9 @@
 # 50% or more AI-generated
 import re
 
-from fastapi.testclient import TestClient
 from prometheus_client import REGISTRY, generate_latest
 
 from app.auth import create_access_token
-from app.main import app
-
-client = TestClient(app)
 
 
 def count(route, status="200", method="GET", variant="none"):
@@ -25,7 +21,7 @@ def count(route, status="200", method="GET", variant="none"):
     )
 
 
-def test_request_counter_increments_by_n():
+def test_request_counter_increments_by_n(client):
     n = 5
     before = count("/health")
     for _ in range(n):
@@ -39,23 +35,23 @@ def api_metrics_text():
     return "\n".join(ln for ln in lines if ln.startswith("api_"))
 
 
-def test_no_pii_in_labels():
+def test_no_pii_in_labels(client):
     # Use an advisor id  to test the dynamic route
     access_token = create_access_token(123456)
     response = client.get(
-        "/api/v1/meetings/123456?email=secret@example.com",
+        "/meetings/123456?email=secret@example.com",
         headers={"Authorization": f"Bearer {access_token}"},
     )
     text = api_metrics_text()
     assert response.status_code == 200
-    assert 'route="/api/v1/meetings/{advisor_id}"' in text
+    assert 'route="/meetings/{advisor_id}"' in text
     labels = re.findall(r"\{([^}]*)\}", text)
     assert all("123456" not in label for label in labels)
     assert all("secret@example.com" not in label for label in labels)
 
 
-def test_ab_route_has_variant_label():
-    response = client.get("/api/v1/feature-flags/ab-test")
+def test_ab_route_has_variant_label(client):
+    response = client.get("/feature-flags/ab-test")
     assert response.status_code == 200
 
     variant = response.json()["Variant"]
@@ -64,13 +60,13 @@ def test_ab_route_has_variant_label():
     assert count("/api/v1/feature-flags/ab-test", variant=variant) >= 1
 
 
-def test_metrics_endpoint_is_not_counted():
+def test_metrics_endpoint_is_not_counted(client):
     response = client.get("/metrics")
     assert response.status_code == 200
     assert 'route="/api/v1/metrics"' not in api_metrics_text()
 
 
-def test_latency_histogram_records_requests():
+def test_latency_histogram_records_requests(client):
     labels = {"method": "GET", "route": "/health", "variant": "none"}
     before = REGISTRY.get_sample_value("api_latency_seconds_count", labels) or 0
     client.get("/health")
@@ -78,7 +74,7 @@ def test_latency_histogram_records_requests():
     assert after - before == 1
 
 
-def test_unknown_routes_count_as_error():
+def test_unknown_routes_count_as_error(client):
     labels = {
         "method": "GET",
         "route": "unmatched",
@@ -92,7 +88,7 @@ def test_unknown_routes_count_as_error():
     assert "does-not-exist-123456" not in api_metrics_text()
 
 
-def test_metrics_endpoint_exposes_api_metrics():
+def test_metrics_endpoint_exposes_api_metrics(client):
     response = client.get("/metrics")
 
     assert response.status_code == 200
