@@ -29,10 +29,10 @@ alt Action is Read-Only ('view')
     API --> Agent : 200 OK (Resource Data)
 
 else Action is mutation (propose)
-    
+
 == 2. Stage Approval Request (No Direct Mutation) ==
 
-    API -> DB : INSERT INTO approval_requests\n(status='pending', requesting_agent_id, delegation_id, action_payload)
+    API -> DB : INSERT INTO approval_requests\n(status='pending', requesting_agent_id, delegation_id, action_payload, expires_at)
     API -> DB : INSERT INTO audit_log\n(actor_type='agent', authorization_decision='allow', outcome='pending_approval')
     API -> DB : COMMIT;
     API --> Agent : 202 Accepted (Pending Human Approval)
@@ -44,14 +44,21 @@ else Action is mutation (propose)
     FGA --> API : { allowed: true }
 
     API -> DB : BEGIN;\nSET LOCAL app.current_org_id = '{org_id}';
-    API -> DB : UPDATE approval_requests\nSET status='approved', approver_membership_id='{approver_id}', approved_at=now()
+    API -> DB : SELECT * FROM approval_requests\nWHERE id = '{approval_request_id}' FOR UPDATE
+    DB --> API : Locked Row (verify status = 'pending' AND expires_at > now())
+    note right of DB
+      Atomically locks request row to prevent concurrent
+      approvals or execution of expired/rejected requests.
+    end note
+
+    API -> DB : UPDATE approval_requests\nSET status='approved', approver_membership_id='{approver_id}', approved_at=now()\nWHERE id='{approval_request_id}' AND status='pending' AND expires_at > now()
     note right of DB
       DB enforces chk_approval_requests_no_self_approval
       and chk_approval_requests_status_invariants
     end note
 
     API -> DB : Execute Staged Action Payload on Target Resource
-    API -> DB : UPDATE approval_requests SET status='executed', executed_at=now()
+    API -> DB : UPDATE approval_requests SET status='executed', executed_at=now() WHERE id='{approval_request_id}'
     API -> DB : INSERT INTO outbox_events & audit_log (outcome='success')
     API -> DB : COMMIT;
 
