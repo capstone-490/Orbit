@@ -128,106 +128,107 @@ describe('AdvisorDashboard', () => {
       credentials: 'include',
     })
   })
+})
 
-  test('shows an error when dashboard API requests fail', async () => {
-    getCurrentAdvisor.mockResolvedValue({ id: 1 })
-    getAdvisorMeetings.mockResolvedValue([])
+test('shows an error when dashboard API requests fail', async () => {
+  getCurrentAdvisor.mockResolvedValue({ id: 1 })
+  getAdvisorMeetings.mockResolvedValue([])
 
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: false,
-        json: async () => [],
-      }),
-    )
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue({
+      ok: false,
+      json: async () => [],
+    }),
+  )
 
-    render(
-      <MemoryRouter>
-        <AdvisorDashboard />
-      </MemoryRouter>,
-    )
+  render(
+    <MemoryRouter>
+      <AdvisorDashboard />
+    </MemoryRouter>,
+  )
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Could not load dashboard data: Failed to fetch dashboard data',
-    )
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Could not load dashboard data: Failed to fetch dashboard data',
+  )
+})
+
+test('refreshes the meeting schedule after a successful reschedule', async () => {
+  getCurrentAdvisor.mockResolvedValue({ id: 1 })
+
+  const originalMeeting = {
+    id: 2,
+    client_id: 101,
+    advisor_id: 1,
+    meeting_date: '2030-10-25T10:00:00',
+    duration_minutes: 30,
+    completion_status: 'Scheduled',
+    client_name: 'Sarah Smith',
+  }
+
+  getAdvisorMeetings.mockResolvedValueOnce([originalMeeting]).mockResolvedValueOnce([
+    {
+      ...originalMeeting,
+      meeting_date: '2030-10-26T14:30:00',
+    },
+  ])
+
+  rescheduleMeeting.mockResolvedValue({
+    id: 2,
+    meeting_date: '2030-10-26T14:30:00',
   })
 
-  test('refreshes the meeting schedule after a successful reschedule', async () => {
-    getCurrentAdvisor.mockResolvedValue({ id: 1 })
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [],
+    }),
+  )
 
-    const originalMeeting = {
-      id: 2,
-      client_id: 101,
-      advisor_id: 1,
-      meeting_date: '2030-10-25T10:00:00',
-      duration_minutes: 30,
-      completion_status: 'Scheduled',
-      client_name: 'Sarah Smith',
-    }
+  render(
+    <MemoryRouter>
+      <AdvisorDashboard />
+    </MemoryRouter>,
+  )
 
-    getAdvisorMeetings.mockResolvedValueOnce([originalMeeting]).mockResolvedValueOnce([
-      {
-        ...originalMeeting,
-        meeting_date: '2030-10-26T14:30:00',
-      },
-    ])
+  const rescheduleButton = await screen.findByRole('button', {
+    name: 'Reschedule',
+  })
 
-    rescheduleMeeting.mockResolvedValue({
-      id: 2,
-      meeting_date: '2030-10-26T14:30:00',
-    })
+  fireEvent.click(rescheduleButton)
 
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => [],
-      }),
-    )
+  expect(screen.getByRole('dialog')).toBeInTheDocument()
 
-    render(
-      <MemoryRouter>
-        <AdvisorDashboard />
-      </MemoryRouter>,
-    )
+  // Select a future date using the calendar.
+  const futureDate = new Date()
+  futureDate.setDate(futureDate.getDate() + 7)
 
-    const rescheduleButton = await screen.findByRole('button', {
-      name: 'Reschedule',
-    })
+  const dateString = [
+    futureDate.getFullYear(),
+    String(futureDate.getMonth() + 1).padStart(2, '0'),
+    String(futureDate.getDate()).padStart(2, '0'),
+  ].join('-')
 
-    fireEvent.click(rescheduleButton)
+  const dateCell = document.querySelector(`[data-day="${dateString}"]`)
 
-    expect(screen.getByRole('dialog')).toBeInTheDocument()
+  expect(dateCell).not.toBeNull()
+  fireEvent.click(dateCell.querySelector('button'))
 
-    // Select a future date using the calendar.
-    const futureDate = new Date()
-    futureDate.setDate(futureDate.getDate() + 7)
+  fireEvent.change(screen.getByLabelText('New start time'), {
+    target: { value: '14:30' },
+  })
 
-    const dateString = [
-      futureDate.getFullYear(),
-      String(futureDate.getMonth() + 1).padStart(2, '0'),
-      String(futureDate.getDate()).padStart(2, '0'),
-    ].join('-')
+  fireEvent.click(screen.getByRole('button', { name: 'Confirm Reschedule' }))
 
-    const dateCell = document.querySelector(`[data-day="${dateString}"]`)
+  await waitFor(() => {
+    expect(rescheduleMeeting).toHaveBeenCalledOnce()
+    expect(getAdvisorMeetings).toHaveBeenCalledTimes(2)
+  })
 
-    expect(dateCell).not.toBeNull()
-    fireEvent.click(dateCell.querySelector('button'))
+  await waitFor(() => {
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
 
-    fireEvent.change(screen.getByLabelText('New start time'), {
-      target: { value: '14:30' },
-    })
-
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm Reschedule' }))
-
-    await waitFor(() => {
-      expect(rescheduleMeeting).toHaveBeenCalledOnce()
-      expect(getAdvisorMeetings).toHaveBeenCalledTimes(2)
-    })
-
-    await waitFor(() => {
-      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    })
-
-    expect(getAdvisorMeetings).toHaveBeenLastCalledWith(1)
+  expect(getAdvisorMeetings).toHaveBeenLastCalledWith(1)
 })
