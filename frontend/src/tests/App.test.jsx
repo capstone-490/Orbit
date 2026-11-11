@@ -51,11 +51,12 @@ describe('App routes', () => {
 
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => ({
+      vi.fn(async (url) => ({
         ok: true,
-        json: async () => ({
-          user: { id: 1, name: 'Test User' },
-        }),
+        json: async () =>
+          url === 'http://localhost:8001/advisors/1/tasks'
+            ? []
+            : { user: { id: 1, name: 'Test User' } },
       })),
     )
 
