@@ -92,7 +92,7 @@ def test_login_returns_503_when_database_unavailable(
     )
 
     response = client.post(
-        "/api/v1/auth/login",
+        "/auth/login",
         json={
             "email": "advisor@example.com",
             "password": "correct-horse",

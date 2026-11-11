@@ -30,7 +30,7 @@ def test_create_follow_up_requires_assigned_client(mock_db, client):
     mock_db.fetchone.return_value = None
 
     response = client.post(
-        "/follow-ups",
+        "/api/v1/follow-ups",
         json={
             "client_id": 12,
             "reason": "Review investment proposal",
@@ -59,7 +59,7 @@ def test_create_follow_up_returns_record(mock_db, client):
     ]
 
     response = client.post(
-        "/follow-ups",
+        "/api/v1/follow-ups",
         json={
             "client_id": 12,
             "reason": "Review investment proposal",
@@ -80,7 +80,7 @@ def test_list_follow_ups_is_scoped_to_current_advisor(mock_db, client):
         {"id": 3, "advisor_id": 7, "client_id": 12, "status": "Pending"}
     ]
 
-    response = client.get("/follow-ups")
+    response = client.get("/api/v1/follow-ups")
 
     assert response.status_code == 200
     assert response.json()[0]["advisor_id"] == 7
@@ -92,7 +92,7 @@ def test_list_follow_ups_is_scoped_to_current_advisor(mock_db, client):
 def test_get_follow_up_hides_other_advisors(mock_db, client):
     mock_db.fetchone.return_value = None
 
-    response = client.get("/follow-ups/99")
+    response = client.get("/api/v1/follow-ups/99")
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Follow-up not found."
@@ -106,7 +106,7 @@ def test_update_status_is_scoped_and_persisted(mock_db, client):
         "status": "Completed",
     }
 
-    response = client.patch("/follow-ups/3/status", json={"status": "Completed"})
+    response = client.patch("/api/v1/follow-ups/3/status", json={"status": "Completed"})
 
     assert response.status_code == 200
     assert response.json()["status"] == "Completed"
@@ -125,7 +125,7 @@ def test_update_discussion_notes_returns_saved_value(mock_db, client):
     }
 
     response = client.patch(
-        "/follow-ups/3",
+        "/api/v1/follow-ups/3",
         json={"discussion_notes": " Discussed next steps. "},
     )
 
@@ -139,7 +139,7 @@ def test_update_discussion_notes_returns_saved_value(mock_db, client):
 def test_update_discussion_notes_accepts_empty_note(mock_db, client):
     mock_db.fetchone.return_value = {"id": 3, "discussion_notes": ""}
 
-    response = client.patch("/follow-ups/3", json={"discussion_notes": "   "})
+    response = client.patch("/api/v1/follow-ups/3", json={"discussion_notes": "   "})
 
     assert response.status_code == 200
     assert response.json()["discussion_notes"] == ""
@@ -148,7 +148,7 @@ def test_update_discussion_notes_accepts_empty_note(mock_db, client):
 def test_update_reason_strips_whitespace(mock_db, client):
     mock_db.fetchone.return_value = {"id": 3, "reason": "Updated reason"}
 
-    response = client.patch("/follow-ups/3", json={"reason": " Updated reason "})
+    response = client.patch("/api/v1/follow-ups/3", json={"reason": " Updated reason "})
 
     assert response.status_code == 200
     assert response.json()["reason"] == "Updated reason"
@@ -160,7 +160,7 @@ def test_update_reason_strips_whitespace(mock_db, client):
     [{}],
 )
 def test_update_follow_up_rejects_empty_update_payload(mock_db, client, payload):
-    response = client.patch("/follow-ups/3", json=payload)
+    response = client.patch("/api/v1/follow-ups/3", json=payload)
 
     assert response.status_code == 422
     assert response.json()["detail"] == "At least one field must be provided."
@@ -168,7 +168,7 @@ def test_update_follow_up_rejects_empty_update_payload(mock_db, client, payload)
 
 
 def test_update_follow_up_rejects_client_id_change(mock_db, client):
-    response = client.patch("/follow-ups/3", json={"client_id": 12})
+    response = client.patch("/api/v1/follow-ups/3", json={"client_id": 12})
 
     assert response.status_code == 422
     assert response.json()["detail"][0]["type"] == "extra_forbidden"
@@ -178,7 +178,9 @@ def test_update_follow_up_rejects_client_id_change(mock_db, client):
 def test_update_follow_up_returns_not_found(mock_db, client):
     mock_db.fetchone.return_value = None
 
-    response = client.patch("/follow-ups/3", json={"discussion_notes": "No record"})
+    response = client.patch(
+        "/api/v1/follow-ups/3", json={"discussion_notes": "No record"}
+    )
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Follow-up not found."
@@ -186,7 +188,7 @@ def test_update_follow_up_returns_not_found(mock_db, client):
 
 @pytest.mark.parametrize("field", ["due_date", "priority", "status"])
 def test_update_follow_up_rejects_null_non_nullable_fields(mock_db, client, field):
-    response = client.patch("/follow-ups/3", json={field: None})
+    response = client.patch("/api/v1/follow-ups/3", json={field: None})
 
     assert response.status_code == 422
     mock_db.execute.assert_not_called()
@@ -216,7 +218,7 @@ def test_update_follow_up_rejects_null_non_nullable_fields(mock_db, client, fiel
     ],
 )
 def test_create_follow_up_validates_input(mock_db, client, payload):
-    response = client.post("/follow-ups", json=payload)
+    response = client.post("/api/v1/follow-ups", json=payload)
 
     assert response.status_code == 422
     mock_db.execute.assert_not_called()

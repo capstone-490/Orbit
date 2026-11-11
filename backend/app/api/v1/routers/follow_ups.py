@@ -3,13 +3,9 @@ from psycopg import Error as PsycopgError
 from psycopg.rows import dict_row
 
 from app.auth import get_current_advisor
-from app.classes.follow_up import (
-    FollowUpCreate,
-    FollowUpStatusUpdate,
-    FollowUpUpdate,
-)
+from app.classes.follow_up import FollowUpCreate, FollowUpStatusUpdate, FollowUpUpdate
 from app.dependencies.db import get_connection
-from app.logging_config import get_logger
+from app.observability.logging_config import get_logger
 
 router = APIRouter(prefix="/follow-ups", tags=["Follow-Ups"])
 logger = get_logger("app.api.follow_ups")

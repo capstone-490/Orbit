@@ -52,8 +52,8 @@ def test_list_meetings_empty(mock_db):
     mock_db.execute.assert_called_once()
     query, params = mock_db.execute.call_args.args
 
-    assert "FROM meetings m" in query
-    assert "JOIN clients c ON c.id = m.client_id" in query
+    assert "FROM t_meetings m" in query
+    assert "JOIN t_clients c ON c.id = m.client_id" in query
     assert "m.duration_minutes" in query
     assert "c.name AS client_name" in query
     assert params["advisor_id"] == 1
@@ -74,7 +74,7 @@ def test_create_continuing_session_for_existing_client(mock_db):
     ]
 
     response = client.post(
-        "/meetings/continuing-session",
+        "/api/v1/meetings/continuing-session",
         json={"client_id": 7, "meeting_date": "2026-12-01T10:00:00Z"},
     )
 
@@ -88,7 +88,7 @@ def test_create_continuing_session_for_existing_client(mock_db):
     }
     assert mock_db.execute.call_count == 4
     insert_query, insert_params = mock_db.execute.call_args.args
-    assert "INSERT INTO meetings" in insert_query
+    assert "INSERT INTO t_meetings" in insert_query
     assert insert_params["advisor_id"] == 1
     assert insert_params["client_id"] == 7
 
@@ -97,7 +97,7 @@ def test_continuing_session_requires_client_belonging_to_advisor(mock_db):
     mock_db.fetchone.return_value = None
 
     response = client.post(
-        "/meetings/continuing-session",
+        "/api/v1/meetings/continuing-session",
         json={"client_id": 7, "meeting_date": "2026-12-01T10:00:00Z"},
     )
 
@@ -126,8 +126,8 @@ def test_continuing_session_rejects_unavailable_time_slot(mock_db):
         "meeting_date": "2026-12-01T10:00:00Z",
     }
 
-    first_response = client.post("/meetings/continuing-session", json=request)
-    second_response = client.post("/meetings/continuing-session", json=request)
+    first_response = client.post("/api/v1/meetings/continuing-session", json=request)
+    second_response = client.post("/api/v1/meetings/continuing-session", json=request)
 
     assert first_response.status_code == 201
     assert second_response.status_code == 409
@@ -139,7 +139,7 @@ def test_continuing_session_rejects_overlapping_one_hour_meeting(mock_db):
     mock_db.fetchone.side_effect = [(7,), (11,)]
 
     response = client.post(
-        "/meetings/continuing-session",
+        "/api/v1/meetings/continuing-session",
         json={"client_id": 7, "meeting_date": "2026-11-07T10:30:00Z"},
     )
 
@@ -154,7 +154,7 @@ def test_continuing_session_rejects_overlapping_one_hour_meeting(mock_db):
 
 def test_continuing_session_requires_timezone(mock_db):
     response = client.post(
-        "/meetings/continuing-session",
+        "/api/v1/meetings/continuing-session",
         json={"client_id": 7, "meeting_date": "2026-12-01T10:00:00"},
     )
 
@@ -227,8 +227,8 @@ def test_list_meetings_with_data(mock_db):
     mock_db.execute.assert_called_once()
     query, params = mock_db.execute.call_args.args
 
-    assert "FROM meetings m" in query
-    assert "JOIN clients c ON c.id = m.client_id" in query
+    assert "FROM t_meetings m" in query
+    assert "JOIN t_clients c ON c.id = m.client_id" in query
     assert "m.duration_minutes" in query
     assert "c.name AS client_name" in query
     assert "m.meeting_uri" in query
@@ -341,7 +341,7 @@ def test_list_meetings_for_client(mock_db):
     assert params["client_id"] == 1
 
 
-RESCHEDULE_URL = "/meetings/1/reschedule"
+RESCHEDULE_URL = "/api/v1/meetings/1/reschedule"
 FUTURE_START = "2030-06-01T10:00:00+00:00"
 
 
@@ -389,7 +389,7 @@ def test_reschedule_meeting_success(mock_db):
 
     assert mock_db.execute.call_count == 4
     update_query = mock_db.execute.call_args_list[-1].args[0]
-    assert "UPDATE meetings" in update_query
+    assert "UPDATE t_meetings" in update_query
 
 
 def test_reschedule_meeting_conflict(mock_db):
