@@ -119,7 +119,7 @@ describe('DashboardTasks Component', () => {
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(
-        'http://localhost:8001/advisors/tasks/1',
+        'http://localhost:8001/api/v1/advisors/tasks/1',
         expect.objectContaining({
           method: 'PATCH',
           body: JSON.stringify({ completed: true }),

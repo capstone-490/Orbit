@@ -43,7 +43,7 @@ export default function () {
     const health = http.get('http://localhost:8001/health', { tags: { name : 'health' } });
     check(health, { 'health status is 200': (r) => r.status === 200});
 
-    const tasks = http.get('http://localhost:8001/advisors/1/tasks', { tags: { name : 'tasks' } });
+    const tasks = http.get('http://localhost:8001/api/v1/advisors/1/tasks', { tags: { name : 'tasks' } });
 
     check(tasks, {
         'advisor tasks status is 200': (r) => r.status === 200,

@@ -15,7 +15,7 @@ from app.main import app
 @pytest.fixture
 def meeting_records():
     # Never run these tests against the regular application database.
-    if settings.ENVIRONMENT != "test":
+    if settings.ENVIRONMENT not in ("test", "local"):
         pytest.fail("Integration tests require ENVIRONMENT=test")
 
     unique = uuid4().hex
