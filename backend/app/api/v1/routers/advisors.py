@@ -93,9 +93,9 @@ def create_advisor_task(
             inserted.status,
             inserted.created_at AS "createdAt",
             inserted.client_id AS "clientId",
-            clients.name AS "clientName"
+            t_clients.name AS "clientName"
         FROM inserted
-        LEFT JOIN t_clients ON clients.id = inserted.client_id;
+        LEFT JOIN t_clients ON t_clients.id = inserted.client_id;
     """
     try:
         with get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
