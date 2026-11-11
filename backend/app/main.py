@@ -27,6 +27,7 @@ from app.core.security.anonymizer import TokenStore
 from app.logging_config import configure_logging, get_logger
 from app.metrics_middleware import MetricsMiddleware
 from app.middleware.request_logging import RequestLoggingMiddleware
+from app.api.v1.routers.priority_actions import router as priority_actions_router
 
 configure_logging()
 logger = get_logger("app")
@@ -75,7 +76,7 @@ app.include_router(password_reset.router)
 app.include_router(follow_ups_router)
 app.include_router(google_meet_integration_router)
 app.include_router(google_meet_public_router)
-
+app.include_router(priority_actions_router)
 
 if os.getenv("ENABLE_DEBUG_ROUTES", "").lower() in {"1", "true", "yes"}:
     from app.api.v1.routers.debug import router as debug_router
