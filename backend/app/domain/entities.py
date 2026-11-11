@@ -164,6 +164,18 @@ class Booking:
     rescheduled_from_id: UUID | None = None
     version: int = 1
 
+    @property
+    def booking_id(self) -> UUID:
+        return self.id
+
+    @property
+    def start_at(self) -> datetime:
+        return self.slot_window.start_at
+
+    @property
+    def end_at(self) -> datetime:
+        return self.slot_window.end_at
+
     @classmethod
     def create_hold(
         cls,
@@ -297,6 +309,10 @@ class Client:
     created_at: datetime | None = None
     updated_at: datetime | None = None
     deleted_at: datetime | None = None
+
+    @property
+    def age(self) -> int | None:
+        return self.calculate_age()
 
     def __post_init__(self) -> None:
         self.display_name = self.display_name.strip()
