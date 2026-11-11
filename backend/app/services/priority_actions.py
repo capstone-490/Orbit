@@ -27,10 +27,7 @@ def classify_urgency(follow_up: dict, today: date) -> str | None:
         return "overdue"
     if days_until_due <= DUE_SOON_DAYS:
         return "due_soon"
-    if (
-        follow_up["priority"] == "High"
-        and days_until_due <= HIGH_PRIORITY_WINDOW_DAYS
-    ):
+    if follow_up["priority"] == "High" and days_until_due <= HIGH_PRIORITY_WINDOW_DAYS:
         return "high_priority"
     return None
 

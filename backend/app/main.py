@@ -21,13 +21,13 @@ from app.api.v1.routers.google_meet_integration import (
     router as google_meet_integration_router,
 )
 from app.api.v1.routers.meetings import router as meetings_router
+from app.api.v1.routers.priority_actions import router as priority_actions_router
 from app.api.v1.routers.sessions import router as sessions_router
 from app.core.feature_flags import get_variant
 from app.core.security.anonymizer import TokenStore
 from app.logging_config import configure_logging, get_logger
 from app.metrics_middleware import MetricsMiddleware
 from app.middleware.request_logging import RequestLoggingMiddleware
-from app.api.v1.routers.priority_actions import router as priority_actions_router
 
 configure_logging()
 logger = get_logger("app")
