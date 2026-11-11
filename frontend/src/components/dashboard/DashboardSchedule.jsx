@@ -1,7 +1,7 @@
 import '../../styles/DashboardSchedule.css'
 import { useState } from 'react'
-import RescheduleMeetingModal from './RescheduleMeetingModal'
 import BriefingNotesModal from './BriefingNotesModal'
+import RescheduleMeetingModal from './RescheduleMeetingModal'
 
 const formatShortTime = (timestamp) => {
   if (!timestamp) return ''
@@ -51,7 +51,6 @@ const getMeetingStatusLabel = (item, overdue) => {
   return overdue ? 'Overdue' : 'Scheduled'
 }
 
-
 function DashboardSchedule({ scheduleData, onMeetingRescheduled }) {
   const [meetingToReschedule, setMeetingToReschedule] = useState(null)
   const [meetingForBriefing, setMeetingForBriefing] = useState(null)
@@ -86,15 +85,15 @@ function DashboardSchedule({ scheduleData, onMeetingRescheduled }) {
               )}
             </span>
             <div className="schedule-actions">
-                {item.id != null && (
-                    <button
-                      type="button"
-                      className="briefing-notes-button"
-                      onClick={() => setMeetingForBriefing(item)}
-                    >
-                      View Details
-                    </button>
-                  )}
+              {item.id != null && (
+                <button
+                  type="button"
+                  className="briefing-notes-button"
+                  onClick={() => setMeetingForBriefing(item)}
+                >
+                  View Details
+                </button>
+              )}
               {statusLabel === 'Scheduled' &&
                 item.id != null &&
                 item.time &&
