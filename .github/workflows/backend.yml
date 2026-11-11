@@ -29,6 +29,7 @@ jobs:
       run:
         working-directory: backend
     env:
+      ENVIRONMENT: test
       DB_NAME: orbit_db
       DB_USER: ${{ secrets.TEST_DB_USER }}
       DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
