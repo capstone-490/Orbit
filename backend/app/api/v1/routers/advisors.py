@@ -1,15 +1,20 @@
+from typing import Literal
+
 from fastapi import APIRouter, HTTPException
 from psycopg import Error as PsycopgError
 from psycopg.rows import dict_row
-from pydantic import BaseModel, StrictBool
+from pydantic import BaseModel
 
 from app.dependencies.db import get_connection
 
 router = APIRouter(prefix="/advisors", tags=["Advisors"])
 
 
-class TaskCompletionUpdate(BaseModel):
-    completed: StrictBool
+TaskStatus = Literal["TO_DO", "IN_PROGRESS", "IN_REVIEW", "COMPLETED"]
+
+
+class TaskStatusUpdate(BaseModel):
+    status: TaskStatus
 
 
 # 1. Fetch Tasks for a Specific Advisor
@@ -21,7 +26,7 @@ def get_advisor_tasks(advisor_id: int):
             t.advisor_id AS "advisorId",
             t.task_title AS "taskTitle",
             t.due_date AS "dueDate",
-            t.completed,
+            t.status,
             t.created_at AS "createdAt",
             t.client_id AS "clientId",
             c.name AS "clientName"
@@ -39,24 +44,24 @@ def get_advisor_tasks(advisor_id: int):
 
 
 @router.patch("/tasks/{task_id}")
-def update_task_completion(task_id: int, body: TaskCompletionUpdate):
+def update_task_status(task_id: int, body: TaskStatusUpdate):
 
     query = """
         UPDATE tasks
-        SET completed = %s
+        SET status = %s
         WHERE id = %s
         RETURNING
             id,
             advisor_id AS "advisorId",
             task_title AS "taskTitle",
             due_date AS "dueDate",
-            completed,
+            status,
             created_at AS "createdAt",
             client_id AS "clientId";
     """
     try:
         with get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
-            cur.execute(query, (body.completed, task_id))
+            cur.execute(query, (body.status, task_id))
             updated_task = cur.fetchone()
             conn.commit()
     except PsycopgError as e:

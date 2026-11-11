@@ -29,7 +29,7 @@ def test_list_advisor_tasks_returns_client_names(mock_db):
             "advisorId": 2,
             "taskTitle": "Call client",
             "dueDate": "2026-10-28",
-            "completed": False,
+            "status": "TO_DO",
             "createdAt": "2026-10-28T10:00:00",
             "clientId": 10,
             "clientName": "Sarah Smith",
@@ -40,7 +40,7 @@ def test_list_advisor_tasks_returns_client_names(mock_db):
 
     assert response.status_code == 200
     assert response.json()[0]["clientName"] == "Sarah Smith"
-    assert response.json()[0]["completed"] is False
+    assert response.json()[0]["status"] == "TO_DO"
     assert "tag" not in response.json()[0]
     query, params = cursor.execute.call_args.args
     assert "LEFT JOIN clients" in query
@@ -109,41 +109,53 @@ def test_list_advisor_clients_returns_rows(mock_db):
     assert connection.cursor.call_args.kwargs == {"row_factory": dict_row}
 
 
-def test_update_task_completion_persists_and_returns_updated_task(mock_db):
+def test_update_task_status_persists_and_returns_updated_task(mock_db):
     connection, cursor = mock_db
-    cursor.fetchone.return_value = {"id": 1, "completed": True}
+    cursor.fetchone.return_value = {"id": 1, "status": "IN_PROGRESS"}
 
-    response = client.patch("/advisors/tasks/1", json={"completed": True})
+    response = client.patch("/advisors/tasks/1", json={"status": "IN_PROGRESS"})
 
     assert response.status_code == 200
-    assert response.json() == {"id": 1, "completed": True}
+    assert response.json() == {"id": 1, "status": "IN_PROGRESS"}
     query, params = cursor.execute.call_args.args
     assert "UPDATE tasks" in query
-    assert params == (True, 1)
+    assert "SET status = %s" in query
+    assert params == ("IN_PROGRESS", 1)
     connection.commit.assert_called_once()
 
 
-def test_update_task_completion_returns_404_for_missing_task(mock_db):
+def test_update_task_status_returns_404_for_missing_task(mock_db):
     _, cursor = mock_db
     cursor.fetchone.return_value = None
 
-    response = client.patch("/advisors/tasks/999", json={"completed": True})
+    response = client.patch("/advisors/tasks/999", json={"status": "COMPLETED"})
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Task not found"}
 
 
-def test_update_task_completion_requires_boolean(mock_db):
-    response = client.patch("/advisors/tasks/1", json={"completed": "yes"})
+@pytest.mark.parametrize("status", ["TO_DO", "IN_PROGRESS", "IN_REVIEW", "COMPLETED"])
+def test_update_task_status_accepts_supported_values(mock_db, status):
+    _, cursor = mock_db
+    cursor.fetchone.return_value = {"id": 1, "status": status}
+
+    response = client.patch("/advisors/tasks/1", json={"status": status})
+
+    assert response.status_code == 200
+    assert response.json()["status"] == status
+
+
+def test_update_task_status_rejects_unsupported_value():
+    response = client.patch("/advisors/tasks/1", json={"status": "BLOCKED"})
 
     assert response.status_code == 422
 
 
-def test_update_task_completion_reports_database_errors(mock_db):
+def test_update_task_status_reports_database_errors(mock_db):
     _, cursor = mock_db
     cursor.execute.side_effect = OperationalError("database unavailable")
 
-    response = client.patch("/advisors/tasks/1", json={"completed": True})
+    response = client.patch("/advisors/tasks/1", json={"status": "TO_DO"})
 
     assert response.status_code == 500
     assert response.json() == {"detail": "database unavailable"}

@@ -1,4 +1,5 @@
 import '../../styles/DashboardSummary.css'
+import { isTaskCompleted } from '../../data/taskStatuses'
 
 const isTaskOverdue = (task, now) => {
   if (!task.dueDate) return false
@@ -49,9 +50,9 @@ function DashboardSummary({ dashboardSummaryData, tasks, schedule, clients }) {
       : 'No upcoming meetings'
     : dashboardSummaryData.nextMeeting
   const pendingTaskCount =
-    tasks?.filter((task) => !task.completed).length ?? dashboardSummaryData.pendingTasks
+    tasks?.filter((task) => !isTaskCompleted(task)).length ?? dashboardSummaryData.pendingTasks
   const overdueTaskCount = tasks
-    ? tasks.filter((task) => !task.completed && isTaskOverdue(task, new Date())).length
+    ? tasks.filter((task) => !isTaskCompleted(task) && isTaskOverdue(task, new Date())).length
     : dashboardSummaryData.overdueTasks
 
   const clientNewCount =

@@ -69,7 +69,7 @@ export const mockPriorityTasks = [
     clientName: 'Sarah Smith',
     dueDate: '2026-10-16',
     tag: 'TODAY',
-    completed: false,
+    status: 'TO_DO',
   },
   {
     id: 2,
@@ -77,7 +77,7 @@ export const mockPriorityTasks = [
     clientName: 'Elena Rostova',
     dueDate: '2026-10-17',
     tag: 'TOMORROW',
-    completed: false,
+    status: 'TO_DO',
   },
   {
     id: 3,
@@ -85,7 +85,7 @@ export const mockPriorityTasks = [
     clientName: 'Marcus Sterling',
     dueDate: '2026-10-20',
     tag: 'TUE, OCT 20',
-    completed: false,
+    status: 'TO_DO',
   },
   {
     id: 4,
@@ -93,7 +93,7 @@ export const mockPriorityTasks = [
     clientName: 'David Vance',
     dueDate: '2026-10-23',
     tag: 'FRI, OCT 23',
-    completed: false,
+    status: 'TO_DO',
   },
   {
     id: 5,
@@ -101,6 +101,6 @@ export const mockPriorityTasks = [
     clientName: 'Rachel Chen',
     dueDate: '2026-10-27',
     tag: 'TUE, OCT 27',
-    completed: false,
+    status: 'TO_DO',
   },
 ]
