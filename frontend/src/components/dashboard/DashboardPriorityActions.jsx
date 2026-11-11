@@ -48,9 +48,7 @@ function DashboardPriorityActions({ actions, total, loading, error, onRetry, onC
 
     if (actions.length === 0) {
       return (
-        <p className="urgent-followups-message">
-          No urgent follow-ups. You&apos;re all caught up.
-        </p>
+        <p className="urgent-followups-message">No urgent follow-ups. You&apos;re all caught up.</p>
       )
     }
 
