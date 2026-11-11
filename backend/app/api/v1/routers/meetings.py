@@ -16,6 +16,21 @@ router = APIRouter(
 )
 
 
+class RescheduleMeetingRequest(BaseModel):
+    new_start: datetime
+
+    @field_validator("new_start")
+    @classmethod
+    def validate_new_start(cls, value: datetime) -> datetime:
+        if value.tzinfo is None or value.utcoffset() is None:
+            raise ValueError("new_start must include a timezone offset")
+
+        if value <= datetime.now(UTC):
+            raise ValueError("new_start must be in the future")
+
+        return value
+
+
 class ContinuingSessionCreate(BaseModel):
     client_id: int
     meeting_date: datetime
@@ -94,11 +109,19 @@ def list_meetings(
     with get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             """
-                SELECT id, client_id, advisor_id, meeting_date, completion_status
-                FROM meetings
-                WHERE advisor_id = %(advisor_id)s
-                ORDER BY meeting_date DESC, id DESC
-                """,
+            SELECT
+                m.id,
+                m.client_id,
+                m.advisor_id,
+                m.meeting_date,
+                m.duration_minutes,
+                m.completion_status,
+                c.name AS client_name
+            FROM meetings m
+            JOIN clients c ON c.id = m.client_id
+            WHERE m.advisor_id = %(advisor_id)s
+            ORDER BY m.meeting_date ASC, m.id ASC
+            """,
             {"advisor_id": advisor_id},
         )
 
@@ -176,6 +199,110 @@ def list_meetings_for_client(
         rows = cur.fetchall()
 
     return [dict(zip(columns, row)) for row in rows]
+
+
+@router.patch("/{meeting_id}/reschedule")
+def reschedule_meeting(
+    meeting_id: int,
+    payload: RescheduleMeetingRequest,
+    advisor: dict[str, int] = Depends(get_current_advisor),
+):
+    advisor_id = advisor["id"]
+
+    with get_connection() as conn, conn.cursor() as cur:
+        # Serialize rescheduling operations for this advisor.
+        cur.execute(
+            "SELECT pg_advisory_xact_lock(%s, %s)",
+            (26, advisor_id),
+        )
+
+        # Fetch only a meeting owned by the authenticated advisor.
+        cur.execute(
+            """
+            SELECT id, client_id, advisor_id, meeting_date,
+                   duration_minutes, completion_status
+            FROM meetings
+            WHERE id = %s AND advisor_id = %s
+            FOR UPDATE
+            """,
+            (meeting_id, advisor_id),
+        )
+
+        meeting = cur.fetchone()
+
+        if meeting is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Meeting not found.",
+            )
+
+        (
+            _current_id,
+            _client_id,
+            _current_advisor_id,
+            _old_start,
+            duration_minutes,
+            status,
+        ) = meeting
+
+        if str(status) != "Scheduled":
+            raise HTTPException(
+                status_code=409,
+                detail="Only scheduled meetings can be rescheduled.",
+            )
+
+        new_end = payload.new_start + timedelta(minutes=duration_minutes)
+
+        # Find any overlapping scheduled meeting for this advisor.
+        cur.execute(
+            """
+            SELECT id
+            FROM meetings
+            WHERE advisor_id = %s
+              AND id <> %s
+              AND completion_status = 'Scheduled'
+              AND meeting_date < %s
+              AND meeting_date
+                  + (duration_minutes * INTERVAL '1 minute') > %s
+            LIMIT 1
+            """,
+            (
+                advisor_id,
+                meeting_id,
+                new_end,
+                payload.new_start,
+            ),
+        )
+
+        if cur.fetchone() is not None:
+            raise HTTPException(
+                status_code=409,
+                detail="The requested time conflicts with another meeting.",
+            )
+
+        cur.execute(
+            """
+            UPDATE meetings
+            SET meeting_date = %s,
+                updated_at = NOW()
+            WHERE id = %s AND advisor_id = %s
+            RETURNING id, client_id, advisor_id, meeting_date,
+                      duration_minutes, completion_status
+            """,
+            (payload.new_start, meeting_id, advisor_id),
+        )
+
+        updated = cur.fetchone()
+
+    return {
+        "id": updated[0],
+        "client_id": updated[1],
+        "advisor_id": updated[2],
+        "meeting_date": updated[3],
+        "duration_minutes": updated[4],
+        "completion_status": str(updated[5]),
+        "notification_status": "not_implemented",
+    }
 
 
 def _require_matching_advisor(advisor_id: int, advisor: dict[str, int]) -> None:

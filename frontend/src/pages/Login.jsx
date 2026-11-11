@@ -5,7 +5,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import orbitLogo from '../assets/orbit-logo.png'
 import { loginAdvisor } from '../services/AuthApi'
 import '../styles/Login.css'
-import AnimatedOrbitBackground from '../components/AnimatedOrbitBackground'
+import AnimatedOrbitBackground from '../components/AnimatedOrbitBackground/AnimatedOrbitBackground'
 
 function Login() {
   const navigate = useNavigate()

@@ -1,4 +1,5 @@
 // AI assistance: Used ChatGPT for implementation guidance and code refinement.
+import './AnimatedOrbitBackground.css'
 
 export default function AnimatedOrbitBackground() {
   return (
