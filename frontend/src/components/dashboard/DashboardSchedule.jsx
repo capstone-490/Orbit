@@ -1,4 +1,6 @@
 import '../../styles/DashboardSchedule.css'
+import { useState } from 'react'
+import RescheduleMeetingModal from './RescheduleMeetingModal'
 
 const formatShortTime = (timestamp) => {
   if (!timestamp) return ''
@@ -59,7 +61,8 @@ const getActionLabel = (item) => {
     : 'View Details'
 }
 
-function DashboardSchedule({ scheduleData }) {
+function DashboardSchedule({ scheduleData, onMeetingRescheduled }) {
+  const [meetingToReschedule, setMeetingToReschedule] = useState(null)
   return (
     <div className="dashboard-schedule">
       <h2>Schedule & Consultations</h2>
@@ -90,12 +93,32 @@ function DashboardSchedule({ scheduleData }) {
                 <div className="item-location">{item.locationOrPlatform}</div>
               )}
             </span>
-            <span className={`item-time ${index === 0 ? 'full-blue' : 'action-button'}`}>
-              {getActionLabel(item)}
-            </span>
+            <div className="schedule-actions">
+              <span className="action-button">{getActionLabel(item)}</span>
+
+              {statusLabel === 'Scheduled' &&
+                item.id != null &&
+                item.time &&
+                new Date(item.time) > new Date() && (
+                  <button
+                    type="button"
+                    className="reschedule-button"
+                    onClick={() => setMeetingToReschedule(item)}
+                  >
+                    Reschedule
+                  </button>
+                )}
+            </div>
           </div>
         )
       })}
+      {meetingToReschedule && (
+        <RescheduleMeetingModal
+          meeting={meetingToReschedule}
+          onClose={() => setMeetingToReschedule(null)}
+          onSuccess={onMeetingRescheduled}
+        />
+      )}
     </div>
   )
 }
