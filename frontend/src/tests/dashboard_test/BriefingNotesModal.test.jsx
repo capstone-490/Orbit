@@ -214,6 +214,42 @@ describe('BriefingNotesModal', () => {
     await screen.findByText('No briefing notes are available for this meeting.')
   })
 
+  it('wraps keyboard focus between the first and last focusable elements', async () => {
+    getMeetingBriefingNotes.mockResolvedValue([])
+
+    const rectsSpy = vi.spyOn(HTMLElement.prototype, 'getClientRects').mockReturnValue([{}])
+
+    try {
+      setup()
+
+      await screen.findByText('No briefing notes are available for this meeting.')
+
+      const dialog = screen.getByRole('dialog')
+      const closeButton = within(dialog).getByRole('button', {
+        name: 'Close',
+        exact: true,
+      })
+
+      // Add another focusable element inside the dialog.
+      const secondButton = document.createElement('button')
+      secondButton.textContent = 'Second action'
+      dialog.appendChild(secondButton)
+
+      // Shift+Tab from the first element wraps to the last.
+      closeButton.focus()
+      fireEvent.keyDown(document, { key: 'Tab', shiftKey: true })
+
+      expect(secondButton).toHaveFocus()
+
+      // Tab from the last element wraps back to the first.
+      fireEvent.keyDown(document, { key: 'Tab' })
+
+      expect(closeButton).toHaveFocus()
+    } finally {
+      rectsSpy.mockRestore()
+    }
+  })
+
   it('restores focus to the previously focused element when closed', async () => {
     getMeetingBriefingNotes.mockResolvedValue([])
 
