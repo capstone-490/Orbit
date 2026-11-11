@@ -184,7 +184,7 @@ def test_list_clients(client, mock_db, auth_headers):
     ]
 
     # Endpoint must be /api/v1/clients (collection), not /api/v1/clients/1
-    response = client.get("/api/v1/clients", headers=auth_headers)
+    response = client.get("/clients", headers=auth_headers)
     assert response.status_code == 200
 
 
@@ -205,6 +205,6 @@ def test_get_client(client, mock_db, auth_headers):
         datetime(2026, 10, 15, tzinfo=UTC),
     )
 
-    response = client.get("/api/v1/clients/1", headers=auth_headers)
+    response = client.get("/clients/1", headers=auth_headers)
     assert response.status_code == 200
     assert response.json()["id"] == 1

@@ -25,7 +25,7 @@ def test_ab_test_returns_expected_variant(
     )
 
     response = client.get(
-        "/api/v1/feature-flags/ab-test",
+        "/feature-flags/ab-test",
         headers=user_headers,
     )
 
@@ -44,7 +44,7 @@ def test_ab_test_response_does_not_expose_user_id(
         changed_by="test_user",
     )
     response = client.get(
-        "/api/v1/feature-flags/ab-test",
+        "/feature-flags/ab-test",
         headers=user_headers,
     )
     assert response.status_code == 200
@@ -65,11 +65,11 @@ def test_same_user_receives_consistent_variant(
     )
 
     first_response = client.get(
-        "/api/v1/feature-flags/ab-test",
+        "/feature-flags/ab-test",
         headers=user_headers,
     )
     second_response = client.get(
-        "/api/v1/feature-flags/ab-test",
+        "/feature-flags/ab-test",
         headers=user_headers,
     )
     assert first_response.status_code == 200
@@ -89,7 +89,7 @@ def test_read_named_feature_flag(
     )
 
     response = client.get(
-        "/api/v1/feature-flags/new-dashboard",
+        "/feature-flags/new-dashboard",
         headers=user_headers,
     )
 
