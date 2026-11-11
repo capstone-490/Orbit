@@ -1,4 +1,3 @@
-
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '@testing-library/jest-dom/vitest'
@@ -53,14 +52,12 @@ describe('BriefingNotesModal', () => {
     setup()
 
     const dialog = screen.getByRole('dialog', {
-        name: 'Meeting Details',
+      name: 'Meeting Details',
     })
 
     expect(dialog).toBeInTheDocument()
 
-    expect(
-        within(dialog).getByRole('heading', { name: 'Briefing Notes' }),
-    ).toBeInTheDocument()
+    expect(within(dialog).getByRole('heading', { name: 'Briefing Notes' })).toBeInTheDocument()
 
     expect(within(dialog).getByText('Client')).toBeInTheDocument()
     expect(within(dialog).getByText('Date & Time')).toBeInTheDocument()
@@ -70,9 +67,7 @@ describe('BriefingNotesModal', () => {
     expect(within(dialog).getByText('30 min')).toBeInTheDocument()
     expect(within(dialog).getByText('Scheduled')).toBeInTheDocument()
 
-    expect(
-        within(dialog).getByText(/Nov 12, 2026.*2:00/i),
-    ).toBeInTheDocument()
+    expect(within(dialog).getByText(/Nov 12, 2026.*2:00/i)).toBeInTheDocument()
 
     expect(await within(dialog).findByText('Investment Goals')).toBeInTheDocument()
   })
@@ -117,9 +112,7 @@ describe('BriefingNotesModal', () => {
 
     const { onClose } = setup()
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Unable to load briefing notes.',
-    )
+    expect(await screen.findByRole('alert')).toHaveTextContent('Unable to load briefing notes.')
 
     expect(onClose).not.toHaveBeenCalled()
     expect(screen.getByRole('dialog')).toBeInTheDocument()
@@ -132,7 +125,6 @@ describe('BriefingNotesModal', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Meeting not found.')
   })
-
 
   it('closes when the close button is clicked', async () => {
     getMeetingBriefingNotes.mockResolvedValue([])
@@ -199,31 +191,30 @@ describe('BriefingNotesModal', () => {
     await screen.findByText('No briefing notes are available for this meeting.')
   })
 
+  it('keeps keyboard focus inside the modal when Tab is pressed', async () => {
+    getMeetingBriefingNotes.mockResolvedValue([])
 
-    it('keeps keyboard focus inside the modal when Tab is pressed', async () => {
-        getMeetingBriefingNotes.mockResolvedValue([])
+    setup()
 
-        setup()
-
-        const closeButton = screen.getByRole('button', {
-            name: 'Close',
-            exact: true,
-        })
-
-        expect(closeButton).toHaveFocus()
-
-        fireEvent.keyDown(document, { key: 'Tab' })
-
-        expect(closeButton).toHaveFocus()
-
-        fireEvent.keyDown(document, { key: 'Tab', shiftKey: true })
-
-        expect(closeButton).toHaveFocus()
-
-        await screen.findByText('No briefing notes are available for this meeting.')
+    const closeButton = screen.getByRole('button', {
+      name: 'Close',
+      exact: true,
     })
 
-    it('restores focus to the previously focused element when closed', async () => {
+    expect(closeButton).toHaveFocus()
+
+    fireEvent.keyDown(document, { key: 'Tab' })
+
+    expect(closeButton).toHaveFocus()
+
+    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true })
+
+    expect(closeButton).toHaveFocus()
+
+    await screen.findByText('No briefing notes are available for this meeting.')
+  })
+
+  it('restores focus to the previously focused element when closed', async () => {
     getMeetingBriefingNotes.mockResolvedValue([])
 
     const trigger = document.createElement('button')
@@ -232,22 +223,22 @@ describe('BriefingNotesModal', () => {
     trigger.focus()
 
     try {
-        const { unmount } = setup()
+      const { unmount } = setup()
 
-        const closeButton = screen.getByRole('button', {
+      const closeButton = screen.getByRole('button', {
         name: 'Close',
         exact: true,
-        })
+      })
 
-        expect(closeButton).toHaveFocus()
+      expect(closeButton).toHaveFocus()
 
-        await screen.findByText('No briefing notes are available for this meeting.')
+      await screen.findByText('No briefing notes are available for this meeting.')
 
-        unmount()
+      unmount()
 
-        expect(trigger).toHaveFocus()
+      expect(trigger).toHaveFocus()
     } finally {
-        trigger.remove()
+      trigger.remove()
     }
-    })
+  })
 })

@@ -147,10 +147,9 @@ describe('MeetingApi', () => {
 
       await expect(getMeetingBriefingNotes(5)).resolves.toEqual(notes)
 
-      expect(fetch).toHaveBeenCalledWith(
-        expect.stringMatching(/\/meetings\/5\/briefing-notes$/),
-        { credentials: 'include' },
-      )
+      expect(fetch).toHaveBeenCalledWith(expect.stringMatching(/\/meetings\/5\/briefing-notes$/), {
+        credentials: 'include',
+      })
     })
 
     it('returns an empty array when the meeting has no notes', async () => {

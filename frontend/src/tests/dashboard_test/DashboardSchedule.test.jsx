@@ -78,9 +78,7 @@ describe('DashboardSchedule Component', () => {
   test('renders View Details actions for eligible meetings', () => {
     render(<DashboardSchedule scheduleData={mockScheduleData} />)
 
-    expect(
-      screen.getAllByRole('button', { name: 'View Details' }),
-    ).toHaveLength(2)
+    expect(screen.getAllByRole('button', { name: 'View Details' })).toHaveLength(2)
 
     expect(screen.queryByText('Join Call')).not.toBeInTheDocument()
   })
@@ -198,5 +196,4 @@ describe('DashboardSchedule Component', () => {
     expect(within(dialog).getByText('Alice Johnson')).toBeInTheDocument()
     expect(getMeetingBriefingNotes).toHaveBeenCalledWith(1)
   })
-
 })
