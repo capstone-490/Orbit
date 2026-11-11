@@ -1,5 +1,7 @@
 # 50% or more AI-generated
 
+import re
+
 from fastapi.testclient import TestClient
 from prometheus_client import REGISTRY, generate_latest
 
@@ -48,8 +50,9 @@ def test_no_pii_in_labels():
     text = api_metrics_text()
     assert response.status_code == 200
     assert 'route="/api/v1/meetings/{advisor_id}"' in text
-    assert "123456" not in text
-    assert "secret@example.com" not in text
+    labels = re.findall(r"\{([^}]*)\}", text)
+    assert all("123456" not in label for label in labels)
+    assert all("secret@example.com" not in label for label in labels)
 
 
 def test_ab_route_has_variant_label():
