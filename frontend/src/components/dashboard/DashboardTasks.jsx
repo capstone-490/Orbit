@@ -1,6 +1,7 @@
 import '../../styles/DashboardTasks.css'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { isTaskCompleted } from '../../data/taskStatuses'
 
 export const API_BASE_URL = import.meta.env.VITE_API_URL
 
@@ -23,7 +24,7 @@ function DashboardTasks({ priorityTasks, onTaskUpdated }) {
   }
 
   const isTaskOverdue = (item) => {
-    if (item.completed) return false
+    if (isTaskCompleted(item)) return false
 
     const dueDate = parseDueDate(item.dueDate)
     return dueDate !== null && getLocalDateKey(dueDate) < getLocalDateKey(new Date())
@@ -43,7 +44,7 @@ function DashboardTasks({ priorityTasks, onTaskUpdated }) {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()
   }
   // Handle checking/unchecking the task
-  const handleCheckboxChange = async (taskId, completed) => {
+  const handleCheckboxChange = async (taskId, status) => {
     setUpdatingTaskIds((current) => new Set(current).add(taskId))
     setUpdateError('')
 
@@ -53,7 +54,7 @@ function DashboardTasks({ priorityTasks, onTaskUpdated }) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ completed }),
+        body: JSON.stringify({ status }),
       })
 
       if (!response.ok) {
@@ -92,9 +93,11 @@ function DashboardTasks({ priorityTasks, onTaskUpdated }) {
             <input
               type="checkbox"
               className="task-checkbox"
-              checked={Boolean(item.completed)}
+              checked={isTaskCompleted(item)}
               disabled={updatingTaskIds.has(item.id)}
-              onChange={(event) => handleCheckboxChange(item.id, event.target.checked)}
+              onChange={(event) =>
+                handleCheckboxChange(item.id, event.target.checked ? 'COMPLETED' : 'TO_DO')
+              }
             />
             <div className="task-details">
               <span className="task-title">{item.taskTitle}</span>

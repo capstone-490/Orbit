@@ -42,7 +42,11 @@ describe('DashboardSummary Component', () => {
     render(
       <DashboardSummary
         dashboardSummaryData={mockSummaryData}
-        tasks={[{ completed: false }, { completed: true }, { completed: false }]}
+        tasks={[
+          { status: 'TO_DO' },
+          { status: 'COMPLETED' },
+          { status: 'IN_REVIEW' },
+        ]}
       />,
     )
 
@@ -80,10 +84,10 @@ describe('DashboardSummary Component', () => {
       <DashboardSummary
         dashboardSummaryData={mockSummaryData}
         tasks={[
-          { dueDate: '2026-10-28', completed: false },
-          { dueDate: '2026-10-29', completed: false },
-          { dueDate: '2026-10-27', completed: true },
-          { dueDate: 'invalid', completed: false },
+          { dueDate: '2026-10-28', status: 'TO_DO' },
+          { dueDate: '2026-10-29', status: 'IN_PROGRESS' },
+          { dueDate: '2026-10-27', status: 'COMPLETED' },
+          { dueDate: 'invalid', status: 'IN_REVIEW' },
         ]}
       />,
     )
@@ -99,8 +103,8 @@ describe('DashboardSummary Component', () => {
       <DashboardSummary
         dashboardSummaryData={mockSummaryData}
         tasks={[
-          { dueDate: '2026-10-28', completed: true },
-          { dueDate: '2026-10-27', completed: true },
+          { dueDate: '2026-10-28', status: 'COMPLETED' },
+          { dueDate: '2026-10-27', status: 'COMPLETED' },
         ]}
       />,
     )

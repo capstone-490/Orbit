@@ -51,11 +51,12 @@ describe('App routes', () => {
 
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => ({
+      vi.fn(async (url) => ({
         ok: true,
-        json: async () => ({
-          user: { id: 1, name: 'Test User' },
-        }),
+        json: async () =>
+          url === 'http://localhost:8001/advisors/1/tasks'
+            ? []
+            : { user: { id: 1, name: 'Test User' } },
       })),
     )
 
@@ -74,7 +75,7 @@ describe('App routes', () => {
 
     for (const [linkName, pageName] of destinations) {
       fireEvent.click(screen.getByRole('link', { name: linkName }))
-      expect(screen.getByText(pageName)).toBeInTheDocument()
+      expect(screen.getAllByText(pageName).length).toBeGreaterThan(0)
     }
 
     expect(screen.getByRole('link', { name: 'Dashboard' })).toHaveAttribute('href', '/dashboard')

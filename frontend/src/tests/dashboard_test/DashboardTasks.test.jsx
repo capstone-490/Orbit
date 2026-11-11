@@ -27,28 +27,28 @@ describe('DashboardTasks Component', () => {
       taskTitle: 'Follow up after Corporate Introduction',
       clientName: 'Sarah Smith',
       dueDate: '2026-10-16',
-      completed: false,
+      status: 'TO_DO',
     },
     {
       id: 2,
       taskTitle: 'Schedule Insurance Education (FC3)',
       clientName: 'Elena Rostova',
       dueDate: '2026-10-17',
-      completed: false,
+      status: 'TO_DO',
     },
     {
       id: 3,
       taskTitle: 'Prepare personalized financial plan',
       clientName: 'Marcus Sterling',
       dueDate: '2026-10-20',
-      completed: false,
+      status: 'TO_DO',
     },
     {
       id: 4,
       taskTitle: 'Extra Task Beyond Limit',
       clientName: 'David Vance',
       dueDate: '2026-10-30',
-      completed: false,
+      status: 'TO_DO',
     },
   ]
 
@@ -100,7 +100,7 @@ describe('DashboardTasks Component', () => {
     vi.setSystemTime(new Date('2026-10-16T12:00:00'))
 
     renderDashboardTasks({
-      priorityTasks: [{ ...mockTasks[0], dueDate: '2026-10-15', completed: true }],
+      priorityTasks: [{ ...mockTasks[0], dueDate: '2026-10-15', status: 'COMPLETED' }],
     })
 
     expect(screen.getByText('OCT 15')).toBeInTheDocument()
@@ -108,7 +108,7 @@ describe('DashboardTasks Component', () => {
   })
 
   test('updates task completion through the API and notifies the parent', async () => {
-    const updatedTask = { ...mockTasks[0], completed: true }
+    const updatedTask = { ...mockTasks[0], status: 'COMPLETED' }
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => updatedTask,
@@ -124,7 +124,7 @@ describe('DashboardTasks Component', () => {
         `${API_BASE_URL}/advisors/tasks/1`,
         expect.objectContaining({
           method: 'PATCH',
-          body: JSON.stringify({ completed: true }),
+          body: JSON.stringify({ status: 'COMPLETED' }),
         }),
       )
       expect(onTaskUpdated).toHaveBeenCalledWith(updatedTask)
