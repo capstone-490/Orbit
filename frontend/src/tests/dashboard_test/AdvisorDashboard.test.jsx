@@ -4,6 +4,22 @@ import '@testing-library/jest-dom/vitest'
 import { MemoryRouter } from 'react-router-dom'
 import AdvisorDashboard from '../../pages/AdvisorDashboard'
 
+vi.mock('../../hooks/usePriorityActions', () => ({
+  usePriorityActions: () => ({
+    actions: [],
+    total: 0,
+    loading: false,
+    error: '',
+    retry: vi.fn(),
+    completeAction: vi.fn(),
+    aiStatus: 'disabled',
+    suggestions: [],
+    approveSuggestion: vi.fn(),
+    dismissSuggestion: vi.fn(),
+    refreshSuggestions: vi.fn(),
+  }),
+}))
+
 vi.mock('../../services/AdvisorDashboardApi', () => ({
   getAdvisorDashboard: vi.fn().mockResolvedValue({
     advisor: { firstName: 'Nayiri' },

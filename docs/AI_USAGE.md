@@ -8,6 +8,7 @@ This document specifies how AI tools, assistants, and generative models are util
 
 - ChatGPT
 - GitHub Copilot
+- Claude
 
 ## AI-assisted features
 <!-- identify the feature or task and references the relevant source file, commit, or pull request -->
@@ -102,3 +103,33 @@ This document specifies how AI tools, assistants, and generative models are util
     `LOG_FULL_STACK` was added to show the full stack when needed.
   - The test filter was adjusted so log lines from the test client (httpx,
     asyncio) did not cause false failures.
+
+## Priority Actions: Urgent Follow-Ups and AI Suggestions
+
+- Feature: ranked urgent follow-ups in the dashboard's Priority Tasks card, and
+  an AI Copilot card with optional next-step suggestions (Approve, Dismiss,
+  Refresh) that falls back cleanly when AI is off or unavailable.
+- Source files: `backend/app/services/priority_actions.py`,
+  `backend/app/services/ai_suggestions.py`,
+  `backend/app/api/v1/routers/priority_actions.py`,
+  `frontend/src/hooks/usePriorityActions.js`,
+  `frontend/src/components/dashboard/DashboardPriorityActions.jsx`,
+  `frontend/src/components/dashboard/DashboardAiCopilot.jsx`, and
+  `docs/priority-actions.md`.
+- Test files: `backend/tests/test_priority_actions.py` and
+  `frontend/src/tests/DashboardPriorityActions.test.jsx`.
+- AI assistance: substantial assistance (Claude) was used for the backend,
+  frontend and tests.
+- Verification evidence:
+  - Backend priority actions tests: 26 passed. Frontend: 45 passed.
+  - Manual test with the local database and a local Ollama model, including
+    both AI fallback states. Client names and contact details are never sent
+    to the AI.
+- Corrections made to AI output:
+  - Moved the section into the Priority Tasks card to match the Figma design.
+  - Added session caching so suggestions aren't regenerated on every visit.
+  - Fixed the test file extension (`.js` to `.jsx`) and mocked the new hook in
+    `AdvisorDashboard.test.jsx` so its fetch-count test still passes.
+
+
+    

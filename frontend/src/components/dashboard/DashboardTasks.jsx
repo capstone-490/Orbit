@@ -75,7 +75,7 @@ function DashboardTasks({ priorityTasks, onTaskUpdated }) {
   return (
     <div className="dashboard-tasks">
       <div className="section-header">
-        <span className="priority-task-title">Priority Tasks</span>
+        <span className="priority-task-title">Priority Actions</span>
         <Link className="all-tasks-link" to="/tasks">
           View All ({priorityTasks.length}) Tasks
         </Link>

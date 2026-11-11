@@ -4,6 +4,9 @@ import DashboardSchedule from '../components/dashboard/DashboardSchedule'
 import DashboardSummary from '../components/dashboard/DashboardSummary'
 import DashboardTasks from '../components/dashboard/DashboardTasks'
 import { getAdvisorDashboard } from '../services/AdvisorDashboardApi'
+import DashboardPriorityActions from '../components/dashboard/DashboardPriorityActions'
+import DashboardAiCopilot from '../components/dashboard/DashboardAiCopilot'
+import { usePriorityActions } from '../hooks/usePriorityActions'
 
 const API_BASE_URL = 'http://localhost:8001'
 
@@ -17,6 +20,7 @@ function AdvisorDashboard() {
   const [clients, setClients] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const priorityActions = usePriorityActions()
 
   useEffect(() => {
     let active = true
@@ -97,8 +101,29 @@ function AdvisorDashboard() {
         <div className="dashboard-card">
           <DashboardSchedule scheduleData={schedule} />
         </div>
-        <div className="dashboard-card">
-          <DashboardTasks priorityTasks={tasks} onTaskUpdated={handleTaskUpdated} />
+                <div className="dashboard-side-column">
+          <div className="dashboard-card">
+            <DashboardTasks priorityTasks={tasks} onTaskUpdated={handleTaskUpdated} />
+            <DashboardPriorityActions
+              actions={priorityActions.actions}
+              total={priorityActions.total}
+              loading={priorityActions.loading}
+              error={priorityActions.error}
+              onRetry={priorityActions.retry}
+              onComplete={priorityActions.completeAction}
+            />
+          </div>
+          <div className="dashboard-card">
+              <DashboardAiCopilot
+              actions={priorityActions.actions}
+              actionsLoading={priorityActions.loading}
+              aiStatus={priorityActions.aiStatus}
+              suggestions={priorityActions.suggestions}
+              onApprove={priorityActions.approveSuggestion}
+              onDismiss={priorityActions.dismissSuggestion}
+              onRefresh={priorityActions.refreshSuggestions}
+            />
+          </div>
         </div>
       </div>
     </main>
