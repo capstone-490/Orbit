@@ -1,7 +1,7 @@
 import '../../styles/DashboardTasks.css'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { isTaskCompleted } from '../../data/taskStatuses'
+import { isTaskCompleted, TASK_STATUSES } from '../../data/taskStatuses'
 
 export const API_BASE_URL = import.meta.env.VITE_API_URL
 
@@ -87,6 +87,7 @@ function DashboardTasks({ priorityTasks, onTaskUpdated }) {
       {updateError && <p role="alert">{updateError}</p>}
       {priorityTasks.slice(0, 3).map((item) => {
         const overdue = isTaskOverdue(item)
+        const status = TASK_STATUSES.find(({ value }) => value === item.status)
 
         return (
           <div key={item.id} className={`task-item${overdue ? ' overdue' : ''}`}>
@@ -102,6 +103,9 @@ function DashboardTasks({ priorityTasks, onTaskUpdated }) {
             <div className="task-details">
               <span className="task-title">{item.taskTitle}</span>
               <span className="task-client">{item.clientName || 'No client assigned'}</span>
+              <span className={`task-status status-${status?.value.toLowerCase() || 'unknown'}`}>
+                {status?.label || 'Unknown'}
+              </span>
             </div>
             <span className={`task-due-date${overdue ? ' overdue' : ''}`}>
               {overdue ? `OVERDUE · ${formatDueDate(item.dueDate)}` : formatDueDate(item.dueDate)}

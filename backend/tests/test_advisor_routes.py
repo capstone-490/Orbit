@@ -1,3 +1,4 @@
+from datetime import date
 from unittest.mock import MagicMock
 
 import pytest
@@ -6,9 +7,21 @@ from psycopg import OperationalError
 from psycopg.rows import dict_row
 
 from app.api.v1.routers import advisors
+from app.auth import get_current_advisor
 from app.main import app
 
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def authenticated_advisor():
+    previous_override = app.dependency_overrides.get(get_current_advisor)
+    app.dependency_overrides[get_current_advisor] = lambda: {"id": 2}
+    yield
+    if previous_override is None:
+        app.dependency_overrides.pop(get_current_advisor, None)
+    else:
+        app.dependency_overrides[get_current_advisor] = previous_override
 
 
 @pytest.fixture
@@ -46,6 +59,80 @@ def test_list_advisor_tasks_returns_client_names(mock_db):
     assert "LEFT JOIN t_clients" in query
     assert "t.tag" not in query
     assert params == (2,)
+
+
+def test_create_advisor_task_returns_created_task(mock_db):
+    connection, cursor = mock_db
+    cursor.fetchone.return_value = {
+        "id": 8,
+        "advisorId": 2,
+        "taskTitle": "Review portfolio",
+        "dueDate": "2026-11-20",
+        "status": "TO_DO",
+        "clientId": 10,
+        "clientName": "Sarah Smith",
+    }
+
+    response = client.post(
+        "/advisors/2/tasks",
+        json={
+            "taskTitle": " Review portfolio ",
+            "dueDate": "2026-11-20",
+            "clientId": 10,
+        },
+    )
+
+    assert response.status_code == 201
+    assert response.json()["taskTitle"] == "Review portfolio"
+    assert response.json()["clientName"] == "Sarah Smith"
+    query, params = cursor.execute.call_args.args
+    assert "INSERT INTO tasks" in query
+    assert "advisor_id = %s" in query
+    assert params == (2, 10, "Review portfolio", date(2026, 11, 20), 10, 10, 2)
+    connection.commit.assert_called_once()
+
+
+def test_create_advisor_task_rejects_another_advisors_client(mock_db):
+    _, cursor = mock_db
+    cursor.fetchone.return_value = None
+
+    response = client.post(
+        "/advisors/2/tasks",
+        json={
+            "taskTitle": "Review portfolio",
+            "dueDate": "2026-11-20",
+            "clientId": 10,
+        },
+    )
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Client not found for advisor"}
+
+
+def test_create_advisor_task_rejects_a_mismatched_advisor():
+    response = client.post(
+        "/advisors/1/tasks",
+        json={"taskTitle": "Review portfolio", "dueDate": "2026-11-20"},
+    )
+
+    assert response.status_code == 403
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"taskTitle": "   ", "dueDate": "2026-11-20"},
+        {"taskTitle": "Missing due date"},
+        {"taskTitle": "Invalid due date", "dueDate": "not-a-date"},
+    ],
+)
+def test_create_advisor_task_validates_required_fields(mock_db, payload):
+    _, cursor = mock_db
+
+    response = client.post("/advisors/2/tasks", json=payload)
+
+    assert response.status_code == 422
+    cursor.execute.assert_not_called()
 
 
 def test_list_advisor_schedule_returns_dict_rows(mock_db):
