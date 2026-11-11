@@ -1,0 +1,326 @@
+/* Substantial AI assistance used; verified with frontend tests. */
+
+/* Right column of the dashboard: Priority Tasks card + AI Copilot card. */
+.dashboard-side-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+/* ---------- Urgent follow-ups (inside the Priority Tasks card) ---------- */
+
+.urgent-followups {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.urgent-followups-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.urgent-followups-title {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.urgent-followups-link {
+  font-size: 0.8rem;
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.urgent-followups-link:hover {
+  text-decoration: underline;
+}
+
+.urgent-followups-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.urgent-followup-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.65rem 0 0.65rem 0.6rem;
+  border-left: 3px solid transparent;
+  border-bottom: 1px solid #f1f2f4;
+}
+
+.urgent-followup-item:last-child {
+  border-bottom: none;
+}
+
+.urgent-followup-item.urgency-overdue {
+  border-left-color: #dc2626;
+}
+
+.urgent-followup-item.urgency-due_soon {
+  border-left-color: #d97706;
+}
+
+.urgent-followup-item.urgency-high_priority {
+  border-left-color: #2563eb;
+}
+
+.urgent-followup-checkbox {
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  margin: 0.15rem 0 0;
+  cursor: pointer;
+  accent-color: #2563eb;
+}
+
+.urgent-followup-checkbox:disabled {
+  cursor: wait;
+}
+
+.urgent-followup-details {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.urgent-followup-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #111827;
+  overflow-wrap: anywhere;
+}
+
+.urgent-followup-meta {
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+.urgent-followup-badge {
+  flex-shrink: 0;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.urgent-followup-badge.tone-danger {
+  color: #b91c1c;
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.urgent-followup-badge.tone-warning {
+  color: #b45309;
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+
+.urgent-followup-badge.tone-neutral {
+  color: #4b5563;
+  background: #f3f4f6;
+  border-color: #e5e7eb;
+}
+
+.urgent-followups-message {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.urgent-followups-error {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #b91c1c;
+}
+
+.urgent-followups-retry {
+  padding: 0.25rem 0.65rem;
+  border: 1px solid #b91c1c;
+  border-radius: 6px;
+  background: #fff;
+  color: #b91c1c;
+  cursor: pointer;
+}
+
+/* ---------- AI Copilot card ---------- */
+
+.ai-copilot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ai-copilot-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ai-copilot-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 6px;
+  background: #f3e8ff;
+  font-size: 0.85rem;
+}
+
+.ai-copilot-heading {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.ai-copilot-divider {
+  width: 100%;
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 0.25rem 0;
+}
+
+.ai-copilot-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.ai-copilot-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.ai-copilot-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #7c3aed;
+}
+
+.ai-copilot-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.ai-copilot-text {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #374151;
+}
+
+.ai-copilot-meta {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.ai-copilot-message {
+  margin: 0;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: #6b7280;
+}
+
+@media (max-width: 600px) {
+  .urgent-followup-item {
+    flex-wrap: wrap;
+  }
+
+  .urgent-followup-badge {
+    margin-left: 1.6rem;
+  }
+}
+
+.ai-copilot-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+}
+
+.ai-copilot-button {
+  padding: 0.3rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ai-copilot-button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.ai-copilot-button.secondary {
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #374151;
+}
+
+.ai-copilot-button.secondary:hover:not(:disabled) {
+  background: #f9fafb;
+}
+
+.ai-copilot-button.primary {
+  border: 1px solid #4f46e5;
+  background: #4f46e5;
+  color: #fff;
+}
+
+.ai-copilot-button.primary:hover:not(:disabled) {
+  background: #4338ca;
+}
+
+.ai-copilot-approved {
+  margin: 0.4rem 0 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #15803d;
+}
+
+.ai-copilot-refresh {
+  margin-left: auto;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  color: #4b5563;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ai-copilot-refresh:hover {
+  background: #f9fafb;
+  color: #111827;
+}
