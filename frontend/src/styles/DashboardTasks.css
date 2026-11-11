@@ -121,5 +121,34 @@
 .task-client {
   font-size: 13px;
   color: #6c757d;
-  margin: 0;
+  margin-bottom: 2px;
+}
+
+.task-status {
+  align-self: flex-start;
+  padding: 2px 6px;
+  border: 1px solid #dce3ee;
+  border-radius: 4px;
+  background-color: #f2f4f7;
+  color: #536078;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.task-status.status-in_progress {
+  border-color: #b8c9f3;
+  background-color: #edf2ff;
+  color: #1747bd;
+}
+
+.task-status.status-in_review {
+  border-color: #f0d7a3;
+  background-color: #fff7e6;
+  color: #925c00;
+}
+
+.task-status.status-completed {
+  border-color: #b7dfc8;
+  background-color: #eaf7ef;
+  color: #24804a;
 }
