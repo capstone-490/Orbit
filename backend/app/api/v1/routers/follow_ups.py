@@ -54,7 +54,7 @@ def create_follow_up(
                     due_date, priority, status
                 )
                 SELECT %s, id, %s, %s, %s, %s, %s
-                FROM clients
+                FROM t_clients
                 WHERE id = %s AND advisor_id = %s
                 RETURNING id, advisor_id, client_id, reason,
                           financial_planning_stage::text AS financial_planning_stage,
