@@ -7,10 +7,8 @@ import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
-from app.api.v1.routers.public_booking import (
-    register_booking_exception_handlers,
-    router,
-)
+from app.api.exception_handlers import register_domain_exception_handlers
+from app.api.v2.routers.public_booking import router
 from app.dependencies.uow import get_clock, get_uow
 from tests.unit.test_public_booking_service import FakeUnitOfWork, now, uow  # noqa: F401
 
@@ -18,7 +16,7 @@ from tests.unit.test_public_booking_service import FakeUnitOfWork, now, uow  # n
 @pytest.fixture
 def test_app(uow: FakeUnitOfWork, now: datetime) -> FastAPI:  # noqa: F811
     app = FastAPI()
-    register_booking_exception_handlers(app)
+    register_domain_exception_handlers(app)
     app.include_router(router, prefix="/api/v1")
 
     app.dependency_overrides[get_uow] = lambda: uow
