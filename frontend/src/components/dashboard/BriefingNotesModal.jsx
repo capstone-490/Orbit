@@ -35,7 +35,6 @@ function BriefingNotesModal({ meeting, onClose }) {
     }
   }, [meeting.id])
 
-
   useEffect(() => {
     const previouslyFocused = document.activeElement
 
@@ -88,7 +87,6 @@ function BriefingNotesModal({ meeting, onClose }) {
     }
   }, [onClose])
 
-
   const formatDate = (timestamp) => {
     if (!timestamp) return ''
 
@@ -127,33 +125,33 @@ function BriefingNotesModal({ meeting, onClose }) {
           </button>
         </header>
 
-                <div className="meeting-info">
-        <div>
+        <div className="meeting-info">
+          <div>
             <span>Client</span>
             <strong>{meeting.clientName}</strong>
-        </div>
+          </div>
 
-        <div>
+          <div>
             <span>Date & Time</span>
             <strong>
-            {meeting.time
+              {meeting.time
                 ? new Date(meeting.time).toLocaleString('en-CA', {
                     dateStyle: 'medium',
                     timeStyle: 'short',
-                })
+                  })
                 : 'Not available'}
             </strong>
-        </div>
+          </div>
 
-        <div>
+          <div>
             <span>Duration</span>
             <strong>{meeting.duration || 'Not available'}</strong>
-        </div>
+          </div>
 
-        <div>
+          <div>
             <span>Status</span>
             <strong>{meeting.completionStatus || 'Scheduled'}</strong>
-        </div>
+          </div>
         </div>
 
         <h3 className="briefing-section-title">Briefing Notes</h3>
@@ -168,23 +166,16 @@ function BriefingNotesModal({ meeting, onClose }) {
           )}
 
           {!loading && !error && notes.length === 0 && (
-            <p className="briefing-empty">
-              No briefing notes are available for this meeting.
-            </p>
+            <p className="briefing-empty">No briefing notes are available for this meeting.</p>
           )}
 
           {!loading && !error && notes.length > 0 && (
             <div className="briefing-notes-grid">
               {notes.map((note, index) => (
-                <article
-                  key={note.id}
-                  className={`briefing-note briefing-note-${index % 4}`}
-                >
+                <article key={note.id} className={`briefing-note briefing-note-${index % 4}`}>
                   <h3>{note.title || 'Untitled Note'}</h3>
                   <p>{note.content}</p>
-                  <time dateTime={note.created_at}>
-                    {formatDate(note.created_at)}
-                  </time>
+                  <time dateTime={note.created_at}>{formatDate(note.created_at)}</time>
                 </article>
               ))}
             </div>
