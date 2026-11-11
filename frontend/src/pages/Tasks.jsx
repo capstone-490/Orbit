@@ -31,8 +31,7 @@ export function TasksList({
       value?.toLowerCase().includes(searchTerm),
     )
     const taskClientId = task.clientId ?? task.client_id
-    const matchesClient =
-      selectedClientId === 'all' || String(taskClientId) === selectedClientId
+    const matchesClient = selectedClientId === 'all' || String(taskClientId) === selectedClientId
 
     return matchesSearch && matchesClient
   })
@@ -183,7 +182,7 @@ export function TasksList({
       )}
 
       {!isLoading && !error && tasks.length > 0 && (
-        <div className="tasks-board" aria-label="Task board">
+        <section className="tasks-board">
           {TASK_STATUSES.map(({ value, label }) => {
             const columnTasks = filteredTasks.filter((task) => task.status === value)
 
@@ -219,9 +218,7 @@ export function TasksList({
               >
                 <header className="tasks-column-header">
                   <h2 id={`tasks-column-${value}`}>{label}</h2>
-                  <span className="tasks-column-count" aria-label={`${columnTasks.length} tasks`}>
-                    {columnTasks.length}
-                  </span>
+                  <span className="tasks-column-count">{columnTasks.length}</span>
                 </header>
 
                 <ul className="tasks-column-list">
@@ -262,7 +259,7 @@ export function TasksList({
                         >
                           {TASK_STATUSES.map((status) => (
                             <option key={status.value} value={status.value}>
-                            {status.label}
+                              {status.label}
                             </option>
                           ))}
                         </select>
@@ -278,7 +275,7 @@ export function TasksList({
               </section>
             )
           })}
-        </div>
+        </section>
       )}
     </main>
   )

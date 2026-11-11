@@ -42,11 +42,7 @@ describe('DashboardSummary Component', () => {
     render(
       <DashboardSummary
         dashboardSummaryData={mockSummaryData}
-        tasks={[
-          { status: 'TO_DO' },
-          { status: 'COMPLETED' },
-          { status: 'IN_REVIEW' },
-        ]}
+        tasks={[{ status: 'TO_DO' }, { status: 'COMPLETED' }, { status: 'IN_REVIEW' }]}
       />,
     )
 
