@@ -100,116 +100,116 @@ describe('AdvisorDashboard', () => {
       expect(fetchMock).toHaveBeenCalledTimes(2)
     })
 
-      expect(fetchMock).toHaveBeenCalledTimes(2)
-      expect(fetchMock).toHaveBeenCalledWith('http://localhost:8001/api/v1/advisors/1/tasks', {
-        credentials: 'include',
-      })
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(fetchMock).toHaveBeenCalledWith('http://localhost:8001/api/v1/advisors/1/tasks', {
+      credentials: 'include',
+    })
 
-      expect(fetchMock).toHaveBeenCalledWith('http://localhost:8001/api/v1/advisors/1/clients', {
-        credentials: 'include',
-      })
+    expect(fetchMock).toHaveBeenCalledWith('http://localhost:8001/api/v1/advisors/1/clients', {
+      credentials: 'include',
     })
   })
+})
 
-  test('shows an error when dashboard API requests fail', async () => {
-    getCurrentAdvisor.mockResolvedValue({ id: 1 })
-    getAdvisorMeetings.mockResolvedValue([])
+test('shows an error when dashboard API requests fail', async () => {
+  getCurrentAdvisor.mockResolvedValue({ id: 1 })
+  getAdvisorMeetings.mockResolvedValue([])
 
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: false,
-        json: async () => [],
-      }),
-    )
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue({
+      ok: false,
+      json: async () => [],
+    }),
+  )
 
-    render(
-      <MemoryRouter>
-        <AdvisorDashboard />
-      </MemoryRouter>,
-    )
+  render(
+    <MemoryRouter>
+      <AdvisorDashboard />
+    </MemoryRouter>,
+  )
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Could not load dashboard data: Failed to fetch dashboard data',
-    )
-  })
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Could not load dashboard data: Failed to fetch dashboard data',
+  )
+})
 
-  test('refreshes the meeting schedule after a successful reschedule', async () => {
-    getCurrentAdvisor.mockResolvedValue({ id: 1 })
+test('refreshes the meeting schedule after a successful reschedule', async () => {
+  getCurrentAdvisor.mockResolvedValue({ id: 1 })
 
-    const originalMeeting = {
-      id: 2,
-      client_id: 101,
-      advisor_id: 1,
-      meeting_date: '2030-10-25T10:00:00',
-      duration_minutes: 30,
-      completion_status: 'Scheduled',
-      client_name: 'Sarah Smith',
-    }
+  const originalMeeting = {
+    id: 2,
+    client_id: 101,
+    advisor_id: 1,
+    meeting_date: '2030-10-25T10:00:00',
+    duration_minutes: 30,
+    completion_status: 'Scheduled',
+    client_name: 'Sarah Smith',
+  }
 
-    getAdvisorMeetings.mockResolvedValueOnce([originalMeeting]).mockResolvedValueOnce([
-      {
-        ...originalMeeting,
-        meeting_date: '2030-10-26T14:30:00',
-      },
-    ])
-
-    rescheduleMeeting.mockResolvedValue({
-      id: 2,
+  getAdvisorMeetings.mockResolvedValueOnce([originalMeeting]).mockResolvedValueOnce([
+    {
+      ...originalMeeting,
       meeting_date: '2030-10-26T14:30:00',
-    })
+    },
+  ])
 
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => [],
-      }),
-    )
+  rescheduleMeeting.mockResolvedValue({
+    id: 2,
+    meeting_date: '2030-10-26T14:30:00',
+  })
 
-    render(
-      <MemoryRouter>
-        <AdvisorDashboard />
-      </MemoryRouter>,
-    )
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [],
+    }),
+  )
 
-    const rescheduleButton = await screen.findByRole('button', {
-      name: 'Reschedule',
-    })
+  render(
+    <MemoryRouter>
+      <AdvisorDashboard />
+    </MemoryRouter>,
+  )
 
-    fireEvent.click(rescheduleButton)
+  const rescheduleButton = await screen.findByRole('button', {
+    name: 'Reschedule',
+  })
 
-    expect(screen.getByRole('dialog')).toBeInTheDocument()
+  fireEvent.click(rescheduleButton)
 
-    // Select a future date using the calendar.
-    const futureDate = new Date()
-    futureDate.setDate(futureDate.getDate() + 7)
+  expect(screen.getByRole('dialog')).toBeInTheDocument()
 
-    const dateString = [
-      futureDate.getFullYear(),
-      String(futureDate.getMonth() + 1).padStart(2, '0'),
-      String(futureDate.getDate()).padStart(2, '0'),
-    ].join('-')
+  // Select a future date using the calendar.
+  const futureDate = new Date()
+  futureDate.setDate(futureDate.getDate() + 7)
 
-    const dateCell = document.querySelector(`[data-day="${dateString}"]`)
+  const dateString = [
+    futureDate.getFullYear(),
+    String(futureDate.getMonth() + 1).padStart(2, '0'),
+    String(futureDate.getDate()).padStart(2, '0'),
+  ].join('-')
 
-    expect(dateCell).not.toBeNull()
-    fireEvent.click(dateCell.querySelector('button'))
+  const dateCell = document.querySelector(`[data-day="${dateString}"]`)
 
-    fireEvent.change(screen.getByLabelText('New start time'), {
-      target: { value: '14:30' },
-    })
+  expect(dateCell).not.toBeNull()
+  fireEvent.click(dateCell.querySelector('button'))
 
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm Reschedule' }))
+  fireEvent.change(screen.getByLabelText('New start time'), {
+    target: { value: '14:30' },
+  })
 
-    await waitFor(() => {
-      expect(rescheduleMeeting).toHaveBeenCalledOnce()
-      expect(getAdvisorMeetings).toHaveBeenCalledTimes(2)
-    })
+  fireEvent.click(screen.getByRole('button', { name: 'Confirm Reschedule' }))
 
-    await waitFor(() => {
-      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    })
+  await waitFor(() => {
+    expect(rescheduleMeeting).toHaveBeenCalledOnce()
+    expect(getAdvisorMeetings).toHaveBeenCalledTimes(2)
+  })
 
-    expect(getAdvisorMeetings).toHaveBeenLastCalledWith(1)
+  await waitFor(() => {
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  expect(getAdvisorMeetings).toHaveBeenLastCalledWith(1)
 })

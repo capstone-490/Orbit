@@ -82,7 +82,7 @@ def get_advisor_schedule(advisor_id: int):
             c.agenda,
             c.completion_status AS "completionStatus",
             c.location_or_platform AS "locationOrPlatform"
-        FROM consultations c
+        FROM t_consultations c
         JOIN clients cl ON c.client_id = cl.id
         WHERE c.advisor_id = %s
         ORDER BY c.meeting_time ASC;
@@ -111,7 +111,7 @@ def get_advisor_clients(advisor_id: int):
             advisor_id AS "advisorId",
             created_at AS "createdAt",
             updated_at AS "updated_at"
-        FROM clients
+        FROM t_clients
         WHERE advisor_id = %s
         ORDER BY name ASC;
     """

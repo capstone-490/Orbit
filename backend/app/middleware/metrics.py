@@ -41,7 +41,6 @@ class MetricsMiddleware:
         if scope["type"] != "http" or scope["path"] in (
             "/metrics",
             # "/health",
-            # "/api/v1/health",
             "/docs",
             "/openapi.json",
             "/redoc",

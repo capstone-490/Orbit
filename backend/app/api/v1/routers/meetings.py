@@ -106,7 +106,7 @@ def create_continuing_session(
             {"lock_key": lock_key},
         )
         cur.execute(
-            "SELECT id FROM clients WHERE id = %(client_id)s AND advisor_id = %(advisor_id)s",
+            "SELECT id FROM t_clients WHERE id = %(client_id)s AND advisor_id = %(advisor_id)s",
             {"client_id": booking.client_id, "advisor_id": advisor["id"]},
         )
         if cur.fetchone() is None:

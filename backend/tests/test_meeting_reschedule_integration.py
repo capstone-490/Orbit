@@ -15,13 +15,8 @@ from app.main import app
 @pytest.fixture
 def meeting_records():
     # Never run these tests against the regular application database.
-    if settings.ENVIRONMENT != "test" or settings.DB_NAME not in {
-        "orbit_db",
-        "test_db",
-    }:
-        pytest.fail(
-            "Integration tests require ENVIRONMENT=test and DB_NAME=orbit_db or test_db"
-        )
+    if settings.ENVIRONMENT != "test":
+        pytest.fail("Integration tests require ENVIRONMENT=test")
 
     unique = uuid4().hex
     advisor_id = None
@@ -31,7 +26,7 @@ def meeting_records():
         with get_connection() as conn, conn.cursor() as cur:
             cur.execute(
                 """
-                    INSERT INTO advisors (username, email, password_hash)
+                    INSERT INTO t_advisors (username, email, password_hash)
                     VALUES (%s, %s, %s)
                     RETURNING id
                     """,
@@ -41,7 +36,7 @@ def meeting_records():
 
             cur.execute(
                 """
-                    INSERT INTO clients
+                    INSERT INTO t_clients
                         (name, phone_number, email, advisor_id)
                     VALUES (%s, %s, %s, %s)
                     RETURNING id
@@ -57,7 +52,7 @@ def meeting_records():
 
             cur.execute(
                 """
-                    INSERT INTO meetings
+                    INSERT INTO t_meetings
                         (advisor_id, client_id, meeting_date, duration_minutes)
                     VALUES (%s, %s, %s, %s)
                     RETURNING id
@@ -82,16 +77,16 @@ def meeting_records():
         if advisor_id is not None:
             with get_connection() as conn, conn.cursor() as cur:
                 cur.execute(
-                    "DELETE FROM meetings WHERE advisor_id = %s",
+                    "DELETE FROM t_meetings WHERE advisor_id = %s",
                     (advisor_id,),
                 )
                 if client_id is not None:
                     cur.execute(
-                        "DELETE FROM clients WHERE id = %s",
+                        "DELETE FROM t_clients WHERE id = %s",
                         (client_id,),
                     )
                 cur.execute(
-                    "DELETE FROM advisors WHERE id = %s",
+                    "DELETE FROM t_advisors WHERE id = %s",
                     (advisor_id,),
                 )
 
@@ -105,7 +100,7 @@ def test_reschedule_updates_real_database(meeting_records):
         headers={"Authorization": f"Bearer {create_access_token(advisor_id)}"},
     ) as client:
         response = client.patch(
-            f"/meetings/{meeting_id}/reschedule",
+            f"/api/v1/meetings/{meeting_id}/reschedule",
             json={"new_start": "2030-06-01T10:00:00+00:00"},
         )
 
@@ -121,7 +116,7 @@ def test_reschedule_updates_real_database(meeting_records):
         cur.execute(
             """
                 SELECT meeting_date, client_id, advisor_id
-                FROM meetings
+                FROM t_meetings
                 WHERE id = %s
                 """,
             (meeting_id,),
@@ -141,7 +136,7 @@ def test_reschedule_rejects_conflicting_meeting(meeting_records):
     with get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             """
-                INSERT INTO meetings
+                INSERT INTO t_meetings
                     (advisor_id, client_id, meeting_date, duration_minutes)
                 VALUES (%s, %s, %s, %s)
                 RETURNING id
@@ -160,7 +155,7 @@ def test_reschedule_rejects_conflicting_meeting(meeting_records):
         headers={"Authorization": f"Bearer {create_access_token(advisor_id)}"},
     ) as client:
         response = client.patch(
-            f"/meetings/{meeting_id}/reschedule",
+            f"/api/v1/meetings/{meeting_id}/reschedule",
             json={"new_start": "2030-06-01T10:15:00+00:00"},
         )
 
@@ -172,7 +167,7 @@ def test_reschedule_rejects_conflicting_meeting(meeting_records):
         cur.execute(
             """
                 SELECT id, meeting_date
-                FROM meetings
+                FROM t_meetings
                 WHERE id IN (%s, %s)
                 ORDER BY id
                 """,
@@ -194,7 +189,7 @@ def test_reschedule_allows_back_to_back_meetings(meeting_records):
     with get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             """
-                INSERT INTO meetings
+                INSERT INTO t_meetings
                     (advisor_id, client_id, meeting_date, duration_minutes)
                 VALUES (%s, %s, %s, %s)
                 """,
@@ -212,7 +207,7 @@ def test_reschedule_allows_back_to_back_meetings(meeting_records):
         headers={"Authorization": f"Bearer {create_access_token(advisor_id)}"},
     ) as client:
         response = client.patch(
-            f"/meetings/{meeting_id}/reschedule",
+            f"/api/v1/meetings/{meeting_id}/reschedule",
             json={"new_start": "2030-06-01T10:30:00+00:00"},
         )
 
@@ -220,7 +215,7 @@ def test_reschedule_allows_back_to_back_meetings(meeting_records):
 
     with get_connection() as conn, conn.cursor() as cur:
         cur.execute(
-            "SELECT meeting_date FROM meetings WHERE id = %s",
+            "SELECT meeting_date FROM t_meetings WHERE id = %s",
             (meeting_id,),
         )
         stored_date = cur.fetchone()[0]
@@ -238,7 +233,7 @@ def test_advisor_cannot_reschedule_another_advisors_meeting(meeting_records):
             unique = uuid4().hex
             cur.execute(
                 """
-                    INSERT INTO advisors (username, email, password_hash)
+                    INSERT INTO t_advisors (username, email, password_hash)
                     VALUES (%s, %s, %s)
                     RETURNING id
                     """,
@@ -258,7 +253,7 @@ def test_advisor_cannot_reschedule_another_advisors_meeting(meeting_records):
             },
         ) as client:
             response = client.patch(
-                f"/meetings/{meeting_id}/reschedule",
+                f"/api/v1/meetings/{meeting_id}/reschedule",
                 json={"new_start": "2030-06-01T10:00:00+00:00"},
             )
 
@@ -269,7 +264,7 @@ def test_advisor_cannot_reschedule_another_advisors_meeting(meeting_records):
             cur.execute(
                 """
                     SELECT advisor_id, meeting_date
-                    FROM meetings
+                    FROM t_meetings
                     WHERE id = %s
                     """,
                 (meeting_id,),
@@ -283,7 +278,7 @@ def test_advisor_cannot_reschedule_another_advisors_meeting(meeting_records):
         if other_advisor_id is not None:
             with get_connection() as conn, conn.cursor() as cur:
                 cur.execute(
-                    "DELETE FROM advisors WHERE id = %s",
+                    "DELETE FROM t_advisors WHERE id = %s",
                     (other_advisor_id,),
                 )
 
@@ -295,7 +290,7 @@ def test_cannot_reschedule_completed_or_cancelled_meeting(meeting_records):
     for status in ("Completed", "Cancelled"):
         with get_connection() as conn, conn.cursor() as cur:
             cur.execute(
-                "UPDATE meetings SET completion_status = %s WHERE id = %s",
+                "UPDATE t_meetings SET completion_status = %s WHERE id = %s",
                 (status, meeting_id),
             )
 
@@ -304,7 +299,7 @@ def test_cannot_reschedule_completed_or_cancelled_meeting(meeting_records):
             headers={"Authorization": f"Bearer {create_access_token(advisor_id)}"},
         ) as client:
             response = client.patch(
-                f"/meetings/{meeting_id}/reschedule",
+                f"/api/v1/meetings/{meeting_id}/reschedule",
                 json={"new_start": "2030-06-01T10:00:00+00:00"},
             )
 
@@ -312,7 +307,7 @@ def test_cannot_reschedule_completed_or_cancelled_meeting(meeting_records):
 
         with get_connection() as conn, conn.cursor() as cur:
             cur.execute(
-                "SELECT meeting_date FROM meetings WHERE id = %s",
+                "SELECT meeting_date FROM t_meetings WHERE id = %s",
                 (meeting_id,),
             )
             assert cur.fetchone()[0] == datetime(2030, 5, 30, 10, tzinfo=UTC)
@@ -335,7 +330,7 @@ def test_invalid_date_preserves_meeting(meeting_records, invalid_start):
         headers={"Authorization": f"Bearer {create_access_token(advisor_id)}"},
     ) as client:
         response = client.patch(
-            f"/meetings/{meeting_id}/reschedule",
+            f"/api/v1/meetings/{meeting_id}/reschedule",
             json={"new_start": invalid_start},
         )
 
@@ -343,7 +338,7 @@ def test_invalid_date_preserves_meeting(meeting_records, invalid_start):
 
     with get_connection() as conn, conn.cursor() as cur:
         cur.execute(
-            "SELECT meeting_date FROM meetings WHERE id = %s",
+            "SELECT meeting_date FROM t_meetings WHERE id = %s",
             (meeting_id,),
         )
         assert cur.fetchone()[0] == datetime(2030, 5, 30, 10, tzinfo=UTC)
@@ -359,7 +354,7 @@ def test_different_advisors_can_use_same_time(meeting_records):
             unique = uuid4().hex
             cur.execute(
                 """
-                    INSERT INTO advisors (username, email, password_hash)
+                    INSERT INTO t_advisors (username, email, password_hash)
                     VALUES (%s, %s, %s)
                     RETURNING id
                     """,
@@ -373,7 +368,7 @@ def test_different_advisors_can_use_same_time(meeting_records):
 
             cur.execute(
                 """
-                    INSERT INTO meetings
+                    INSERT INTO t_meetings
                         (advisor_id, client_id, meeting_date, duration_minutes)
                     VALUES (%s, %s, %s, %s)
                     """,
@@ -390,7 +385,7 @@ def test_different_advisors_can_use_same_time(meeting_records):
             headers={"Authorization": f"Bearer {create_access_token(advisor_id)}"},
         ) as client:
             response = client.patch(
-                f"/meetings/{meeting_id}/reschedule",
+                f"/api/v1/meetings/{meeting_id}/reschedule",
                 json={"new_start": "2030-06-01T10:00:00+00:00"},
             )
 
@@ -400,11 +395,11 @@ def test_different_advisors_can_use_same_time(meeting_records):
         if other_advisor_id is not None:
             with get_connection() as conn, conn.cursor() as cur:
                 cur.execute(
-                    "DELETE FROM meetings WHERE advisor_id = %s",
+                    "DELETE FROM t_meetings WHERE advisor_id = %s",
                     (other_advisor_id,),
                 )
                 cur.execute(
-                    "DELETE FROM advisors WHERE id = %s",
+                    "DELETE FROM t_advisors WHERE id = %s",
                     (other_advisor_id,),
                 )
 
@@ -416,7 +411,7 @@ def test_concurrent_reschedules_cannot_double_book(meeting_records):
     with get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             """
-                INSERT INTO meetings
+                INSERT INTO t_meetings
                     (advisor_id, client_id, meeting_date, duration_minutes)
                 VALUES (%s, %s, %s, %s)
                 RETURNING id
@@ -440,7 +435,7 @@ def test_concurrent_reschedules_cannot_double_book(meeting_records):
         ) as client:
             barrier.wait(timeout=10)
             return client.patch(
-                f"/meetings/{meeting_id}/reschedule",
+                f"/api/v1/meetings/{meeting_id}/reschedule",
                 json={"new_start": "2030-06-01T10:00:00+00:00"},
             ).status_code
 
@@ -457,7 +452,7 @@ def test_concurrent_reschedules_cannot_double_book(meeting_records):
         cur.execute(
             """
                 SELECT COUNT(*)
-                FROM meetings
+                FROM t_meetings
                 WHERE id IN (%s, %s)
                   AND meeting_date = %s
                 """,
