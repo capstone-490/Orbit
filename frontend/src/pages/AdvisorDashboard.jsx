@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import '../styles/AdvisorDashboard.css'
 import DashboardAiCopilot from '../components/dashboard/DashboardAiCopilot'
 import DashboardPriorityActions from '../components/dashboard/DashboardPriorityActions'
@@ -7,13 +7,25 @@ import DashboardSummary from '../components/dashboard/DashboardSummary'
 import DashboardTasks from '../components/dashboard/DashboardTasks'
 import { usePriorityActions } from '../hooks/usePriorityActions'
 import { getAdvisorDashboard } from '../services/AdvisorDashboardApi'
+import { getCurrentAdvisor } from '../services/AuthApi'
+import { getAdvisorMeetings } from '../services/MeetingApi'
 
 const API_BASE_URL = 'http://localhost:8001'
 
+const mapMeetingsToSchedule = (meetings) =>
+  meetings.map((meeting) => ({
+    id: meeting.id,
+    time: meeting.meeting_date,
+    duration: `${meeting.duration_minutes} min`,
+    clientName: meeting.client_name,
+    category: 'Consultation',
+    agenda: '',
+    completionStatus: meeting.completion_status,
+    locationOrPlatform: null,
+  }))
+
 function AdvisorDashboard() {
   const [dashboardData, setDashboardData] = useState(null)
-
-  const advisorId = 1 // Hardcoded for this example, or pull from auth state
 
   const [tasks, setTasks] = useState([])
   const [schedule, setSchedule] = useState([])
@@ -27,26 +39,36 @@ function AdvisorDashboard() {
 
     const fetchData = async () => {
       try {
-        if (active) setLoading(true)
+        if (active) {
+          setLoading(true)
+          setError(null)
+        }
 
-        // Fetch tasks, schedule, and clients concurrently
-        const [tasksRes, scheduleRes, clientsRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/advisors/${advisorId}/tasks`),
-          fetch(`${API_BASE_URL}/advisors/${advisorId}/schedule`),
-          fetch(`${API_BASE_URL}/advisors/${advisorId}/clients`),
+        const advisor = await getCurrentAdvisor()
+        const advisorId = advisor.id
+
+        const [tasksRes, meetingsData, clientsRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/advisors/${advisorId}/tasks`, {
+            credentials: 'include',
+          }),
+          getAdvisorMeetings(advisorId),
+          fetch(`${API_BASE_URL}/advisors/${advisorId}/clients`, {
+            credentials: 'include',
+          }),
         ])
 
-        if (!tasksRes.ok || !scheduleRes.ok || !clientsRes.ok) {
+        if (!tasksRes.ok || !clientsRes.ok) {
           throw new Error('Failed to fetch dashboard data')
         }
 
         const tasksData = await tasksRes.json()
-        const scheduleData = await scheduleRes.json()
         const clientsData = await clientsRes.json()
+
+        const mappedSchedule = mapMeetingsToSchedule(meetingsData)
 
         if (active) {
           setTasks(tasksData)
-          setSchedule(scheduleData)
+          setSchedule(mappedSchedule)
           setClients(clientsData)
         }
       } catch (err) {
@@ -68,6 +90,12 @@ function AdvisorDashboard() {
       currentTasks.map((task) => (task.id === updatedTask.id ? { ...task, ...updatedTask } : task)),
     )
   }
+  const handleMeetingRescheduled = useCallback(async () => {
+    const advisor = await getCurrentAdvisor()
+    const meetingsData = await getAdvisorMeetings(advisor.id)
+
+    setSchedule(mapMeetingsToSchedule(meetingsData))
+  }, [])
 
   useEffect(() => {
     const loadDashboard = async () => {
@@ -99,7 +127,10 @@ function AdvisorDashboard() {
 
       <div className="dashboard-overview">
         <div className="dashboard-card">
-          <DashboardSchedule scheduleData={schedule} />
+          <DashboardSchedule
+            scheduleData={schedule}
+            onMeetingRescheduled={handleMeetingRescheduled}
+          />
         </div>
         <div className="dashboard-side-column">
           <div className="dashboard-card">

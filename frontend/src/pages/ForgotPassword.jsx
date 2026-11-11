@@ -5,6 +5,7 @@ import orbitLogo from '../assets/orbit-logo.png'
 import { requestPasswordReset } from '../services/AuthApi.passwordReset'
 import '../styles/Login.css'
 import '../styles/CreateAccount.css'
+import AnimatedOrbitBackground from '../components/AnimatedOrbitBackground/AnimatedOrbitBackground'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -47,14 +48,12 @@ function ForgotPassword() {
   }
 
   return (
-    <main className="login-page">
-      <div className="login-orbit login-orbit-one" />
-      <div className="login-orbit login-orbit-two" />
-      <span className="login-dot login-dot-one" />
-      <span className="login-dot login-dot-two" />
-      <span className="login-dot login-dot-three" />
-
-      <section className="login-shell" aria-labelledby="forgot-password-title">
+    <main className="login-page forgot-password-page">
+      <AnimatedOrbitBackground />
+      <section
+        className="login-shell forgot-password-shell"
+        aria-labelledby="forgot-password-title"
+      >
         <div className="login-brand">
           <div className="login-logo-frame">
             <img src={orbitLogo} alt="Orbit" />

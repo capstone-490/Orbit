@@ -1,5 +1,5 @@
 # Substantial AI assistance used; verified with backend tests and live auth smoke test.
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
@@ -50,7 +50,10 @@ def test_list_meetings_empty(mock_db):
     mock_db.execute.assert_called_once()
     query, params = mock_db.execute.call_args.args
 
-    assert "SELECT id, client_id, advisor_id, meeting_date, completion_status" in query
+    assert "FROM meetings m" in query
+    assert "JOIN clients c ON c.id = m.client_id" in query
+    assert "m.duration_minutes" in query
+    assert "c.name AS client_name" in query
     assert params["advisor_id"] == 1
 
 
@@ -166,15 +169,17 @@ def test_cannot_read_another_advisors_meetings(mock_db):
 
 def test_list_meetings_with_data(mock_db):
     mock_db.fetchall.return_value = [
-        (1, 1, 1, "2024-06-01T10:00:00Z", "Scheduled"),
-        (2, 2, 1, "2024-06-02T11:00:00Z", "Completed"),
+        (1, 1, 1, "2024-06-01T10:00:00Z", 30, "Scheduled", "Sarah Smith"),
+        (2, 2, 1, "2024-06-02T11:00:00Z", 45, "Completed", "John Doe"),
     ]
     mock_db.description = [
         SimpleNamespace(name="id"),
         SimpleNamespace(name="client_id"),
         SimpleNamespace(name="advisor_id"),
         SimpleNamespace(name="meeting_date"),
+        SimpleNamespace(name="duration_minutes"),
         SimpleNamespace(name="completion_status"),
+        SimpleNamespace(name="client_name"),
     ]
 
     response = client.get("/meetings/1")
@@ -186,21 +191,28 @@ def test_list_meetings_with_data(mock_db):
             "client_id": 1,
             "advisor_id": 1,
             "meeting_date": "2024-06-01T10:00:00Z",
+            "duration_minutes": 30,
             "completion_status": "Scheduled",
+            "client_name": "Sarah Smith",
         },
         {
             "id": 2,
             "client_id": 2,
             "advisor_id": 1,
             "meeting_date": "2024-06-02T11:00:00Z",
+            "duration_minutes": 45,
             "completion_status": "Completed",
+            "client_name": "John Doe",
         },
     ]
 
     mock_db.execute.assert_called_once()
     query, params = mock_db.execute.call_args.args
 
-    assert "SELECT id, client_id, advisor_id, meeting_date, completion_status" in query
+    assert "FROM meetings m" in query
+    assert "JOIN clients c ON c.id = m.client_id" in query
+    assert "m.duration_minutes" in query
+    assert "c.name AS client_name" in query
     assert params["advisor_id"] == 1
 
 
@@ -307,3 +319,139 @@ def test_list_meetings_for_client(mock_db):
     assert "SELECT id, client_id, advisor_id, meeting_date, completion_status" in query
     assert params["advisor_id"] == 1
     assert params["client_id"] == 1
+
+
+RESCHEDULE_URL = "/meetings/1/reschedule"
+FUTURE_START = "2030-06-01T10:00:00+00:00"
+
+
+def mock_reschedule_queries(cursor, meeting, conflict=None):
+    """Mock advisory lock, meeting lookup, conflict check, and update."""
+    updated = (
+        meeting[0],
+        meeting[1],
+        meeting[2],
+        datetime.fromisoformat(FUTURE_START),
+        meeting[4],
+        meeting[5],
+    )
+
+    cursor.fetchone.side_effect = [
+        meeting,
+        conflict,
+        updated,
+    ]
+
+
+def test_reschedule_meeting_success(mock_db):
+    meeting = (
+        1,  # meeting ID
+        2,  # client ID
+        1,  # advisor ID
+        datetime(2030, 5, 30, 10, tzinfo=UTC),
+        30,  # duration
+        "Scheduled",
+    )
+    mock_reschedule_queries(mock_db, meeting)
+
+    response = client.patch(
+        RESCHEDULE_URL,
+        json={"new_start": FUTURE_START},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == 1
+    assert data["client_id"] == 2
+    assert data["advisor_id"] == 1
+    assert data["duration_minutes"] == 30
+    assert data["notification_status"] == "not_implemented"
+
+    assert mock_db.execute.call_count == 4
+    update_query = mock_db.execute.call_args_list[-1].args[0]
+    assert "UPDATE meetings" in update_query
+
+
+def test_reschedule_meeting_conflict(mock_db):
+    meeting = (
+        1,
+        2,
+        1,
+        datetime(2030, 5, 30, 10, tzinfo=UTC),
+        30,
+        "Scheduled",
+    )
+    mock_db.fetchone.side_effect = [
+        meeting,
+        (99,),  # Conflicting meeting ID
+    ]
+
+    response = client.patch(
+        RESCHEDULE_URL,
+        json={"new_start": FUTURE_START},
+    )
+
+    assert response.status_code == 409
+    assert "conflicts" in response.json()["detail"]
+    assert mock_db.execute.call_count == 3
+
+
+def test_reschedule_completed_meeting(mock_db):
+    mock_db.fetchone.return_value = (
+        1,
+        2,
+        1,
+        datetime(2030, 5, 30, 10, tzinfo=UTC),
+        30,
+        "Completed",
+    )
+
+    response = client.patch(
+        RESCHEDULE_URL,
+        json={"new_start": FUTURE_START},
+    )
+
+    assert response.status_code == 409
+    assert mock_db.execute.call_count == 2
+
+
+def test_reschedule_meeting_not_found(mock_db):
+    mock_db.fetchone.return_value = None
+
+    response = client.patch(
+        RESCHEDULE_URL,
+        json={"new_start": FUTURE_START},
+    )
+
+    assert response.status_code == 404
+    assert mock_db.execute.call_count == 2
+
+
+@pytest.mark.parametrize(
+    "invalid_start",
+    [
+        "2020-01-01T10:00:00+00:00",
+        "2030-06-01T10:00:00",
+        "not-a-date",
+    ],
+)
+def test_reschedule_invalid_date(mock_db, invalid_start):
+    response = client.patch(
+        RESCHEDULE_URL,
+        json={"new_start": invalid_start},
+    )
+
+    assert response.status_code == 422
+    mock_db.execute.assert_not_called()
+
+
+def test_reschedule_requires_authentication(mock_db):
+    unauthenticated_client = TestClient(app)
+
+    response = unauthenticated_client.patch(
+        RESCHEDULE_URL,
+        json={"new_start": FUTURE_START},
+    )
+
+    assert response.status_code == 401
+    mock_db.execute.assert_not_called()
