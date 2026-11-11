@@ -127,9 +127,7 @@ describe('TasksList', () => {
 
     render(
       <TasksList
-        tasks={[
-          { id: 1, taskTitle: 'Call client', clientName: 'Sarah Smith', status: 'TO_DO' },
-        ]}
+        tasks={[{ id: 1, taskTitle: 'Call client', clientName: 'Sarah Smith', status: 'TO_DO' }]}
         isLoading={false}
         error=""
         onStatusChange={onStatusChange}
@@ -270,9 +268,7 @@ describe('TasksPage', () => {
       'fetch',
       vi.fn((url) =>
         Promise.resolve(
-          url.endsWith('/tasks')
-            ? { ok: false }
-            : { ok: true, json: async () => [] },
+          url.endsWith('/tasks') ? { ok: false } : { ok: true, json: async () => [] },
         ),
       ),
     )
