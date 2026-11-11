@@ -10,6 +10,17 @@ from app.auth import get_current_advisor
 from app.main import app
 
 
+@pytest.fixture(autouse=True)
+def authenticated_advisor():
+    previous_override = app.dependency_overrides.get(get_current_advisor)
+    app.dependency_overrides[get_current_advisor] = lambda: {"id": 2}
+    yield
+    if previous_override is None:
+        app.dependency_overrides.pop(get_current_advisor, None)
+    else:
+        app.dependency_overrides[get_current_advisor] = previous_override
+
+
 @pytest.fixture
 def mock_db(monkeypatch):
     connection = MagicMock()
@@ -218,7 +229,7 @@ def test_update_task_status_persists_and_returns_updated_task(
     connection.commit.assert_called_once()
 
 
-def test_update_task_status_requires_authentication():
+def test_update_task_status_requires_authentication(client):
     app.dependency_overrides.pop(get_current_advisor, None)
 
     response = client.patch("/advisors/tasks/1", json={"status": "IN_PROGRESS"})
