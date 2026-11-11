@@ -1,3 +1,4 @@
+// Substantial AI assistance used; verified with frontend tests and production build.
 import { useEffect, useRef, useState } from 'react'
 import { getMeetingBriefingNotes } from '../../services/MeetingApi'
 import '../../styles/BriefingNotesModal.css'
