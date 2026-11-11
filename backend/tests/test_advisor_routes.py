@@ -267,7 +267,7 @@ def test_update_task_status_accepts_supported_values(mock_db, client, status):
     assert response.json()["status"] == status
 
 
-def test_update_task_status_rejects_unsupported_value():
+def test_update_task_status_rejects_unsupported_value(client):
     response = client.patch("/advisors/tasks/1", json={"status": "BLOCKED"})
 
     assert response.status_code == 422
@@ -291,9 +291,9 @@ def test_update_task_status_reports_database_errors(
 @pytest.mark.parametrize(
     ("path", "method"),
     [
-        ("/api/v1/advisors/1/tasks", "get"),
-        ("/api/v1/advisors/1/schedule", "get"),
-        ("/api/v1/advisors/1/clients", "get"),
+        ("/advisors/1/tasks", "get"),
+        ("/advisors/1/schedule", "get"),
+        ("/advisors/1/clients", "get"),
     ],
 )
 def test_advisor_routes_report_database_errors(mock_db, client, path, method):
