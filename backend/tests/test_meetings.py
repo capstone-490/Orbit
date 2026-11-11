@@ -456,13 +456,24 @@ def test_reschedule_requires_authentication(mock_db):
     assert response.status_code == 401
     mock_db.execute.assert_not_called()
 
+
 def test_briefing_notes_returns_client_notes(mock_db):
     mock_db.fetchone.return_value = (7,)
     mock_db.fetchall.return_value = [
-        (12, "Investment Goals", "Discuss retirement planning.",
-         "2026-11-01T14:30:00Z", "2026-11-02T09:15:00Z"),
-        (11, "Risk Profile", "Client prefers low-risk investments.",
-         "2026-10-28T10:00:00Z", "2026-10-28T10:00:00Z"),
+        (
+            12,
+            "Investment Goals",
+            "Discuss retirement planning.",
+            "2026-11-01T14:30:00Z",
+            "2026-11-02T09:15:00Z",
+        ),
+        (
+            11,
+            "Risk Profile",
+            "Client prefers low-risk investments.",
+            "2026-10-28T10:00:00Z",
+            "2026-10-28T10:00:00Z",
+        ),
     ]
     mock_db.description = [
         SimpleNamespace(name=name)

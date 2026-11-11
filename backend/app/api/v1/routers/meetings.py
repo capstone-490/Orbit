@@ -15,6 +15,7 @@ router = APIRouter(
     dependencies=[Depends(get_current_advisor)],
 )
 
+
 @router.get("/{meeting_id}/briefing-notes")
 def get_meeting_briefing_notes(
     meeting_id: int,
@@ -61,6 +62,7 @@ def get_meeting_briefing_notes(
         rows = cur.fetchall()
 
     return [dict(zip(columns, row)) for row in rows]
+
 
 class RescheduleMeetingRequest(BaseModel):
     new_start: datetime
