@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getDueBadge } from '../../utils/dueBadge'
 
-// Urgent follow-ups, shown inside the dashboard's Priority Tasks card.
+// Urgent client follow-ups, shown in their own dashboard card so they are
+// kept separate from the advisor's tasks.
 function DashboardPriorityActions({ actions, total, loading, error, onRetry, onComplete }) {
   const [completingIds, setCompletingIds] = useState(() => new Set())
   const [completeError, setCompleteError] = useState('')
@@ -58,10 +59,7 @@ function DashboardPriorityActions({ actions, total, loading, error, onRetry, onC
           const badge = getDueBadge(action)
 
           return (
-            <li
-              key={action.follow_up_id}
-              className={`urgent-followup-item urgency-${action.urgency}`}
-            >
+            <li key={action.follow_up_id} className={`urgent-followup-item tone-${badge.tone}`}>
               <input
                 type="checkbox"
                 className="urgent-followup-checkbox"
@@ -74,10 +72,17 @@ function DashboardPriorityActions({ actions, total, loading, error, onRetry, onC
                 <span className="urgent-followup-title">{action.reason}</span>
                 <span className="urgent-followup-meta">
                   {action.client_name} · {action.urgency_reason}
-                  {action.priority === 'High' && action.urgency !== 'high_priority'
-                    ? ' · High priority'
-                    : ''}
                 </span>
+                <div className="urgent-followup-pills">
+                  <span className={`followup-pill priority-${action.priority?.toLowerCase()}`}>
+                    {action.priority}
+                  </span>
+                  <span
+                    className={`followup-pill status-${action.status?.toLowerCase().replace(' ', '-')}`}
+                  >
+                    {action.status}
+                  </span>
+                </div>
               </div>
               <span className={`urgent-followup-badge tone-${badge.tone}`}>{badge.label}</span>
             </li>
@@ -90,15 +95,19 @@ function DashboardPriorityActions({ actions, total, loading, error, onRetry, onC
   return (
     <section className="urgent-followups" aria-labelledby="urgent-followups-title">
       <div className="urgent-followups-header">
-        <h3 id="urgent-followups-title" className="urgent-followups-title">
-          Urgent Follow-Ups
-        </h3>
+        <div>
+          <h2 id="urgent-followups-title" className="urgent-followups-title">
+            Urgent Follow-Ups
+          </h2>
+          <p className="urgent-followups-subtitle">Client follow-ups that need attention first</p>
+        </div>
         {!loading && !error && total > 0 && (
           <Link className="urgent-followups-link" to="/follow-ups">
-            View all ({total})
+            View all follow-ups ({total})
           </Link>
         )}
       </div>
+      <hr className="urgent-followups-divider" />
       {completeError && (
         <p className="urgent-followups-error" role="alert">
           {completeError}

@@ -7,6 +7,7 @@ empty list. It never raises, so the dashboard keeps working without it.
 """
 
 import json
+import math
 import os
 from typing import Protocol
 
@@ -19,6 +20,7 @@ logger = get_logger("app.services.ai_suggestions")
 MAX_ITEMS_SENT = 10
 MAX_SUGGESTIONS = 5
 MAX_SUGGESTION_LENGTH = 300
+DEFAULT_TIMEOUT_SECONDS = 5.0
 
 SYSTEM_PROMPT = (
     "You help a financial advisor decide what to do next. You receive a JSON "
@@ -74,6 +76,24 @@ def _parse_suggestions(content: str) -> list[dict]:
     return suggestions
 
 
+def _timeout_from_env() -> float:
+    """Read AI_TIMEOUT_SECONDS, falling back to the default if it is invalid."""
+    raw = os.getenv("AI_TIMEOUT_SECONDS", "").strip()
+    if not raw:
+        return DEFAULT_TIMEOUT_SECONDS
+    try:
+        timeout = float(raw)
+    except ValueError:
+        logger.warning("AI_TIMEOUT_SECONDS is not a number; using the default")
+        return DEFAULT_TIMEOUT_SECONDS
+    if not math.isfinite(timeout) or timeout <= 0:
+        logger.warning(
+            "AI_TIMEOUT_SECONDS must be a positive number; using the default"
+        )
+        return DEFAULT_TIMEOUT_SECONDS
+    return timeout
+
+
 def get_ai_provider() -> SuggestionProvider | None:
     """Build the provider from env vars, or return None if AI is turned off."""
     if os.getenv("AI_SUGGESTIONS_ENABLED", "false").lower() not in {"1", "true", "yes"}:
@@ -87,7 +107,7 @@ def get_ai_provider() -> SuggestionProvider | None:
         base_url=base_url,
         model=model,
         api_key=os.getenv("AI_API_KEY", ""),
-        timeout=float(os.getenv("AI_TIMEOUT_SECONDS", "5")),
+        timeout=_timeout_from_env(),
     )
 
 

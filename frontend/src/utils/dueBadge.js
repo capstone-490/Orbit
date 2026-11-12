@@ -5,10 +5,11 @@ const formatShortDate = (dueDate) => {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()
 }
 
-// Badge text and colour for each urgent follow-up.
+// Badge text and colour for each urgent follow-up. Tones match the
+// Follow-Up Tracker: overdue (red), today (blue), upcoming (light blue).
 export const getDueBadge = (action) => {
-  if (action.urgency === 'overdue') return { label: 'OVERDUE', tone: 'danger' }
-  if (action.days_until_due === 0) return { label: 'TODAY', tone: 'danger' }
-  if (action.days_until_due === 1) return { label: 'TOMORROW', tone: 'warning' }
-  return { label: formatShortDate(action.due_date), tone: 'neutral' }
+  if (action.urgency === 'overdue') return { label: 'OVERDUE', tone: 'overdue' }
+  if (action.days_until_due === 0) return { label: 'TODAY', tone: 'today' }
+  if (action.days_until_due === 1) return { label: 'TOMORROW', tone: 'upcoming' }
+  return { label: formatShortDate(action.due_date), tone: 'upcoming' }
 }

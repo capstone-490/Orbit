@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import DashboardAiCopilot from '../components/dashboard/DashboardAiCopilot'
 import DashboardPriorityActions from '../components/dashboard/DashboardPriorityActions'
 import {
+  AI_PREFERENCE_KEY,
   SUGGESTION_CACHE_KEY,
   SUGGESTION_CACHE_TTL_MS,
   usePriorityActions,
@@ -73,6 +74,7 @@ afterEach(() => {
   vi.clearAllMocks()
   vi.restoreAllMocks()
   window.sessionStorage.clear()
+  window.localStorage.clear()
 })
 
 // --------------------------------------------------------------------------
@@ -105,24 +107,26 @@ describe('DashboardPriorityActions', () => {
       within(items[0]).getByText('Missing signature on compliance document'),
     ).toBeInTheDocument()
     expect(within(items[0]).getByText('OVERDUE')).toBeInTheDocument()
-    expect(items[0]).toHaveClass('urgency-overdue')
+    expect(items[0]).toHaveClass('tone-overdue')
     expect(within(items[1]).getByText('TOMORROW')).toBeInTheDocument()
     expect(within(items[2]).getByText('NOV 17')).toBeInTheDocument()
   })
 
-  it('shows the client and reason without repeating the priority', () => {
+  it('shows the client, reason, priority and status', () => {
     renderPriorityActions()
 
     const items = screen.getAllByRole('listitem')
-    expect(items[0]).toHaveTextContent('John Doe · Overdue by 1 day · High priority')
-    expect(items[2]).toHaveTextContent('Sara · High priority, due in 7 days')
-    expect(items[2]).not.toHaveTextContent('days · High priority')
+    expect(items[0]).toHaveTextContent('John Doe · Overdue by 1 day')
+    expect(within(items[0]).getByText('High')).toHaveClass('followup-pill', 'priority-high')
+    expect(within(items[0]).getByText('In Progress')).toHaveClass('status-in-progress')
+    expect(within(items[1]).getByText('Medium')).toHaveClass('priority-medium')
+    expect(within(items[1]).getByText('Pending')).toHaveClass('status-pending')
   })
 
   it('links to all follow-ups with the urgent total', () => {
     renderPriorityActions({ total: 8 })
 
-    expect(screen.getByRole('link', { name: 'View all (8)' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'View all follow-ups (8)' })).toHaveAttribute(
       'href',
       '/follow-ups',
     )
@@ -195,13 +199,13 @@ describe('DashboardPriorityActions', () => {
     expect(screen.getAllByRole('listitem')).toHaveLength(3)
   })
 
-  it('labels follow-ups due today', () => {
-    expect(getDueBadge({ urgency: 'due_soon', days_until_due: 0, due_date: '2026-11-10' })).toEqual(
-      {
-        label: 'TODAY',
-        tone: 'danger',
-      },
-    )
+  it.each([
+    [{ urgency: 'overdue', days_until_due: -2 }, 'OVERDUE', 'overdue'],
+    [{ urgency: 'due_soon', days_until_due: 0 }, 'TODAY', 'today'],
+    [{ urgency: 'due_soon', days_until_due: 1 }, 'TOMORROW', 'upcoming'],
+    [{ urgency: 'high_priority', days_until_due: 6, due_date: '2026-11-17' }, 'NOV 17', 'upcoming'],
+  ])('labels %o as %s with the %s colour', (action, label, tone) => {
+    expect(getDueBadge(action)).toEqual({ label, tone })
   })
 })
 
@@ -215,7 +219,9 @@ function renderCopilot(props = {}) {
       actions={ACTIONS}
       actionsLoading={false}
       aiStatus="available"
+      aiEnabled
       suggestions={[]}
+      onToggleAi={vi.fn()}
       onApprove={vi.fn().mockResolvedValue(undefined)}
       onDismiss={vi.fn()}
       onRefresh={vi.fn()}
@@ -251,10 +257,42 @@ describe('DashboardAiCopilot', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Generating suggestions…')
   })
 
-  it('explains when AI is turned off', () => {
+  it('explains when AI is not set up on the server', () => {
     renderCopilot({ aiStatus: 'disabled' })
 
-    expect(screen.getByText('AI suggestions are turned off.')).toBeInTheDocument()
+    expect(
+      screen.getByText('AI suggestions are not set up for this workspace.'),
+    ).toBeInTheDocument()
+  })
+
+  it('shows the AI switch as on and lets the advisor turn it off', async () => {
+    const onToggleAi = vi.fn()
+    const user = userEvent.setup()
+    renderCopilot({ suggestions: [SUGGESTION], onToggleAi })
+
+    const toggle = screen.getByRole('switch', { name: 'AI suggestions' })
+    expect(toggle).toBeChecked()
+    expect(screen.getByText('On')).toBeInTheDocument()
+
+    await user.click(toggle)
+
+    expect(onToggleAi).toHaveBeenCalledWith(false)
+  })
+
+  it('shows no suggestions or refresh button while the advisor has AI off', async () => {
+    const onToggleAi = vi.fn()
+    const user = userEvent.setup()
+    renderCopilot({ aiEnabled: false, aiStatus: 'off', suggestions: [SUGGESTION], onToggleAi })
+
+    expect(screen.getByText(/AI suggestions are off/)).toBeInTheDocument()
+    expect(screen.queryByText('Email the tax documents today.')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Refresh AI suggestions' })).not.toBeInTheDocument()
+
+    const toggle = screen.getByRole('switch', { name: 'AI suggestions' })
+    expect(toggle).not.toBeChecked()
+    await user.click(toggle)
+
+    expect(onToggleAi).toHaveBeenCalledWith(true)
   })
 
   it('explains when AI is unavailable', () => {
@@ -567,7 +605,7 @@ describe('usePriorityActions', () => {
       SUGGESTION_CACHE_KEY,
       JSON.stringify({
         savedAt: Date.now(),
-        actionIds: [91, 92],
+        actionKeys: ['[91,"Other","2026-11-01","High","Pending"]'],
         status: 'available',
         suggestions: [{ follow_up_id: 91, text: "Someone else's suggestion." }],
         handledIds: [],
@@ -697,4 +735,52 @@ describe('usePriorityActions', () => {
     await waitFor(() => expect(result.current.aiStatus).toBe('unavailable'))
     expect(getPriorityActionSuggestions).not.toHaveBeenCalled()
   })
+})
+
+it('regenerates suggestions when a follow-up changes but its id stays the same', async () => {
+  getPriorityActions.mockResolvedValueOnce({ items: ACTIONS, total: 3 })
+  getPriorityActionSuggestions.mockResolvedValue({ status: 'available', suggestions: [SUGGESTION] })
+
+  const first = renderHook(() => usePriorityActions())
+  await waitFor(() => expect(first.result.current.suggestions).toHaveLength(1))
+  first.unmount()
+
+  const moved = ACTIONS.map((action) =>
+    action.follow_up_id === 2 ? { ...action, due_date: '2026-11-20', priority: 'Low' } : action,
+  )
+  getPriorityActions.mockResolvedValueOnce({ items: moved, total: 3 })
+  renderHook(() => usePriorityActions())
+
+  await waitFor(() => expect(getPriorityActionSuggestions).toHaveBeenCalledTimes(2))
+})
+
+it('does not call the AI when the advisor has turned it off', async () => {
+  window.localStorage.setItem(AI_PREFERENCE_KEY, 'false')
+  getPriorityActions.mockResolvedValue({ items: ACTIONS, total: 3 })
+
+  const { result } = renderHook(() => usePriorityActions())
+
+  await waitFor(() => expect(result.current.aiStatus).toBe('off'))
+  expect(result.current.aiEnabled).toBe(false)
+  expect(result.current.actions).toHaveLength(3)
+  expect(getPriorityActionSuggestions).not.toHaveBeenCalled()
+})
+
+it('remembers the AI choice and loads suggestions when turned back on', async () => {
+  getPriorityActions.mockResolvedValue({ items: ACTIONS, total: 3 })
+  getPriorityActionSuggestions.mockResolvedValue({ status: 'available', suggestions: [SUGGESTION] })
+
+  const { result } = renderHook(() => usePriorityActions())
+  await waitFor(() => expect(result.current.suggestions).toHaveLength(1))
+
+  act(() => result.current.setAiEnabled(false))
+
+  await waitFor(() => expect(result.current.aiStatus).toBe('off'))
+  expect(result.current.suggestions).toEqual([])
+  expect(window.localStorage.getItem(AI_PREFERENCE_KEY)).toBe('false')
+
+  act(() => result.current.setAiEnabled(true))
+
+  await waitFor(() => expect(result.current.suggestions).toEqual([SUGGESTION]))
+  expect(window.localStorage.getItem(AI_PREFERENCE_KEY)).toBe('true')
 })
