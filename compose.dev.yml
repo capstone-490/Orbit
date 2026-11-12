@@ -17,6 +17,10 @@ services:
     environment:
       ENVIRONMENT: dev
       DEBUG: "true"
+      OPENFGA_API_URL: http://openfga:8080
+    depends_on:
+      openfga:
+        condition: service_healthy
     ports:
       - "127.0.0.1:8001:8001"
     volumes:
@@ -31,10 +35,13 @@ services:
       - .env
     environment:
       DB_HOST: db
+      OPENFGA_API_URL: http://openfga:8080
     volumes:
       - *backend-bind
     depends_on:
       db:
+        condition: service_healthy
+      openfga:
         condition: service_healthy
     command:
       - sh
@@ -66,6 +73,65 @@ services:
       VITE_API_URL: ${VITE_API_URL:-http://localhost:8001/api/v1}
     networks:
       - backend_net
+
+
+  openfga-db-init:
+    image: postgres:18.6-alpine3.24
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+    command:
+      - sh
+      - -c
+      - >-
+        psql -h db -U "${POSTGRES_USER}" -d "${DB_NAME}" -tc
+        "SELECT 1 FROM pg_database WHERE datname = 'openfga'" | grep -q 1 ||
+        psql -h db -U "${POSTGRES_USER}" -d "${DB_NAME}" -c "CREATE DATABASE openfga;"
+    networks:
+      - backend_net
+    restart: "no"
+
+  # 2. Runs OpenFGA schema migrations against the 'openfga' database
+  openfga-migrate:
+    image: openfga/openfga:latest
+    command: migrate
+    environment:
+      OPENFGA_DATASTORE_ENGINE: postgres
+      OPENFGA_DATASTORE_URI: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/openfga?sslmode=disable
+    depends_on:
+      openfga-db-init:
+        condition: service_completed_successfully
+    networks:
+      - backend_net
+    restart: "no"
+
+  openfga:
+    image: openfga/openfga:v1.22.1
+    command: run
+    environment:
+      OPENFGA_DATASTORE_ENGINE: postgres
+      OPENFGA_DATASTORE_URI: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/openfga?sslmode=disable
+      OPENFGA_PLAYGROUND_ENABLED: "true"
+      OPENFGA_PLAYGROUND_ADDR: 0.0.0.0:3000
+      OPENFGA_LOG_FORMAT: json
+    ports:
+      - "127.0.0.1:8080:8080" # HTTP API
+      - "127.0.0.1:8081:8081" # gRPC API
+      - "127.0.0.1:3000:3000" # Web Playground (http://localhost:3000/playground)
+      - "127.0.0.1:2112:2112" # Prometheus metrics
+    depends_on:
+      openfga-migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/grpc_health_probe", "-addr=localhost:8081"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend_net
+    restart: unless-stopped
 
 volumes:
   frontend_node_modules:
