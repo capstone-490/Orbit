@@ -8,6 +8,7 @@ dependencies = [
     "asyncpg>=0.32.0",
     "email-validator>=2.3.0",
     "fastapi[standard]>=0.143.0",
+    "openfga-sdk>=0.10.5",
     "prometheus-client>=0.26.0",
     "psycopg[binary]>=3.3.6",
     "pwdlib[argon2]>=0.3.1",

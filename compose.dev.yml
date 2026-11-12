@@ -50,7 +50,8 @@ services:
         alembic -c /app/alembic.ini upgrade head &&
         python -m scripts.provision_db_credentials &&
         python -m scripts.load_feature_flags &&
-        python -m scripts.seed_db
+        python -m scripts.seed_db &&
+        python -m scripts.seed_openfga
     restart: "no"
 
   frontend:
@@ -95,7 +96,7 @@ services:
 
   # 2. Runs OpenFGA schema migrations against the 'openfga' database
   openfga-migrate:
-    image: openfga/openfga:latest
+    image: openfga/openfga:v1.22.1
     command: migrate
     environment:
       OPENFGA_DATASTORE_ENGINE: postgres
@@ -113,13 +114,10 @@ services:
     environment:
       OPENFGA_DATASTORE_ENGINE: postgres
       OPENFGA_DATASTORE_URI: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/openfga?sslmode=disable
-      OPENFGA_PLAYGROUND_ENABLED: "true"
-      OPENFGA_PLAYGROUND_ADDR: 0.0.0.0:3000
       OPENFGA_LOG_FORMAT: json
     ports:
       - "127.0.0.1:8080:8080" # HTTP API
       - "127.0.0.1:8081:8081" # gRPC API
-      - "127.0.0.1:3000:3000" # Web Playground (http://localhost:3000/playground)
       - "127.0.0.1:2112:2112" # Prometheus metrics
     depends_on:
       openfga-migrate:

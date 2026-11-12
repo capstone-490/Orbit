@@ -1,0 +1,276 @@
+name: Orbit ReBAC Test Suite
+
+tuples:
+  # organization 1
+  - user: membership:owner_1  # org has owner
+    relation: owner
+    object: organization:org_1
+  - user: organization:org_1  # org has default sub
+    relation: organization
+    object: subscription:sub_default
+  - user: subscription:sub_default  # default sub has a client
+    relation: subscription
+    object: client:client_1
+  - user: organization:org_1  # sub 2
+    relation: organization
+    object: subscription:sub_private
+  - user: subscription:sub_private  # sub2 has a client
+    relation: subscription
+    object: client:client_private
+
+  # organization 2
+  - user: membership:owner_2
+    relation: owner
+    object: organization:org_2
+  - user: organization:org_2
+    relation: organization
+    object: subscription:sub_org_2
+  - user: subscription:sub_org_2
+    relation: subscription
+    object: folder:folder_org_2
+  - user: folder:folder_org_2
+    relation: folder
+    object: meeting:meeting_org_2
+
+  # hierarchy in org1 : root_folder > folder1 > folder2 + sibling_folder
+  - user: subscription:sub_default
+    relation: subscription
+    object: folder:root_folder
+  - user: folder:root_folder
+    relation: folder
+    object: meeting:root_meeting
+  - user: folder:root_folder
+    relation: parent_folder
+    object: folder:folder1
+  - user: folder:root_folder
+    relation: parent_folder
+    object: folder:sibling_folder
+  - user: folder:folder1
+    relation: parent_folder
+    object: folder:folder2
+  - user: folder:folder1
+    relation: folder
+    object: meeting:child_meeting
+
+  # scoped assignments on clients and folders
+  - user: membership:advisor_1
+    relation: primary_advisor
+    object: client:client_1
+  - user: membership:staff_1
+    relation: assigned_staff
+    object: client:client_1
+  - user: membership:advisor_1
+    relation: advisor
+    object: folder:folder1
+  - user: agent:assistant_1
+    relation: delegated_agent
+    object: folder:folder1
+    condition:
+      name: non_expired_grant
+      context:
+        expires_at: "2026-12-31T23:59:59Z"
+
+tests:
+  - name: 1. Organization and Subscription boundaries
+    check:
+      # org1 owner inherits access all the way down to meetings in subfolders
+      - user: membership:owner_1
+        object: meeting:child_meeting
+        assertions:
+          can_view: true
+          can_edit: true
+          can_delete: true
+      # org1 owner can access all subs
+      - user: membership:owner_1
+        object: client:client_private
+        assertions:
+          can_view: true
+          can_edit: true
+          can_delete: true
+      # org 1 owner cannot access org 2 meetings
+      - user: membership:owner_1
+        object: meeting:meeting_org_2
+        assertions:
+          can_view: false
+          can_edit: false
+          can_delete: false
+      # org 1 advisor cannot access org 2 folders
+      - user: membership:advisor_1
+        object: folder:folder_org_2
+        assertions:
+          can_view: false
+          can_edit: false
+      # org 1 agent cannot access org 2 meetings
+      - user: agent:assistant_1
+        object: meeting:meeting_org_2
+        context:
+          current_time: "2026-06-01T12:00:00Z"
+        assertions:
+          can_view: false
+          can_propose: false
+      # advisor cannot access another subscription's client
+      - user: membership:advisor_1
+        object: client:client_private
+        assertions:
+          can_view: false
+          can_edit: false
+
+  - name: 2. Advisor folder inheritance
+    check:
+      # direct access on assigned folder
+      - user: membership:advisor_1
+        object: folder:folder1
+        assertions:
+          can_view: true
+          can_edit: true
+          can_delete: false
+      # inherits permissions to subfolder underneath folder1
+      - user: membership:advisor_1
+        object: folder:folder2
+        assertions:
+          can_view: true
+          can_edit: true
+      # inherits permissions to meetings inside folder1
+      - user: membership:advisor_1
+        object: meeting:child_meeting
+        assertions:
+          can_view: true
+          can_edit: true
+      # cannot see parent folder above folder1
+      - user: membership:advisor_1
+        object: folder:root_folder
+        assertions:
+          can_view: false
+          can_edit: false
+      # cannot see meetings in parent folder above folder1
+      - user: membership:advisor_1
+        object: meeting:root_meeting
+        assertions:
+          can_view: false
+          can_edit: false
+
+  - name: 3. Agent folder inheritance + expiry
+    check:
+      # active grant on scoped folder
+      - user: agent:assistant_1
+        object: folder:folder1
+        context:
+          current_time: "2026-06-01T12:00:00Z"
+        assertions:
+          can_view: true
+          can_propose: true
+          can_edit: false
+      # agent inherits view and propose to subfolders
+      - user: agent:assistant_1
+        object: folder:folder2
+        context:
+          current_time: "2026-06-01T12:00:00Z"
+        assertions:
+          can_view: true
+          can_propose: true
+          can_edit: false
+      # agent inherits view and propose to meetings inside folder1
+      - user: agent:assistant_1
+        object: meeting:child_meeting
+        context:
+          current_time: "2026-06-01T12:00:00Z"
+        assertions:
+          can_view: true
+          can_propose: true
+          can_edit: false
+      # agent cannot see parent folder above folder1
+      - user: agent:assistant_1
+        object: folder:root_folder
+        context:
+          current_time: "2026-06-01T12:00:00Z"
+        assertions:
+          can_view: false
+          can_propose: false
+      # agent cannot see meetings in parent folder above folder1
+      - user: agent:assistant_1
+        object: meeting:root_meeting
+        context:
+          current_time: "2026-06-01T12:00:00Z"
+        assertions:
+          can_view: false
+          can_propose: false
+      
+      # after grant expiration, inherited access to child_meeting is revoked
+      - user: agent:assistant_1
+        object: meeting:child_meeting
+        context:
+          current_time: "2027-01-02T00:00:00Z"
+        assertions:
+          can_view: false
+          can_propose: false
+
+  - name: 4. Invalid access, privilege escalation, iolation
+    check:
+      # completely unassigned user has zero access
+      - user: membership:unassigned_stranger
+        object: client:client_1
+        assertions:
+          can_view: false
+          can_propose: false
+          can_edit: false
+          can_delete: false
+      
+      # unassigned agent cannot view or propose even with valid timestamp context
+      - user: agent:unassigned_agent
+        object: folder:folder1
+        context:
+          current_time: "2026-06-01T12:00:00Z"
+        assertions:
+          can_view: false
+          can_propose: false
+          can_edit: false
+      
+      # lateral isolation: staff assigned to client_1 cannot access folder1 in the same subscription
+      - user: membership:staff_1
+        object: folder:folder1
+        assertions:
+          can_view: false
+          can_propose: false
+          can_edit: false
+      
+      # privilege escalation: folder/client advisor cannot manage or view org-level settings
+      - user: membership:advisor_1
+        object: organization:org_1
+        assertions:
+          can_view: false
+          can_manage: false
+      
+      # advisor on folder1 cannot access a sibling
+      - user: membership:advisor_1
+        object: folder:sibling_folder
+        assertions:
+          can_view: false
+          can_propose: false
+          can_edit: false
+      
+      # agent on folder1 cannot access a sibling
+      - user: agent:assistant_1
+        object: folder:sibling_folder
+        context:
+          current_time: "2026-06-01T12:00:00Z"
+        assertions:
+          can_view: false
+          can_propose: false
+      
+      # active agent can never edit or delete a meeting
+      - user: agent:assistant_1
+        object: meeting:child_meeting
+        context:
+          current_time: "2026-06-01T12:00:00Z"
+        assertions:
+          can_edit: false
+          can_delete: false
+      
+      # exact boundary expiry check: current_time == expires_at fails
+      - user: agent:assistant_1
+        object: folder:folder1
+        context:
+          current_time: "2026-12-31T23:59:59Z"
+        assertions:
+          can_view: false
+          can_propose: false

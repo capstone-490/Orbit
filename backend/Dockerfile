@@ -2,6 +2,7 @@
 FROM python:3.14-slim AS base
 
 COPY --from=ghcr.io/astral-sh/uv:0.9.5 /uv /uvx /bin/
+COPY --from=openfga/cli:latest /fga /bin/fga
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \

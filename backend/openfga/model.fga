@@ -1,0 +1,61 @@
+model
+  schema 1.1
+
+type membership
+
+type agent
+
+type organization
+  relations
+    define owner: [membership]
+    define staff: [membership] or owner
+    define can_manage: owner
+    define can_view: staff
+
+type subscription
+  relations
+    define organization: [organization]
+    define advisor: [membership]
+    define staff: [membership]
+    define can_delete: can_manage from organization
+    define can_edit: advisor or can_manage from organization
+    define can_view: staff or can_edit or can_view from organization
+
+type client
+  relations
+    define subscription: [subscription]
+    define primary_advisor: [membership]
+    define assigned_staff: [membership]
+    define delegated_agent: [agent with non_expired_grant]
+    define can_delete: can_delete from subscription
+    define can_edit: primary_advisor or can_edit from subscription
+    define can_propose: delegated_agent or assigned_staff or can_edit
+    define can_view: can_propose or can_view from subscription
+
+type folder
+  relations
+    define subscription: [subscription]
+    define parent_folder: [folder]
+    define advisor: [membership]
+    define assigned_staff: [membership]
+    define delegated_agent: [agent with non_expired_grant]
+    define can_delete: can_delete from parent_folder or can_delete from subscription
+    define can_edit: advisor or can_edit from parent_folder or can_edit from subscription
+    define can_propose: delegated_agent or assigned_staff or can_edit or can_propose from parent_folder
+    define can_view: can_propose or can_view from parent_folder or can_view from subscription
+
+type meeting
+  relations
+    define subscription: [subscription]
+    define folder: [folder]
+    define client: [client]
+    define advisor: [membership]
+    define delegated_agent: [agent with non_expired_grant]
+    define can_delete: can_delete from folder or can_delete from client or can_delete from subscription
+    define can_edit: advisor or can_edit from folder or can_edit from client or can_edit from subscription
+    define can_propose: delegated_agent or can_edit or can_propose from folder or can_propose from client
+    define can_view: can_propose or can_view from folder or can_view from client or can_view from subscription
+
+condition non_expired_grant(current_time: timestamp, expires_at: timestamp) {
+  current_time < expires_at
+}
