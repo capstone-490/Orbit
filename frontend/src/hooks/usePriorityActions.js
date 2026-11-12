@@ -9,9 +9,29 @@ import {
 
 // AI suggestions are slow to generate, so they are kept for the browser
 // session (sessionStorage is cleared when the tab is closed). The cache is
-// only reused when the urgent follow-up list is unchanged and recent enough.
+// only reused when the urgent follow-ups (including their reason, due date,
+// priority and status) are unchanged and the cache is recent enough.
 export const SUGGESTION_CACHE_KEY = 'orbit.priorityActions.aiSuggestions'
 export const SUGGESTION_CACHE_TTL_MS = 10 * 60 * 1000
+
+// The advisor's own on/off choice for AI suggestions, kept in this browser.
+export const AI_PREFERENCE_KEY = 'orbit.priorityActions.aiEnabled'
+
+function readAiPreference() {
+  try {
+    return window.localStorage.getItem(AI_PREFERENCE_KEY) !== 'false'
+  } catch {
+    return true
+  }
+}
+
+function writeAiPreference(enabled) {
+  try {
+    window.localStorage.setItem(AI_PREFERENCE_KEY, String(enabled))
+  } catch {
+    // Storage can be blocked; the choice then lasts until the page reloads.
+  }
+}
 
 function readCache() {
   try {
@@ -35,11 +55,26 @@ function updateCache(change) {
   if (cached) writeCache(change(cached))
 }
 
-const sortedIds = (actions) =>
-  actions.map((action) => action.follow_up_id).sort((first, second) => first - second)
+// Everything the AI suggestion depends on. If any of these change, cached
+// suggestions are considered outdated.
+const actionSignature = (action) =>
+  JSON.stringify([
+    action.follow_up_id,
+    action.reason,
+    action.due_date,
+    action.priority,
+    action.status,
+  ])
 
-const sameIds = (first, second) =>
-  first.length === second.length && first.every((id, index) => id === second[index])
+const signatureId = (signature) => JSON.parse(signature)[0]
+
+const actionSignatures = (actions) =>
+  [...actions]
+    .sort((first, second) => first.follow_up_id - second.follow_up_id)
+    .map(actionSignature)
+
+const sameList = (first, second) =>
+  first.length === second.length && first.every((item, index) => item === second[index])
 
 // Loads urgent follow-ups and AI suggestions. A slow or failing AI call never
 // delays or breaks the urgent list.
@@ -52,6 +87,7 @@ export function usePriorityActions(limit = 5) {
   const [suggestions, setSuggestions] = useState([])
   const [reloadKey, setReloadKey] = useState(0)
   const [suggestionsKey, setSuggestionsKey] = useState(0)
+  const [aiEnabled, setAiEnabledState] = useState(readAiPreference)
   const forceRefresh = useRef(false)
 
   useEffect(() => {
@@ -82,17 +118,25 @@ export function usePriorityActions(limit = 5) {
     }
   }, [limit, reloadKey])
 
-  const actionIdsKey = sortedIds(actions).join(',')
+  const actionsKey = JSON.stringify(actionSignatures(actions))
 
   useEffect(() => {
     if (loading) return undefined
 
     let active = true
-    const actionIds = actionIdsKey ? actionIdsKey.split(',').map(Number) : []
+    const signatures = JSON.parse(actionsKey)
     const force = forceRefresh.current
     forceRefresh.current = false
 
     const loadSuggestions = async () => {
+      if (!aiEnabled) {
+        if (active) {
+          setAiStatus('off')
+          setSuggestions([])
+        }
+        return
+      }
+
       if (error) {
         if (active) {
           setAiStatus('unavailable')
@@ -106,7 +150,8 @@ export function usePriorityActions(limit = 5) {
         !force &&
         cached &&
         Date.now() - cached.savedAt < SUGGESTION_CACHE_TTL_MS &&
-        sameIds(cached.actionIds, actionIds)
+        Array.isArray(cached.actionKeys) &&
+        sameList(cached.actionKeys, signatures)
 
       if (cacheIsUsable) {
         if (active) {
@@ -131,7 +176,13 @@ export function usePriorityActions(limit = 5) {
         setAiStatus(status)
         setSuggestions(fresh)
         if (status === 'available') {
-          writeCache({ savedAt: Date.now(), actionIds, status, suggestions: fresh, handledIds })
+          writeCache({
+            savedAt: Date.now(),
+            actionKeys: signatures,
+            status,
+            suggestions: fresh,
+            handledIds,
+          })
         }
       } catch (err) {
         console.error('Failed to load AI suggestions:', err)
@@ -146,9 +197,16 @@ export function usePriorityActions(limit = 5) {
     return () => {
       active = false
     }
-  }, [loading, error, actionIdsKey, suggestionsKey])
+  }, [loading, error, actionsKey, suggestionsKey, aiEnabled])
 
   const retry = useCallback(() => setReloadKey((key) => key + 1), [])
+
+  // Lets the advisor turn AI suggestions on or off. While off, nothing is sent
+  // to the AI service.
+  const setAiEnabled = useCallback((enabled) => {
+    writeAiPreference(enabled)
+    setAiEnabledState(enabled)
+  }, [])
 
   // Asks the AI for new suggestions, ignoring the cache.
   const refreshSuggestions = useCallback(() => {
@@ -163,7 +221,9 @@ export function usePriorityActions(limit = 5) {
     await updateFollowUpStatus(followUpId, 'Completed')
     updateCache((cached) => ({
       ...cached,
-      actionIds: cached.actionIds.filter((id) => id !== followUpId),
+      actionKeys: (cached.actionKeys ?? []).filter(
+        (signature) => signatureId(signature) !== followUpId,
+      ),
       suggestions: cached.suggestions.filter(
         (suggestion) => suggestion.follow_up_id !== followUpId,
       ),
@@ -216,6 +276,8 @@ export function usePriorityActions(limit = 5) {
     retry,
     completeAction,
     aiStatus,
+    aiEnabled,
+    setAiEnabled,
     suggestions,
     refreshSuggestions,
     approveSuggestion,
