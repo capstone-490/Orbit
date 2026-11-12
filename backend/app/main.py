@@ -15,6 +15,7 @@ from app.api.v1.routers.advisors import router as advisor_router
 from app.api.v1.routers.clients import router as clients_router
 from app.api.v1.routers.follow_ups import router as follow_ups_router
 from app.api.v1.routers.meetings import router as meetings_router
+from app.api.v1.routers.priority_actions import router as priority_actions_router
 from app.api.v1.routers.sessions import router as sessions_router
 from app.core.feature_flags import get_variant
 from app.core.security.anonymizer import TokenStore
@@ -67,7 +68,7 @@ app.include_router(advisor_registration_router)
 app.include_router(meetings_router)
 app.include_router(password_reset.router)
 app.include_router(follow_ups_router)
-
+app.include_router(priority_actions_router)
 
 if os.getenv("ENABLE_DEBUG_ROUTES", "").lower() in {"1", "true", "yes"}:
     from app.api.v1.routers.debug import router as debug_router

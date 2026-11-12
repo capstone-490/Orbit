@@ -16,6 +16,24 @@ vi.mock('../../services/MeetingApi', () => ({
   rescheduleMeeting: vi.fn(),
 }))
 
+vi.mock('../../hooks/usePriorityActions', () => ({
+  usePriorityActions: () => ({
+    actions: [],
+    total: 0,
+    loading: false,
+    error: '',
+    retry: vi.fn(),
+    completeAction: vi.fn(),
+    aiStatus: 'disabled',
+    suggestions: [],
+    approveSuggestion: vi.fn(),
+    dismissSuggestion: vi.fn(),
+    refreshSuggestions: vi.fn(),
+    aiEnabled: true,
+    setAiEnabled: vi.fn(),
+  }),
+}))
+
 vi.mock('../../services/AdvisorDashboardApi', () => ({
   getAdvisorDashboard: vi.fn().mockResolvedValue({
     advisor: { firstName: 'Nayiri' },

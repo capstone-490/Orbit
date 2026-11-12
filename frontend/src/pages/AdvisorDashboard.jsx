@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import '../styles/AdvisorDashboard.css'
+import DashboardAiCopilot from '../components/dashboard/DashboardAiCopilot'
+import DashboardPriorityActions from '../components/dashboard/DashboardPriorityActions'
 import DashboardSchedule from '../components/dashboard/DashboardSchedule'
 import DashboardSummary from '../components/dashboard/DashboardSummary'
 import DashboardTasks from '../components/dashboard/DashboardTasks'
+import { usePriorityActions } from '../hooks/usePriorityActions'
 import { getAdvisorDashboard } from '../services/AdvisorDashboardApi'
 import { getCurrentAdvisor } from '../services/AuthApi'
 import { getAdvisorMeetings } from '../services/MeetingApi'
@@ -29,6 +32,7 @@ function AdvisorDashboard() {
   const [clients, setClients] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const priorityActions = usePriorityActions()
 
   useEffect(() => {
     let active = true
@@ -128,8 +132,33 @@ function AdvisorDashboard() {
             onMeetingRescheduled={handleMeetingRescheduled}
           />
         </div>
-        <div className="dashboard-card">
-          <DashboardTasks priorityTasks={tasks} onTaskUpdated={handleTaskUpdated} />
+        <div className="dashboard-side-column">
+          <div className="dashboard-card">
+            <DashboardTasks priorityTasks={tasks} onTaskUpdated={handleTaskUpdated} />
+          </div>
+          <div className="dashboard-card">
+            <DashboardPriorityActions
+              actions={priorityActions.actions}
+              total={priorityActions.total}
+              loading={priorityActions.loading}
+              error={priorityActions.error}
+              onRetry={priorityActions.retry}
+              onComplete={priorityActions.completeAction}
+            />
+          </div>
+          <div className="dashboard-card">
+            <DashboardAiCopilot
+              actions={priorityActions.actions}
+              actionsLoading={priorityActions.loading}
+              aiStatus={priorityActions.aiStatus}
+              aiEnabled={priorityActions.aiEnabled}
+              suggestions={priorityActions.suggestions}
+              onToggleAi={priorityActions.setAiEnabled}
+              onApprove={priorityActions.approveSuggestion}
+              onDismiss={priorityActions.dismissSuggestion}
+              onRefresh={priorityActions.refreshSuggestions}
+            />
+          </div>
         </div>
       </div>
     </main>
