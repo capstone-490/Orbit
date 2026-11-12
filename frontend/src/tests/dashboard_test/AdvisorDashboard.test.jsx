@@ -29,6 +29,8 @@ vi.mock('../../hooks/usePriorityActions', () => ({
     approveSuggestion: vi.fn(),
     dismissSuggestion: vi.fn(),
     refreshSuggestions: vi.fn(),
+    aiEnabled: true,
+    setAiEnabled: vi.fn(),
   }),
 }))
 

@@ -135,6 +135,8 @@ function AdvisorDashboard() {
         <div className="dashboard-side-column">
           <div className="dashboard-card">
             <DashboardTasks priorityTasks={tasks} onTaskUpdated={handleTaskUpdated} />
+          </div>
+          <div className="dashboard-card">
             <DashboardPriorityActions
               actions={priorityActions.actions}
               total={priorityActions.total}
@@ -149,7 +151,9 @@ function AdvisorDashboard() {
               actions={priorityActions.actions}
               actionsLoading={priorityActions.loading}
               aiStatus={priorityActions.aiStatus}
+              aiEnabled={priorityActions.aiEnabled}
               suggestions={priorityActions.suggestions}
+              onToggleAi={priorityActions.setAiEnabled}
               onApprove={priorityActions.approveSuggestion}
               onDismiss={priorityActions.dismissSuggestion}
               onRefresh={priorityActions.refreshSuggestions}

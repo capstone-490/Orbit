@@ -1,6 +1,8 @@
 /* Substantial AI assistance used; verified with frontend tests. */
+/* Colours match the Follow-Up Tracker page: overdue (red), today (blue),
+   upcoming (light blue), and the same priority/status pills. */
 
-/* Right column of the dashboard: Priority Tasks card + AI Copilot card. */
+/* Right column of the dashboard: Priority Tasks, Urgent Follow-Ups, AI Copilot. */
 .dashboard-side-column {
   display: flex;
   flex-direction: column;
@@ -8,39 +10,52 @@
   min-width: 0;
 }
 
-/* ---------- Urgent follow-ups (inside the Priority Tasks card) ---------- */
+/* ---------- Urgent follow-ups card ---------- */
 
 .urgent-followups {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
+  gap: 0.6rem;
 }
 
 .urgent-followups-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .urgent-followups-title {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: 1.25rem;
   font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: #6b7280;
+  color: #0f172a;
+}
+
+.urgent-followups-subtitle {
+  margin: 0.2rem 0 0;
+  font-size: 0.85rem;
+  color: #64748b;
 }
 
 .urgent-followups-link {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
+  font-weight: 600;
   color: #2563eb;
   text-decoration: none;
+  white-space: nowrap;
 }
 
 .urgent-followups-link:hover {
   text-decoration: underline;
+}
+
+.urgent-followups-divider {
+  width: 100%;
+  border: none;
+  border-top: 1px solid #e2e8f0;
+  margin: 0;
 }
 
 .urgent-followups-list {
@@ -49,37 +64,42 @@
   padding: 0;
   display: flex;
   flex-direction: column;
+  gap: 0.6rem;
 }
 
 .urgent-followup-item {
   display: flex;
   align-items: flex-start;
-  gap: 0.6rem;
-  padding: 0.65rem 0 0.65rem 0.6rem;
-  border-left: 3px solid transparent;
-  border-bottom: 1px solid #f1f2f4;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid #dbe4f0;
+  border-left-width: 4px;
+  border-radius: 10px;
+  background: #f5f8fd;
 }
 
-.urgent-followup-item:last-child {
-  border-bottom: none;
-}
-
-.urgent-followup-item.urgency-overdue {
+.urgent-followup-item.tone-overdue {
+  border-color: #f6caca;
   border-left-color: #dc2626;
+  background: #fdf2f2;
 }
 
-.urgent-followup-item.urgency-due_soon {
-  border-left-color: #d97706;
-}
-
-.urgent-followup-item.urgency-high_priority {
+.urgent-followup-item.tone-today {
+  border-color: #c9dbf7;
   border-left-color: #2563eb;
+  background: #eef4fd;
+}
+
+.urgent-followup-item.tone-upcoming {
+  border-color: #dbe4f0;
+  border-left-color: #93b4e8;
+  background: #f5f8fd;
 }
 
 .urgent-followup-checkbox {
   flex-shrink: 0;
-  width: 1rem;
-  height: 1rem;
+  width: 1.05rem;
+  height: 1.05rem;
   margin: 0.15rem 0 0;
   cursor: pointer;
   accent-color: #2563eb;
@@ -93,55 +113,106 @@
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: 0.3rem;
   min-width: 0;
 }
 
 .urgent-followup-title {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 600;
-  color: #111827;
+  color: #0f172a;
   overflow-wrap: anywhere;
 }
 
 .urgent-followup-meta {
-  font-size: 0.78rem;
-  color: #6b7280;
+  font-size: 0.8rem;
+  color: #64748b;
 }
 
+.urgent-followup-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+/* Due badge on the right of each item */
 .urgent-followup-badge {
   flex-shrink: 0;
-  padding: 0.15rem 0.45rem;
-  border-radius: 4px;
+  padding: 0.2rem 0.55rem;
   border: 1px solid transparent;
-  font-size: 0.68rem;
+  border-radius: 6px;
+  font-size: 0.7rem;
   font-weight: 700;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
   white-space: nowrap;
 }
 
-.urgent-followup-badge.tone-danger {
-  color: #b91c1c;
-  background: #fef2f2;
-  border-color: #fecaca;
+.urgent-followup-badge.tone-overdue {
+  color: #c53030;
+  background: #fde8e8;
+  border-color: #f6caca;
 }
 
-.urgent-followup-badge.tone-warning {
+.urgent-followup-badge.tone-today {
+  color: #1d4ed8;
+  background: #e0ebfd;
+  border-color: #c9dbf7;
+}
+
+.urgent-followup-badge.tone-upcoming {
+  color: #334155;
+  background: #eef2f7;
+  border-color: #dbe4f0;
+}
+
+/* Priority and status pills, same colours as the Follow-Up Tracker table */
+.followup-pill {
+  padding: 0.12rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.followup-pill.priority-high {
+  color: #dc2626;
+  background: #fde8e8;
+}
+
+.followup-pill.priority-medium {
   color: #b45309;
-  background: #fffbeb;
-  border-color: #fde68a;
+  background: #fef3c7;
 }
 
-.urgent-followup-badge.tone-neutral {
-  color: #4b5563;
-  background: #f3f4f6;
-  border-color: #e5e7eb;
+.followup-pill.priority-low {
+  color: #15803d;
+  background: #e7f6ec;
+}
+
+.followup-pill.status-pending {
+  color: #a16207;
+  background: #fef6dc;
+}
+
+.followup-pill.status-in-progress {
+  color: #1d4ed8;
+  background: #e0ebfd;
+}
+
+.followup-pill.status-completed {
+  color: #15803d;
+  background: #e7f6ec;
+}
+
+.followup-pill.status-cancelled {
+  color: #64748b;
+  background: #eef2f7;
 }
 
 .urgent-followups-message {
   margin: 0;
-  font-size: 0.85rem;
-  color: #6b7280;
+  font-size: 0.875rem;
+  color: #64748b;
 }
 
 .urgent-followups-error {
@@ -149,16 +220,17 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 0.5rem;
+  margin: 0;
   font-size: 0.85rem;
-  color: #b91c1c;
+  color: #c53030;
 }
 
 .urgent-followups-retry {
-  padding: 0.25rem 0.65rem;
-  border: 1px solid #b91c1c;
+  padding: 0.3rem 0.75rem;
+  border: 1px solid #c53030;
   border-radius: 6px;
   background: #fff;
-  color: #b91c1c;
+  color: #c53030;
   cursor: pointer;
 }
 
@@ -167,7 +239,7 @@
 .ai-copilot {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.6rem;
 }
 
 .ai-copilot-header {
@@ -180,24 +252,91 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.6rem;
-  height: 1.6rem;
-  border-radius: 6px;
-  background: #f3e8ff;
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 8px;
+  background: #e0ebfd;
   font-size: 0.85rem;
 }
 
 .ai-copilot-heading {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1.25rem;
   font-weight: 700;
+  color: #0f172a;
+}
+
+.ai-copilot-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-left: auto;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.ai-copilot-toggle-input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.ai-copilot-toggle-track {
+  position: relative;
+  width: 2.1rem;
+  height: 1.15rem;
+  border-radius: 999px;
+  background: #cbd5e1;
+  transition: background 0.15s ease;
+}
+
+.ai-copilot-toggle-thumb {
+  position: absolute;
+  top: 0.15rem;
+  left: 0.15rem;
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.15s ease;
+}
+
+.ai-copilot-toggle-input:checked + .ai-copilot-toggle-track {
+  background: #2563eb;
+}
+
+.ai-copilot-toggle-input:checked + .ai-copilot-toggle-track .ai-copilot-toggle-thumb {
+  transform: translateX(0.95rem);
+}
+
+.ai-copilot-toggle-input:focus-visible + .ai-copilot-toggle-track {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.ai-copilot-refresh {
+  padding: 0.25rem 0.65rem;
+  border: 1px solid #c9dbf7;
+  border-radius: 6px;
+  background: #fff;
+  color: #2563eb;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ai-copilot-refresh:hover {
+  background: #eef4fd;
 }
 
 .ai-copilot-divider {
   width: 100%;
   border: none;
-  border-top: 1px solid #e5e7eb;
-  margin: 0.25rem 0;
+  border-top: 1px solid #e2e8f0;
+  margin: 0;
 }
 
 .ai-copilot-list {
@@ -212,11 +351,11 @@
 .ai-copilot-item {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
-  padding: 0.7rem 0.8rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  background: #fff;
+  gap: 0.25rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid #dbe4f0;
+  border-radius: 10px;
+  background: #f5f8fd;
 }
 
 .ai-copilot-label {
@@ -224,52 +363,35 @@
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: #7c3aed;
+  color: #2563eb;
 }
 
 .ai-copilot-title {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 600;
-  color: #111827;
+  color: #0f172a;
 }
 
 .ai-copilot-text {
   margin: 0;
-  font-size: 0.85rem;
-  color: #374151;
+  font-size: 0.875rem;
+  color: #334155;
 }
 
 .ai-copilot-meta {
-  font-size: 0.75rem;
-  color: #6b7280;
-}
-
-.ai-copilot-message {
-  margin: 0;
-  font-size: 0.85rem;
-  font-style: italic;
-  color: #6b7280;
-}
-
-@media (max-width: 600px) {
-  .urgent-followup-item {
-    flex-wrap: wrap;
-  }
-
-  .urgent-followup-badge {
-    margin-left: 1.6rem;
-  }
+  font-size: 0.78rem;
+  color: #64748b;
 }
 
 .ai-copilot-actions {
   display: flex;
   justify-content: flex-end;
   gap: 0.5rem;
-  margin-top: 0.4rem;
+  margin-top: 0.35rem;
 }
 
 .ai-copilot-button {
-  padding: 0.3rem 0.75rem;
+  padding: 0.35rem 0.85rem;
   border-radius: 6px;
   font-size: 0.8rem;
   font-weight: 600;
@@ -282,45 +404,45 @@
 }
 
 .ai-copilot-button.secondary {
-  border: 1px solid #d1d5db;
+  border: 1px solid #cbd5e1;
   background: #fff;
-  color: #374151;
+  color: #334155;
 }
 
 .ai-copilot-button.secondary:hover:not(:disabled) {
-  background: #f9fafb;
+  background: #f1f5f9;
 }
 
 .ai-copilot-button.primary {
-  border: 1px solid #4f46e5;
-  background: #4f46e5;
+  border: 1px solid #2563eb;
+  background: #2563eb;
   color: #fff;
 }
 
 .ai-copilot-button.primary:hover:not(:disabled) {
-  background: #4338ca;
+  background: #1d4ed8;
 }
 
 .ai-copilot-approved {
-  margin: 0.4rem 0 0;
+  margin: 0.35rem 0 0;
   font-size: 0.8rem;
   font-weight: 600;
   color: #15803d;
 }
 
-.ai-copilot-refresh {
-  margin-left: auto;
-  padding: 0.2rem 0.6rem;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  background: #fff;
-  color: #4b5563;
-  font-size: 0.75rem;
-  font-weight: 600;
-  cursor: pointer;
+.ai-copilot-message {
+  margin: 0;
+  font-size: 0.875rem;
+  font-style: italic;
+  color: #64748b;
 }
 
-.ai-copilot-refresh:hover {
-  background: #f9fafb;
-  color: #111827;
+@media (max-width: 600px) {
+  .urgent-followup-item {
+    flex-wrap: wrap;
+  }
+
+  .urgent-followup-badge {
+    margin-left: 1.8rem;
+  }
 }

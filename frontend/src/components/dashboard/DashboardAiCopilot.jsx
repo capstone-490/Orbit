@@ -9,7 +9,9 @@ function DashboardAiCopilot({
   actions,
   actionsLoading,
   aiStatus,
+  aiEnabled,
   suggestions,
+  onToggleAi,
   onApprove,
   onDismiss,
   onRefresh,
@@ -36,6 +38,14 @@ function DashboardAiCopilot({
   }
 
   const renderBody = () => {
+    if (!aiEnabled) {
+      return (
+        <p className="ai-copilot-message">
+          AI suggestions are off. Turn them on to get suggested next steps for urgent follow-ups.
+        </p>
+      )
+    }
+
     if (actionsLoading || aiStatus === 'loading') {
       return (
         <p className="ai-copilot-message" role="status">
@@ -45,13 +55,13 @@ function DashboardAiCopilot({
     }
 
     if (aiStatus === 'disabled') {
-      return <p className="ai-copilot-message">AI suggestions are turned off.</p>
+      return <p className="ai-copilot-message">AI suggestions are not set up for this workspace.</p>
     }
 
     if (aiStatus === 'unavailable') {
       return (
         <p className="ai-copilot-message">
-          AI suggestions are unavailable right now. Your priority tasks are still up to date.
+          AI suggestions are unavailable right now. Your urgent follow-ups are still up to date.
         </p>
       )
     }
@@ -113,16 +123,33 @@ function DashboardAiCopilot({
         <h2 id="ai-copilot-title" className="ai-copilot-heading">
           AI Copilot
         </h2>
-        {!actionsLoading && (aiStatus === 'available' || aiStatus === 'unavailable') && (
-          <button
-            type="button"
-            className="ai-copilot-refresh"
-            onClick={onRefresh}
-            aria-label="Refresh AI suggestions"
-          >
-            ↻ Refresh
-          </button>
-        )}
+        <label className="ai-copilot-toggle">
+          <input
+            type="checkbox"
+            role="switch"
+            className="ai-copilot-toggle-input"
+            aria-checked={aiEnabled}
+            checked={aiEnabled}
+            onChange={(event) => onToggleAi(event.target.checked)}
+            aria-label="AI suggestions"
+          />
+          <span className="ai-copilot-toggle-track" aria-hidden="true">
+            <span className="ai-copilot-toggle-thumb" />
+          </span>
+          <span className="ai-copilot-toggle-text">{aiEnabled ? 'On' : 'Off'}</span>
+        </label>
+        {aiEnabled &&
+          !actionsLoading &&
+          (aiStatus === 'available' || aiStatus === 'unavailable') && (
+            <button
+              type="button"
+              className="ai-copilot-refresh"
+              onClick={onRefresh}
+              aria-label="Refresh AI suggestions"
+            >
+              ↻ Refresh
+            </button>
+          )}
       </div>
       <hr className="ai-copilot-divider" />
       {actionError && (
