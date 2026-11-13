@@ -1,11 +1,9 @@
 import { FiCheck } from 'react-icons/fi'
 
-function BookingSteps({ currentStep }) {
-  const steps = [
-    { number: 1, title: 'Select Type' },
-    { number: 2, title: 'Date & Time' },
-    { number: 3, title: 'Details' },
-  ]
+const DEFAULT_TITLES = ['Select Type', 'Date & Time', 'Details']
+
+function BookingSteps({ currentStep, titles = DEFAULT_TITLES }) {
+  const steps = titles.map((title, index) => ({ number: index + 1, title }))
 
   return (
     <div className="booking-steps">
