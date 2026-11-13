@@ -2,6 +2,8 @@ import '../../styles/DashboardTasks.css'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
+export const API_BASE_URL = import.meta.env.VITE_API_URL
+
 function DashboardTasks({ priorityTasks, onTaskUpdated }) {
   const [updatingTaskIds, setUpdatingTaskIds] = useState(() => new Set())
   const [updateError, setUpdateError] = useState('')
@@ -46,7 +48,7 @@ function DashboardTasks({ priorityTasks, onTaskUpdated }) {
     setUpdateError('')
 
     try {
-      const response = await fetch(`http://localhost:8001/api/v1/advisors/tasks/${taskId}`, {
+      const response = await fetch(`${API_BASE_URL}/advisors/tasks/${taskId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

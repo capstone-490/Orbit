@@ -4,6 +4,8 @@ import '@testing-library/jest-dom/vitest'
 import { MemoryRouter } from 'react-router-dom'
 import DashboardTasks from '../../components/dashboard/DashboardTasks'
 
+export const API_BASE_URL = import.meta.env.VITE_API_URL
+
 const renderDashboardTasks = (props) =>
   render(
     <MemoryRouter>
@@ -119,7 +121,7 @@ describe('DashboardTasks Component', () => {
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(
-        'http://localhost:8001/api/v1/advisors/tasks/1',
+        `${API_BASE_URL}/advisors/tasks/1`,
         expect.objectContaining({
           method: 'PATCH',
           body: JSON.stringify({ completed: true }),
