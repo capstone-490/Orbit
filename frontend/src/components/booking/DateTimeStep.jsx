@@ -15,6 +15,9 @@ function DateTimeStep({
   setSelectedTime,
   onBack,
   onContinue,
+  meetingName = 'Introduction Meeting',
+  duration = 45,
+  backLabel = 'Back to Session Type',
 }) {
   const [availableTimes, setAvailableTimes] = useState([])
   const [loadingTimes, setLoadingTimes] = useState(false)
@@ -49,7 +52,7 @@ function DateTimeStep({
 
         <p>
           <span className="meeting-dot"></span>
-          Introduction Meeting · 45 min consultation
+          {meetingName} · {duration} min consultation
         </p>
       </div>
 
@@ -124,7 +127,7 @@ function DateTimeStep({
       <div className="date-time-actions">
         <button type="button" className="back-button" onClick={onBack}>
           <FiArrowLeft />
-          Back to Session Type
+          {backLabel}
         </button>
 
         <button

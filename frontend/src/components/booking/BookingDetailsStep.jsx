@@ -8,15 +8,20 @@ import {
   FiShield,
   FiUser,
 } from 'react-icons/fi'
+import BookingConfirmationModal from './BookingConfirmationModal'
 
 function BookingDetailsStep({
   selectedType,
+  meetingName,
+  duration = 45,
   selectedDate,
   selectedTime,
   advisor,
   onBack,
   onChangeBooking,
+  onBookingComplete,
 }) {
+  const [isConfirmed, setIsConfirmed] = useState(false)
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -36,6 +41,7 @@ function BookingDetailsStep({
 
   const handleSubmit = (event) => {
     event.preventDefault()
+    setIsConfirmed(true)
   }
 
   const formattedDate = selectedDate
@@ -47,8 +53,9 @@ function BookingDetailsStep({
       })
     : ''
 
-  const meetingName =
-    selectedType === 'follow-up' ? 'Follow-up Consultation' : 'Introduction Meeting'
+  const consultationName =
+    meetingName ??
+    (selectedType === 'follow-up' ? 'Follow-up Consultation' : 'Introduction Meeting')
 
   return (
     <div className="booking-details-content">
@@ -58,7 +65,9 @@ function BookingDetailsStep({
 
           <div>
             <span>CONSULTATION</span>
-            <p>{meetingName} (45 min)</p>
+            <p>
+              {consultationName} ({duration} min)
+            </p>
           </div>
         </div>
 
@@ -203,6 +212,20 @@ function BookingDetailsStep({
           </button>
         </div>
       </form>
+      {isConfirmed && (
+        <BookingConfirmationModal
+          meetingName={consultationName}
+          duration={duration}
+          formattedDate={formattedDate}
+          selectedTime={selectedTime}
+          advisorName={`${advisor.firstName} ${advisor.lastName}`}
+          email={formData.email}
+          onDone={() => {
+            setIsConfirmed(false)
+            onBookingComplete?.()
+          }}
+        />
+      )}
     </div>
   )
 }

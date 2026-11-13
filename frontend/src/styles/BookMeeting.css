@@ -998,3 +998,367 @@
     justify-content: center;
   }
 }
+
+/* ---------- Advisory Stage picker (Continue My Financial Sessions) ---------- */
+
+.advisory-stage-content {
+  padding-top: 24px;
+}
+
+.advisory-stage-heading h2 {
+  margin: 0;
+  color: #172033;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.advisory-stage-heading p {
+  margin: 6px 0 0;
+  color: #778197;
+  font-size: 12px;
+}
+
+.advisory-stage-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  margin: 18px 0 0;
+  padding: 0;
+  border: none;
+}
+
+/* Hidden on screen but still read by screen readers and usable with the keyboard */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.advisory-stage-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  box-sizing: border-box;
+  text-align: left;
+  background: #ffffff;
+  border: 1px solid #e1e5ed;
+  border-radius: 10px;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.advisory-stage-option:hover {
+  border-color: #8da1f5;
+}
+
+.advisory-stage-option:has(input:focus-visible) {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(79, 104, 232, 0.2);
+}
+
+/* 1px less padding keeps the row the same size with the 2px border */
+.advisory-stage-option.selected {
+  padding: 13px 15px;
+  border: 2px solid #4567ec;
+  background: #f5f7ff;
+}
+
+.stage-icon {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e1e5ed;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #5f6470;
+}
+
+.stage-icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+.advisory-stage-option.selected .stage-icon {
+  border-color: #c9d4fb;
+  background: #e8edff;
+  color: #3f5fe7;
+}
+
+.stage-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.stage-badge {
+  padding: 3px 7px;
+  border-radius: 5px;
+  background: #eef1f6;
+  color: #5f6470;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.advisory-stage-option.selected .stage-badge {
+  background: #dce5ff;
+  color: #3559df;
+}
+
+.stage-title {
+  color: #172033;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.stage-duration {
+  margin-left: -4px;
+  color: #9ca3af;
+  font-size: 11px;
+}
+
+.stage-radio {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: 1.5px solid #c4cad5;
+  border-radius: 50%;
+  color: #ffffff;
+}
+
+.advisory-stage-option.selected .stage-radio {
+  border-color: #4567ec;
+  background: #4567ec;
+}
+
+.stage-radio svg {
+  width: 11px;
+  height: 11px;
+}
+
+/* Keeps longer step names like "Client Details" on one line */
+.booking-step p {
+  white-space: nowrap;
+}
+
+@media (max-width: 750px) {
+  .advisory-stage-option {
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .advisory-stage-option.selected {
+    padding: 11px;
+  }
+}
+
+/* ---------- Booking confirmation pop-up ---------- */
+
+.confirmation-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(3px);
+  animation: confirmation-fade-in 0.2s ease;
+}
+
+.confirmation-modal {
+  width: 100%;
+  max-width: 460px;
+  padding: 32px 28px 26px;
+  box-sizing: border-box;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid #dce3f3;
+  border-radius: 17px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.22);
+  animation: confirmation-pop-in 0.25s ease;
+}
+
+.confirmation-icon {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  background: #e7f8ee;
+  color: #16a34a;
+  box-shadow: 0 0 0 8px #f3fcf6;
+}
+
+.confirmation-icon svg {
+  width: 26px;
+  height: 26px;
+}
+
+.confirmation-modal h2 {
+  margin: 0;
+  color: #172033;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.confirmation-subtitle {
+  margin: 8px 0 0;
+  color: #697386;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.confirmation-details {
+  margin-top: 22px;
+  padding: 6px 16px;
+  text-align: left;
+  border: 1px solid #dce3f3;
+  border-radius: 12px;
+  background: #f8faff;
+}
+
+.confirmation-row {
+  display: grid;
+  grid-template-columns: 16px 90px 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 0;
+  border-bottom: 1px solid #e8edf6;
+}
+
+.confirmation-row:last-child {
+  border-bottom: none;
+}
+
+.confirmation-row svg {
+  width: 15px;
+  height: 15px;
+  color: #4f68e8;
+}
+
+.confirmation-row span {
+  color: #697386;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.confirmation-row strong {
+  color: #172033;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.confirmation-email {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 13px 15px;
+  text-align: left;
+  border: 1px solid #cfe0ff;
+  border-radius: 10px;
+  background: #f2f6ff;
+}
+
+.confirmation-email svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: #3f5fe7;
+}
+
+.confirmation-email p {
+  margin: 0;
+  color: #475569;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.confirmation-email strong {
+  color: #172033;
+  overflow-wrap: anywhere;
+}
+
+.confirmation-done-button {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 22px;
+  border: none;
+  border-radius: 8px;
+  background: #050505;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.confirmation-done-button:hover {
+  background: #1c1c1c;
+}
+
+.confirmation-done-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(79, 104, 232, 0.35);
+}
+
+@keyframes confirmation-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes confirmation-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 750px) {
+  .confirmation-modal {
+    padding: 26px 20px 20px;
+  }
+
+  .confirmation-row {
+    grid-template-columns: 16px 1fr;
+  }
+
+  .confirmation-row strong {
+    grid-column: 2;
+  }
+}
