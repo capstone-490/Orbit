@@ -6,6 +6,7 @@ requires-python = ">=3.14"
 dependencies = [
     "alembic>=1.20.0",
     "asyncpg>=0.32.0",
+    "cryptography>=50.0.2",
     "email-validator>=2.3.0",
     "fastapi[standard]>=0.143.0",
     "prometheus-client>=0.26.0",
@@ -15,6 +16,13 @@ dependencies = [
     "pydantic-settings>=2.15.0",
     "resend>=2.52.0",
     "sqlalchemy>=2.1.4",
+    "google-api-core>=2.44.0",
+    "google-api-python-client>=2.201.0",
+    "google-apps-meet>=0.5.2",
+    "google-auth>=2.62.1",
+    "google-auth-httplib2>=0.4.4",
+    "google-auth-oauthlib>=1.5.0",
+    "googleapis-common-protos>=1.76.0",
 ]
 
 [dependency-groups]
@@ -69,6 +77,10 @@ explicit_package_bases = true
 mypy_path = "."
 packages = ["app", "scripts", "tests"]
 exclude = ["^.venv/"]
+
+[[tool.mypy.overrides]]
+module = ["google_auth_oauthlib.*", "googleapiclient.*", "httplib2"]
+ignore_missing_imports = true
 
 [tool.ruff.lint.isort]
 known-first-party = ["app", "scripts"]
