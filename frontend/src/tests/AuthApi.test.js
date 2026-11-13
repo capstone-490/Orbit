@@ -74,11 +74,8 @@ describe('registerAdvisor', () => {
 
     await expect(registerAdvisor(advisor)).resolves.toEqual(responseData)
 
-<<<<<<< HEAD
+
     expect(fetchMock).toHaveBeenCalledWith(`${API_BASE_URL}/auth/register`, {
-=======
-    expect(fetchMock).toHaveBeenCalledWith('http://localhost:8001/api/v1/auth/register', {
->>>>>>> c626015 (fix tests, organize routes after combining db)
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
