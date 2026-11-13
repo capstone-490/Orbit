@@ -207,7 +207,30 @@ def test_update_task_status_persists_and_returns_updated_task(mock_db):
     query, params = cursor.execute.call_args.args
     assert "UPDATE tasks" in query
     assert "SET status = %s" in query
-    assert params == ("IN_PROGRESS", 1)
+    assert "advisor_id = %s" in query
+    assert params == ("IN_PROGRESS", 1, 2)
+    connection.commit.assert_called_once()
+
+
+def test_update_task_status_requires_authentication():
+    app.dependency_overrides.pop(get_current_advisor, None)
+
+    response = client.patch("/advisors/tasks/1", json={"status": "IN_PROGRESS"})
+
+    assert response.status_code == 401
+
+
+def test_update_task_status_does_not_update_another_advisors_task(mock_db):
+    connection, cursor = mock_db
+    cursor.fetchone.return_value = None
+
+    response = client.patch("/advisors/tasks/1", json={"status": "COMPLETED"})
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Task not found"}
+    query, params = cursor.execute.call_args.args
+    assert "WHERE id = %s AND advisor_id = %s" in query
+    assert params == ("COMPLETED", 1, 2)
     connection.commit.assert_called_once()
 
 
@@ -245,7 +268,9 @@ def test_update_task_status_reports_database_errors(mock_db):
     response = client.patch("/advisors/tasks/1", json={"status": "TO_DO"})
 
     assert response.status_code == 500
-    assert response.json() == {"detail": "database unavailable"}
+    assert response.json() == {
+        "detail": "An internal database error occurred. Please try again later."
+    }
 
 
 @pytest.mark.parametrize(

@@ -55,8 +55,11 @@ def get_advisor_tasks(advisor_id: int):
         with get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
             cur.execute(query, (advisor_id,))
             return cur.fetchall()
-    except PsycopgError as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except PsycopgError:
+        raise HTTPException(
+            status_code=500,
+            detail="An internal database error occurred. Please try again later.",
+        )
 
 
 @router.post("/{advisor_id}/tasks", status_code=201)
@@ -107,8 +110,11 @@ def create_advisor_task(
             )
             created_task = cur.fetchone()
             conn.commit()
-    except PsycopgError as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except PsycopgError:
+        raise HTTPException(
+            status_code=500,
+            detail="An internal database error occurred. Please try again later.",
+        )
 
     if not created_task:
         raise HTTPException(status_code=404, detail="Client not found for advisor")
@@ -117,12 +123,15 @@ def create_advisor_task(
 
 
 @router.patch("/tasks/{task_id}")
-def update_task_status(task_id: int, body: TaskStatusUpdate):
-
+def update_task_status(
+    task_id: int,
+    body: TaskStatusUpdate,
+    advisor: dict[str, int] = Depends(get_current_advisor),
+):
     query = """
         UPDATE tasks
         SET status = %s
-        WHERE id = %s
+        WHERE id = %s AND advisor_id = %s
         RETURNING
             id,
             advisor_id AS "advisorId",
@@ -134,11 +143,14 @@ def update_task_status(task_id: int, body: TaskStatusUpdate):
     """
     try:
         with get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
-            cur.execute(query, (body.status, task_id))
+            cur.execute(query, (body.status, task_id, advisor["id"]))
             updated_task = cur.fetchone()
             conn.commit()
-    except PsycopgError as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except PsycopgError:
+        raise HTTPException(
+            status_code=500,
+            detail="An internal database error occurred. Please try again later.",
+        )
 
     if not updated_task:
         raise HTTPException(status_code=404, detail="Task not found")
