@@ -6,17 +6,26 @@ import BookingSteps from '../../components/booking/BookingSteps'
 afterEach(cleanup)
 
 describe('BookingSteps', () => {
-  const renderSteps = (currentStep) => {
-    const { container } = render(<BookingSteps currentStep={currentStep} />)
+  const renderSteps = (currentStep, titles) => {
+    const { container } = render(<BookingSteps currentStep={currentStep} titles={titles} />)
     return container.querySelectorAll('.booking-step')
   }
 
   it('shows all booking steps', () => {
-    renderSteps(1)
+    renderSteps(1, ['Select Type', 'Date & Time', 'Details'])
 
     for (const title of ['Select Type', 'Date & Time', 'Details']) {
       expect(screen.getByText(title)).toBeInTheDocument()
     }
+  })
+
+  it('shows custom step titles when provided', () => {
+    renderSteps(1, ['Advisory Stage', 'Date & Time', 'Client Details'])
+
+    for (const title of ['Advisory Stage', 'Date & Time', 'Client Details']) {
+      expect(screen.getByText(title)).toBeInTheDocument()
+    }
+    expect(screen.queryByText('Select Type')).not.toBeInTheDocument()
   })
 
   it('marks the first step as active', () => {
