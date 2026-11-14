@@ -53,7 +53,7 @@ def get_advisor_tasks(advisor_id: int):
     """
     try:
         with (
-            get_connection(advisor_id, "Advisor") as conn,
+            get_connection(str(advisor_id), "Advisor") as conn,
             conn.cursor(row_factory=dict_row) as cur,
         ):
             cur.execute(query, (advisor_id,))
