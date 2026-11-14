@@ -541,6 +541,7 @@ def test_briefing_notes_meeting_not_found(mock_db):
     assert response.json()["detail"] == "Meeting not found."
     assert mock_db.execute.call_count == 1
 
+
 def test_briefing_notes_requires_authentication(mock_db):
     unauthenticated_client = TestClient(app)
 
