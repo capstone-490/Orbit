@@ -27,7 +27,7 @@ def get_meeting_briefing_notes(
             """
             SELECT m.client_id
             FROM meetings AS m
-            JOIN clients AS c ON c.id = m.client_id
+            JOIN t_clients AS c ON c.id = m.client_id
             WHERE m.id = %(meeting_id)s
               AND m.advisor_id = %(advisor_id)s
               AND c.advisor_id = %(advisor_id)s
@@ -51,7 +51,7 @@ def get_meeting_briefing_notes(
         cur.execute(
             """
             SELECT id, title, content, created_at, updated_at
-            FROM notes
+            FROM t_notes
             WHERE client_id = %(client_id)s
             ORDER BY created_at DESC, id DESC
             """,

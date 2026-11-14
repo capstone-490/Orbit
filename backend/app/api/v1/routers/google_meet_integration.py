@@ -93,7 +93,7 @@ def authorize():
         value=f"{state}:{flow.code_verifier}",
         max_age=OAUTH_STATE_MAX_AGE,
         httponly=True,
-        secure=os.environ.get("ORBIT_COOKIE_SECURE", "false").lower() == "true",
+        secure=os.environ.get("COOKIE_SECURE", "false").lower() == "true",
         samesite="lax",
         path=router.prefix,
     )
@@ -244,7 +244,7 @@ def book_meeting(advisor_id: int, booking: BookingCreate):
 def _get_or_create_booking_client(advisor_id: int, booking: BookingCreate) -> int:
     with get_connection() as conn, conn.cursor() as cur:
         cur.execute(
-            "SELECT id, advisor_id FROM clients WHERE lower(email) = lower(%s)",
+            "SELECT id, advisor_id FROM t_clients WHERE lower(email) = lower(%s)",
             (booking.email,),
         )
         row = cur.fetchone()
@@ -260,7 +260,7 @@ def _get_or_create_booking_client(advisor_id: int, booking: BookingCreate) -> in
         try:
             cur.execute(
                 """
-                    INSERT INTO clients (name, email, phone_number, advisor_id)
+                    INSERT INTO t_clients (name, email, phone_number, advisor_id)
                     VALUES (%s, %s, %s, %s)
                     RETURNING id
                     """,
@@ -318,7 +318,7 @@ def _schedule_calendar_event(
     # isn't this advisor's.
     with get_connection() as conn, conn.cursor() as cur:
         cur.execute(
-            "SELECT 1 FROM clients WHERE id = %s AND advisor_id = %s",
+            "SELECT 1 FROM t_clients WHERE id = %s AND advisor_id = %s",
             (client_id, advisor_id),
         )
         if cur.fetchone() is None:
@@ -348,7 +348,7 @@ def _schedule_calendar_event(
     with get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             """
-                INSERT INTO meetings (
+                INSERT INTO t_meetings (
                     advisor_id,
                     client_id,
                     meeting_date,

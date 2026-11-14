@@ -67,7 +67,7 @@ def test_ab_route_has_variant_label():
 def test_metrics_endpoint_is_not_counted():
     response = client.get("/metrics")
     assert response.status_code == 200
-    assert 'route="/api/v1/metrics"' not in api_metrics_text()
+    assert 'route="/metrics"' not in api_metrics_text()
 
 
 def test_latency_histogram_records_requests():

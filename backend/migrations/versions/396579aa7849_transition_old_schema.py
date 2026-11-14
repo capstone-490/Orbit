@@ -348,8 +348,9 @@ def upgrade() -> None:
             client_id BIGINT
                 REFERENCES t_clients(id) ON DELETE SET NULL,
             task_title VARCHAR(255) NOT NULL,
+            status VARCHAR(16) NOT NULL DEFAULT 'TO_DO'
+                CHECK (status IN ('TO_DO', 'IN_PROGRESS', 'IN_REVIEW', 'COMPLETED')),
             due_date DATE NOT NULL,
-            completed BOOLEAN DEFAULT FALSE,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
     """)

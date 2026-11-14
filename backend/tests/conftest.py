@@ -10,6 +10,7 @@ from contextlib import ExitStack
 import pytest
 from fastapi.testclient import TestClient
 
+from app.auth import get_current_advisor
 from app.dependencies.deps import get_db
 from app.main import create_application
 
@@ -24,7 +25,11 @@ def app(db_session):
     def override_get_db():
         yield db_session
 
+    def override_get_current_advisor():
+        return {"id": 2}
+
     application.dependency_overrides[get_db] = override_get_db
+    application.dependency_overrides[get_current_advisor] = override_get_current_advisor
     yield application
 
     application.dependency_overrides.clear()
@@ -50,7 +55,6 @@ def api_client(app):
 
 @pytest.fixture
 def client(api_client, request):
-    """Default client using DEFAULT_API_VERSION (supports indirect parametrize)."""
     version = getattr(request, "param", DEFAULT_API_VERSION)
     return api_client(version)
 

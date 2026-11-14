@@ -70,11 +70,11 @@ def create_advisor_task(
 
     query = """
         WITH inserted AS (
-            INSERT INTO tasks (advisor_id, client_id, task_title, due_date)
+            INSERT INTO t_tasks (advisor_id, client_id, task_title, due_date)
             SELECT %s, %s, %s, %s
             WHERE %s::BIGINT IS NULL OR EXISTS (
                 SELECT 1
-                FROM clients
+                FROM t_clients
                 WHERE id = %s AND advisor_id = %s
             )
             RETURNING id, advisor_id, client_id, task_title, due_date, status, created_at
@@ -87,9 +87,9 @@ def create_advisor_task(
             inserted.status,
             inserted.created_at AS "createdAt",
             inserted.client_id AS "clientId",
-            clients.name AS "clientName"
+            t_clients.name AS "clientName"
         FROM inserted
-        LEFT JOIN clients ON clients.id = inserted.client_id;
+        LEFT JOIN t_clients ON t_clients.id = inserted.client_id;
     """
     try:
         with get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
@@ -161,7 +161,7 @@ def get_advisor_schedule(advisor_id: int):
             c.completion_status AS "completionStatus",
             c.location_or_platform AS "locationOrPlatform"
         FROM t_consultations c
-        JOIN clients cl ON c.client_id = cl.id
+        JOIN t_clients cl ON c.client_id = cl.id
         WHERE c.advisor_id = %s
         ORDER BY c.meeting_time ASC;
     """

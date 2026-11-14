@@ -38,8 +38,8 @@ class Settings(BaseSettings):
     ORBIT_AUTH_SECRET: str = ""
     ORBIT_ANONYMIZATION_SECRET: str = INSECURE_DEFAULT_ANONYMIZATION_SECRET
 
-    VITE_API_URL: str
-    FRONTEND_URL: str = "http://localhost:5173"
+    VITE_API_URL: str = "/api/v1"
+    FRONTEND_URL: str = "http://127.0.0.1:5173"
 
     # Public URL of this FastAPI backend, used to build absolute URLs to its routes
     BACKEND_URL: str
