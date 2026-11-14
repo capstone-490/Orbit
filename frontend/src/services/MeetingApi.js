@@ -61,3 +61,30 @@ export async function rescheduleMeeting(meetingId, newStart) {
 
   return response.json()
 }
+
+export async function getMeetingBriefingNotes(meetingId) {
+  requirePositiveId(meetingId, 'meetingId')
+
+  const response = await fetch(`${API_BASE_URL}/meetings/${meetingId}/briefing-notes`, {
+    credentials: 'include',
+  })
+
+  if (!response.ok) {
+    let message = 'Unable to load briefing notes. Please try again.'
+
+    try {
+      const data = await response.json()
+      if (typeof data.detail === 'string') {
+        message = data.detail
+      }
+    } catch {
+      // Keep the fallback message.
+    }
+
+    const error = new Error(message)
+    error.status = response.status
+    throw error
+  }
+
+  return response.json()
+}
