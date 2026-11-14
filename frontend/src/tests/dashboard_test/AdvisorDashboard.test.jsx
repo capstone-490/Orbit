@@ -64,7 +64,7 @@ describe('AdvisorDashboard', () => {
               taskTitle: 'Call client',
               clientName: 'Sarah Smith',
               dueDate: '2026-10-25',
-              completed: false,
+              status: 'TO_DO',
             },
           ],
         })

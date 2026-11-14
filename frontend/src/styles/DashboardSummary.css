@@ -7,6 +7,7 @@
 .dashboard-summary span.summary-card {
   display: flex;
   flex-direction: column;
+  align-items: stretch;
   flex: 1;
   min-width: 200px;
   padding: 20px;
@@ -17,11 +18,31 @@
   box-sizing: border-box;
 }
 
-.card-header {
+.dashboard-summary .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 8px;
+  text-align: left;
+}
+
+.dashboard-summary .card-title {
+  margin-right: auto;
+  text-align: left;
+}
+
+.dashboard-summary .card-icon {
+  margin-left: auto;
+}
+
+.dashboard-summary .card-body {
+  display: block;
+  width: 100%;
+  text-align: left;
+}
+
+.dashboard-summary .card-body > span {
+  text-align: left;
 }
 
 .card-title {
@@ -46,6 +67,6 @@
 }
 
 .card-body .secondary-value.alert {
-  color: #dc3545;
+  color: #3591dc;
   font-weight: 600;
 }

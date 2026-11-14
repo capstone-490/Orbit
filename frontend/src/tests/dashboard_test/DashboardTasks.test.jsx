@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { useState } from 'react'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import '@testing-library/jest-dom/vitest'
 import { MemoryRouter } from 'react-router-dom'
@@ -10,6 +11,18 @@ const renderDashboardTasks = (props) =>
       <DashboardTasks {...props} />
     </MemoryRouter>,
   )
+
+function StatefulDashboardTasks({ tasks }) {
+  const [currentTasks, setCurrentTasks] = useState(tasks)
+
+  const handleTaskUpdated = (updatedTask) => {
+    setCurrentTasks((current) =>
+      current.map((task) => (task.id === updatedTask.id ? { ...task, ...updatedTask } : task)),
+    )
+  }
+
+  return <DashboardTasks priorityTasks={currentTasks} onTaskUpdated={handleTaskUpdated} />
+}
 
 afterEach(() => {
   cleanup()
@@ -25,28 +38,28 @@ describe('DashboardTasks Component', () => {
       taskTitle: 'Follow up after Corporate Introduction',
       clientName: 'Sarah Smith',
       dueDate: '2026-10-16',
-      completed: false,
+      status: 'TO_DO',
     },
     {
       id: 2,
       taskTitle: 'Schedule Insurance Education (FC3)',
       clientName: 'Elena Rostova',
       dueDate: '2026-10-17',
-      completed: false,
+      status: 'TO_DO',
     },
     {
       id: 3,
       taskTitle: 'Prepare personalized financial plan',
       clientName: 'Marcus Sterling',
       dueDate: '2026-10-20',
-      completed: false,
+      status: 'TO_DO',
     },
     {
       id: 4,
       taskTitle: 'Extra Task Beyond Limit',
       clientName: 'David Vance',
       dueDate: '2026-10-30',
-      completed: false,
+      status: 'TO_DO',
     },
   ]
 
@@ -77,6 +90,20 @@ describe('DashboardTasks Component', () => {
     expect(screen.getByText('No client assigned')).toBeInTheDocument()
   })
 
+  test('displays the task workflow status', () => {
+    renderDashboardTasks({
+      priorityTasks: [
+        { ...mockTasks[0], status: 'TO_DO' },
+        { ...mockTasks[1], status: 'IN_PROGRESS' },
+        { ...mockTasks[2], status: 'IN_REVIEW' },
+      ],
+    })
+
+    expect(screen.getByText('To do')).toBeInTheDocument()
+    expect(screen.getByText('In progress')).toBeInTheDocument()
+    expect(screen.getByText('In review')).toBeInTheDocument()
+  })
+
   test('flags past due incomplete tasks as overdue', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-10-16T12:00:00'))
@@ -93,28 +120,31 @@ describe('DashboardTasks Component', () => {
     expect(document.querySelectorAll('.task-item.overdue')).toHaveLength(1)
   })
 
-  test('does not flag completed past due tasks as overdue', () => {
+  test('does not display completed past due tasks', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-10-16T12:00:00'))
 
     renderDashboardTasks({
-      priorityTasks: [{ ...mockTasks[0], dueDate: '2026-10-15', completed: true }],
+      priorityTasks: [{ ...mockTasks[0], dueDate: '2026-10-15', status: 'COMPLETED' }],
     })
 
-    expect(screen.getByText('OCT 15')).toBeInTheDocument()
+    expect(screen.queryByText(mockTasks[0].taskTitle)).not.toBeInTheDocument()
     expect(document.querySelector('.task-item.overdue')).not.toBeInTheDocument()
   })
 
   test('updates task completion through the API and notifies the parent', async () => {
-    const updatedTask = { ...mockTasks[0], completed: true }
+    const updatedTask = { ...mockTasks[0], status: 'COMPLETED' }
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => updatedTask,
     })
-    const onTaskUpdated = vi.fn()
     vi.stubGlobal('fetch', fetchMock)
 
-    renderDashboardTasks({ priorityTasks: mockTasks, onTaskUpdated })
+    render(
+      <MemoryRouter>
+        <StatefulDashboardTasks tasks={mockTasks} />
+      </MemoryRouter>,
+    )
     fireEvent.click(screen.getAllByRole('checkbox')[0])
 
     await waitFor(() => {
@@ -122,10 +152,12 @@ describe('DashboardTasks Component', () => {
         'http://localhost:8001/advisors/tasks/1',
         expect.objectContaining({
           method: 'PATCH',
-          body: JSON.stringify({ completed: true }),
+          credentials: 'include',
+          body: JSON.stringify({ status: 'COMPLETED' }),
         }),
       )
-      expect(onTaskUpdated).toHaveBeenCalledWith(updatedTask)
+      expect(screen.queryByText(mockTasks[0].taskTitle)).not.toBeInTheDocument()
+      expect(screen.getByText(mockTasks[3].taskTitle)).toBeInTheDocument()
     })
   })
 

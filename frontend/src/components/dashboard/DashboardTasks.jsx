@@ -1,6 +1,7 @@
 import '../../styles/DashboardTasks.css'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { isTaskCompleted, TASK_STATUSES } from '../../data/taskStatuses'
 
 function DashboardTasks({ priorityTasks, onTaskUpdated }) {
   const [updatingTaskIds, setUpdatingTaskIds] = useState(() => new Set())
@@ -21,7 +22,7 @@ function DashboardTasks({ priorityTasks, onTaskUpdated }) {
   }
 
   const isTaskOverdue = (item) => {
-    if (item.completed) return false
+    if (isTaskCompleted(item)) return false
 
     const dueDate = parseDueDate(item.dueDate)
     return dueDate !== null && getLocalDateKey(dueDate) < getLocalDateKey(new Date())
@@ -41,17 +42,18 @@ function DashboardTasks({ priorityTasks, onTaskUpdated }) {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()
   }
   // Handle checking/unchecking the task
-  const handleCheckboxChange = async (taskId, completed) => {
+  const handleCheckboxChange = async (taskId, status) => {
     setUpdatingTaskIds((current) => new Set(current).add(taskId))
     setUpdateError('')
 
     try {
       const response = await fetch(`http://localhost:8001/advisors/tasks/${taskId}`, {
         method: 'PATCH',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ completed }),
+        body: JSON.stringify({ status }),
       })
 
       if (!response.ok) {
@@ -82,28 +84,37 @@ function DashboardTasks({ priorityTasks, onTaskUpdated }) {
       </div>
       <hr className="task-divider" />
       {updateError && <p role="alert">{updateError}</p>}
-      {priorityTasks.slice(0, 3).map((item) => {
-        const overdue = isTaskOverdue(item)
+      {priorityTasks
+        .filter((item) => !isTaskCompleted(item))
+        .slice(0, 3)
+        .map((item) => {
+          const overdue = isTaskOverdue(item)
+          const status = TASK_STATUSES.find(({ value }) => value === item.status)
 
-        return (
-          <div key={item.id} className={`task-item${overdue ? ' overdue' : ''}`}>
-            <input
-              type="checkbox"
-              className="task-checkbox"
-              checked={Boolean(item.completed)}
-              disabled={updatingTaskIds.has(item.id)}
-              onChange={(event) => handleCheckboxChange(item.id, event.target.checked)}
-            />
-            <div className="task-details">
-              <span className="task-title">{item.taskTitle}</span>
-              <span className="task-client">{item.clientName || 'No client assigned'}</span>
+          return (
+            <div key={item.id} className={`task-item${overdue ? ' overdue' : ''}`}>
+              <input
+                type="checkbox"
+                className="task-checkbox"
+                checked={isTaskCompleted(item)}
+                disabled={updatingTaskIds.has(item.id)}
+                onChange={(event) =>
+                  handleCheckboxChange(item.id, event.target.checked ? 'COMPLETED' : 'TO_DO')
+                }
+              />
+              <div className="task-details">
+                <span className="task-title">{item.taskTitle}</span>
+                <span className="task-client">{item.clientName || 'No client assigned'}</span>
+                <span className={`task-status status-${status?.value.toLowerCase() || 'unknown'}`}>
+                  {status?.label || 'Unknown'}
+                </span>
+              </div>
+              <span className={`task-due-date${overdue ? ' overdue' : ''}`}>
+                {overdue ? `OVERDUE · ${formatDueDate(item.dueDate)}` : formatDueDate(item.dueDate)}
+              </span>
             </div>
-            <span className={`task-due-date${overdue ? ' overdue' : ''}`}>
-              {overdue ? `OVERDUE · ${formatDueDate(item.dueDate)}` : formatDueDate(item.dueDate)}
-            </span>
-          </div>
-        )
-      })}
+          )
+        })}
     </div>
   )
 }

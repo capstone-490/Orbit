@@ -8,7 +8,6 @@ Create Date: 2026-11-07 21:19:49.250379
 
 from collections.abc import Sequence
 
-import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
@@ -19,21 +18,25 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    op.add_column(
-        "meetings",
-        sa.Column(
-            "duration_minutes",
-            sa.Integer(),
-            nullable=False,
-            server_default="30",
-        ),
-    )
+    op.execute("""
+        ALTER TABLE meetings
+        ADD COLUMN IF NOT EXISTS duration_minutes INTEGER NOT NULL DEFAULT 30;
 
-    op.create_check_constraint(
-        "ck_meetings_duration_positive",
-        "meetings",
-        "duration_minutes > 0",
-    )
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1
+                FROM pg_constraint
+                WHERE conname = 'ck_meetings_duration_positive'
+                  AND conrelid = 'meetings'::regclass
+            ) THEN
+                ALTER TABLE meetings
+                ADD CONSTRAINT ck_meetings_duration_positive
+                CHECK (duration_minutes > 0);
+            END IF;
+        END
+        $$;
+    """)
 
 
 def downgrade() -> None:
