@@ -8,8 +8,8 @@ from fastapi.testclient import TestClient
 from psycopg import Error as PsycopgError
 
 from app.api.v1.routers.tasks import build_task_response, router
-from app.services.sla_cal import UrgencyState, compute_urgency
 from app.auth import get_current_advisor
+from app.services.sla_cal import UrgencyState, compute_urgency
 
 app = FastAPI()
 app.include_router(router)

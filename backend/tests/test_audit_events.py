@@ -223,7 +223,7 @@ def test_client_insert_wrong_user_type(db_session):
         """)
     )
     with pytest.raises(IntegrityError) as exc_info:
-        result = db_session.execute(
+        db_session.execute(
             text("""
                 INSERT INTO clients (
                     name,
