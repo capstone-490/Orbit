@@ -11,11 +11,15 @@ from google.auth.exceptions import RefreshError
 from googleapiclient.errors import HttpError
 
 from app.api.v1.routers import google_meet_integration as gmi
+from app.api.versions import APIVersion, api_prefix
 from app.auth import create_access_token
+from app.core.config import settings
 from app.core.security.token_cipher import decrypt_token, encrypt_token
 from app.main import app
 
-PREFIX = "/google-meet-integration"
+API_VERSION = APIVersion.V1
+PREFIX = f"{api_prefix(API_VERSION)}/google-meet-integration"
+
 
 # Stored credentials are encrypted at rest
 CREDS_ROW = (encrypt_token(json.dumps({"token": "t"})),)
@@ -112,7 +116,7 @@ def test_authorize_redirects_to_google_and_sets_state_cookie(mock_flow):
         access_type="offline", prompt="consent"
     )
     assert mock_flow.flow.redirect_uri == (
-        f"{gmi.settings.BACKEND_URL}{PREFIX}/oauth2callback"
+        f"{settings.api_url(API_VERSION)}/google-meet-integration/oauth2callback"
     )
 
 
@@ -138,7 +142,10 @@ def test_callback_stores_credentials(mock_flow, mock_db):
         client.cookies.clear()
 
     assert response.status_code == 303
+    print("EXPECTED:", f"{PREFIX}/authorized")
+    print("ACTUAL:", response.headers["location"])
     assert response.headers["location"] == f"{PREFIX}/authorized"
+
     # The state cookie is cleared once it has been used
     assert f'{gmi.OAUTH_STATE_COOKIE}=""' in response.headers["set-cookie"]
 

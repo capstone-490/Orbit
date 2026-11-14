@@ -18,15 +18,12 @@ from googleapiclient.errors import HttpError
 from psycopg.errors import UniqueViolation
 from pydantic import AwareDatetime, BaseModel, EmailStr, Field
 
+from app.api.versions import APIVersion, api_prefix
 from app.auth import get_current_advisor
 from app.core.config import settings
-from app.core.security.token_cipher import (
-    InvalidToken,
-    decrypt_token,
-    encrypt_token,
-)
+from app.core.security.token_cipher import InvalidToken, decrypt_token, encrypt_token
 from app.dependencies.db import get_connection
-from app.logging_config import get_logger
+from app.observability.logging_config import get_logger
 
 logger = get_logger("google_meet_integration")
 
@@ -135,7 +132,10 @@ def oauth2callback(
 
     # Redirect so the one-time code leaves the address bar and a refresh
     # doesn't try to exchange it again.
-    response = RedirectResponse(router.url_path_for("authorized"), status_code=303)
+    response = RedirectResponse(
+        f"{api_prefix(APIVersion.V1)}{router.url_path_for('authorized')}",
+        status_code=303,
+    )
     response.delete_cookie(OAUTH_STATE_COOKIE, path=router.prefix)
     return response
 
@@ -449,7 +449,9 @@ def _build_flow(state: str | None = None, code_verifier: str | None = None) -> F
     # Google redirects back to this backend's oauth2callback route. It must
     # exactly match an authorized redirect URI on the OAuth client in the Google
     # Cloud Console, and Google requires an absolute URI, hence the backend host.
-    flow.redirect_uri = f"{settings.BACKEND_URL}{router.url_path_for('oauth2callback')}"
+    flow.redirect_uri = (
+        f"{settings.api_url(APIVersion.V1)}{router.url_path_for('oauth2callback')}"
+    )
     return flow
 
 

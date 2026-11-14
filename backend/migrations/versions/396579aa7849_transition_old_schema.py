@@ -121,6 +121,8 @@ def upgrade() -> None:
             duration_minutes INTEGER NOT NULL DEFAULT 30
                 CHECK (duration_minutes > 0),
             completion_status meeting_status NOT NULL DEFAULT 'Scheduled',
+            meeting_uri TEXT,
+            meeting_code TEXT,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
@@ -135,6 +137,31 @@ def upgrade() -> None:
                 ON DELETE CASCADE
         );
     """)
+
+    # One Google account per advisor. credentials holds Credentials.to_json()
+    # encrypted with GOOGLE_TOKEN_ENCRYPTION_KEY (Fernet), never plain text.
+    # calendar_id is the secondary calendar Orbit creates for meetings; NULL
+    # until the first meeting is scheduled.
+    op.execute("""
+        CREATE TABLE IF NOT EXISTS google_oauth_credentials (
+            advisor_id BIGINT PRIMARY KEY,
+            credentials TEXT NOT NULL,
+            calendar_id TEXT,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+            CONSTRAINT fk_google_oauth_credentials_advisor
+                FOREIGN KEY (advisor_id)
+                REFERENCES t_advisors(id)
+                ON DELETE CASCADE
+        );
+    """)
+
+    op.execute("""
+            CREATE TRIGGER trg_google_oauth_credentials_updated_at
+            BEFORE UPDATE ON google_oauth_credentials
+            FOR EACH ROW EXECUTE FUNCTION trigger_set_updated_at();
+        """)
 
     # ---------------------------------------------------------
     # 6. t_goals

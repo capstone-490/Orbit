@@ -5,6 +5,8 @@ from typing import Literal
 from pydantic import PostgresDsn, computed_field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.api.versions import APIVersion, api_prefix
+
 INSECURE_DEFAULT_SECRET = "local-and-ci-test-only-secret-key"
 INSECURE_DEFAULT_ANONYMIZATION_SECRET = "Supercalifragilisticexpialidocious"
 # Valid Fernet key for local and CI only (base64 of a fixed 32-byte string)
@@ -36,10 +38,11 @@ class Settings(BaseSettings):
     ORBIT_AUTH_SECRET: str = ""
     ORBIT_ANONYMIZATION_SECRET: str = INSECURE_DEFAULT_ANONYMIZATION_SECRET
 
-    VITE_API_URL: str = "http://localhost:8001/api/v1"
+    VITE_API_URL: str
+    FRONTEND_URL: str = "http://localhost:5173"
 
     # Public URL of this FastAPI backend, used to build absolute URLs to its routes
-    BACKEND_URL: str = "http://localhost:8001"
+    BACKEND_URL: str
 
     # OAuth client downloaded from Google Cloud Console (never commit this file)
     GOOGLE_CLIENT_SECRETS_FILE: str = "credentials.json"
@@ -48,9 +51,6 @@ class Settings(BaseSettings):
     # Generate one with:
     # python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
     GOOGLE_TOKEN_ENCRYPTION_KEY: str = INSECURE_DEFAULT_GOOGLE_TOKEN_KEY
-
-    # Frontend
-    FRONTEND_URL: str = "http://localhost:5173"
 
     # Email configuration
     RESEND_API_KEY: str | None = None
@@ -114,6 +114,9 @@ class Settings(BaseSettings):
                 path=self.DB_NAME,
             )
         )
+
+    def api_url(self, version: APIVersion) -> str:
+        return f"{self.BACKEND_URL.rstrip('/')}{api_prefix(version)}"
 
     @computed_field  # type: ignore[prop-decorator]
     @property
