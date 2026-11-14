@@ -1,6 +1,6 @@
 //Above 50% AI generated
 
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Calendar from '../../pages/Calendar'
@@ -135,5 +135,37 @@ describe('Calendar', () => {
     calendarApi.getAppointments.mockImplementation(serve([raw({ id: '1' }), raw({ id: '2' })]))
     render(<Calendar />)
     expect(await screen.findByText(/2 Booked this month/)).toBeInTheDocument()
+  })
+
+  it('navigates between months with Previous, Next and Today', async () => {
+    render(<Calendar />)
+    expect(screen.getByRole('heading', { name: 'November 2026' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+    expect(screen.getByRole('heading', { name: 'December 2026' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Previous' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Previous' }))
+    expect(screen.getByRole('heading', { name: 'October 2026' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Today' }))
+    expect(screen.getByRole('heading', { name: 'November 2026' })).toBeInTheDocument()
+    await screen.findByText('Nothing scheduled.')
+  })
+
+  it('shows the week range and moves one week at a time', async () => {
+    render(<Calendar />)
+    fireEvent.click(screen.getByRole('tab', { name: 'Week' }))
+    expect(screen.getByRole('tab', { name: 'Week' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('heading', { name: /Nov 8 . Nov 14, 2026/ })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+    expect(screen.getByRole('heading', { name: /Nov 15 . Nov 21, 2026/ })).toBeInTheDocument()
+    await screen.findByText('Nothing scheduled.')
+  })
+  it('shows "No scheduled appointments" on an empty day', async () => {
+    render(<Calendar />)
+    fireEvent.click(screen.getByRole('tab', { name: 'Day' }))
+    expect(await screen.findByText('No scheduled appointments')).toBeInTheDocument()
   })
 })
