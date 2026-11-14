@@ -1,9 +1,8 @@
 # Below 50% AI-generated
 import pytest
-
 from sqlalchemy import text
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.exc import DBAPIError
+from sqlalchemy.exc import DBAPIError, IntegrityError
+
 
 @pytest.fixture
 def audit_event(db_session):
@@ -41,15 +40,14 @@ def test_delete_audit_event_is_rejected(
     db_session,
     audit_event,
 ):
-    with pytest.raises(DBAPIError) as exc:
-        with db_session.begin_nested():
-            db_session.execute(
-                text("""
+    with pytest.raises(DBAPIError) as exc, db_session.begin_nested():
+        db_session.execute(
+            text("""
                     DELETE FROM audit_events
                     WHERE id = :event_id
                 """),
-                {"event_id": audit_event},
-            )
+            {"event_id": audit_event},
+        )
 
     assert exc.value.orig.sqlstate == "42501"
 
@@ -69,16 +67,15 @@ def test_update_audit_event_is_rejected(
     db_session,
     audit_event,
 ):
-    with pytest.raises(DBAPIError) as exc:
-        with db_session.begin_nested():
-            db_session.execute(
-                text("""
+    with pytest.raises(DBAPIError) as exc, db_session.begin_nested():
+        db_session.execute(
+            text("""
                     UPDATE audit_events
                     SET action_type = 'DELETE'
                     WHERE id = :event_id
                 """),
-                {"event_id": audit_event},
-            )
+            {"event_id": audit_event},
+        )
 
     assert exc.value.orig.sqlstate == "42501"
 

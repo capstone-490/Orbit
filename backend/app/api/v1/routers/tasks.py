@@ -1,9 +1,9 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from psycopg import Error as PsycopgError
 
+from app.auth import get_current_advisor
 from app.classes.task import TaskCreate, TaskResponse
 from app.dependencies.db import get_connection
-from app.auth import get_current_advisor
 from app.services.sla_cal import (
     URGENCY_COLOR,
     compute_urgency,
@@ -12,13 +12,15 @@ from app.services.sla_cal import (
     get_timezone,
 )
 
-
-
 router = APIRouter()
 
 
 @router.get("/tasks", response_model=list[TaskResponse])
-def get_tasks(client_id: int, user_timezone: str = "UTC", advisor: dict[str, int] = Depends(get_current_advisor)):
+def get_tasks(
+    client_id: int,
+    user_timezone: str = "UTC",
+    advisor: dict[str, int] = Depends(get_current_advisor),
+):
 
     try:
         timezone_zi = get_timezone(user_timezone)
@@ -60,7 +62,11 @@ def get_tasks(client_id: int, user_timezone: str = "UTC", advisor: dict[str, int
 
 
 @router.post("/tasks", response_model=TaskResponse, status_code=201)
-def create_task(task: TaskCreate, user_timezone: str = "UTC", advisor: dict[str, int] = Depends(get_current_advisor)):
+def create_task(
+    task: TaskCreate,
+    user_timezone: str = "UTC",
+    advisor: dict[str, int] = Depends(get_current_advisor),
+):
 
     try:
         # Validate timezone-aware datetimes
