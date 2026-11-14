@@ -17,7 +17,7 @@ def mock_db(monkeypatch):
     cursor = MagicMock()
     connection.__enter__.return_value = connection
     connection.cursor.return_value.__enter__.return_value = cursor
-    monkeypatch.setattr(advisors, "get_connection", lambda: connection)
+    monkeypatch.setattr(advisors, "get_connection", lambda user_id=None, user_type="System": connection)
     return connection, cursor
 
 

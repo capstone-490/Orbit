@@ -33,7 +33,7 @@ def mock_db(monkeypatch):
     conn.__enter__.return_value = conn
     conn.cursor.return_value.__enter__.return_value = cursor
 
-    monkeypatch.setattr(meetings, "get_connection", lambda: conn)
+    monkeypatch.setattr(meetings, "get_connection", lambda user_id=None, user_type="System": conn)
 
     return cursor
 
