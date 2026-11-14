@@ -229,3 +229,7 @@ node_modules/
 dist/
 coverage/
 *.lcov
+
+#Google Meet Integration
+credentials.json
+token.json

@@ -1,0 +1,101 @@
+'Below 50% Ai-generated
+@startuml Advisor_Tenant_Identity_Model
+
+skinparam style strictuml
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam Shadowing false
+skinparam classAttributeIconSize 0
+skinparam nodesep 55
+skinparam ranksep 65
+
+top to bottom direction
+
+title Orbit - Tenant, Identity and Personas Model
+
+package "Identity and Organization" {
+
+    entity Identity {
+        id : UUID
+        issuer : Text
+        subject : Text
+        status : Text
+        is_platform_operator : Boolean
+    }
+
+    entity Organization {
+        id : UUID
+        name : Text
+        status : Text
+    }
+
+    entity Membership {
+        id : UUID
+        status : Text
+    }
+
+    Identity ||--o{ Organization : owns >
+    Identity ||--o{ Membership : joins >
+    Organization ||--o{ Membership : has >
+}
+
+package "Business Personas and Groups" {
+
+    entity AdvisorProfile {
+        id : UUID
+        license_number : Text
+        timezone : Text
+        booking_enabled : Boolean
+    }
+
+    entity StaffProfile {
+        id : UUID
+        department : Text
+        job_title : Text
+    }
+
+    entity Group {
+        id : UUID
+        name : Text
+        status : Text
+    }
+
+    entity GroupMember {
+        id : UUID
+        status : Text
+    }
+
+    Membership ||--o| AdvisorProfile : has >
+    Membership |o--o{ AdvisorProfile : supervises >
+    Membership ||--o| StaffProfile : has >
+
+    Organization ||--o{ Group : has >
+    Membership |o--o{ Group : creates >
+    Group ||--o{ GroupMember : contains >
+    Membership ||--o{ GroupMember : joins >
+    Membership ||--o{ GroupMember : adds >
+}
+
+package "Resource Containers and Agents" {
+
+    entity Subscription {
+        id : UUID
+        name : Text
+        purpose : Text
+        is_default : Boolean
+        status : Text
+    }
+
+    entity Agent {
+        id : UUID
+        name : Text
+        agent_type : Text
+        status : Text
+    }
+
+    Organization ||--|{ Subscription : has >
+    Subscription ||--o{ Agent : home for >
+    Membership ||--o{ Agent : creates >
+}
+
+@enduml

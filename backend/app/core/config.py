@@ -6,6 +6,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 INSECURE_DEFAULT_SECRET = "local-and-ci-test-only-secret-key"
 INSECURE_DEFAULT_ANONYMIZATION_SECRET = "Supercalifragilisticexpialidocious"
+# Valid Fernet key for local and CI only (base64 of a fixed 32-byte string)
+INSECURE_DEFAULT_GOOGLE_TOKEN_KEY = "bG9jYWwtYW5kLWNpLW9ubHktZ29vZ2xlLWtleS0zMmI="
 from pathlib import Path
 
 
@@ -22,6 +24,17 @@ class Settings(BaseSettings):
     SECRET_KEY: str = INSECURE_DEFAULT_SECRET
     ORBIT_ANONYMIZATION_SECRET: str = INSECURE_DEFAULT_ANONYMIZATION_SECRET
     VITE_API_URL: str = "http://localhost:8001"
+
+    # Public URL of this FastAPI backend, used to build absolute URLs to its routes
+    BACKEND_URL: str = "http://localhost:8001"
+
+    # OAuth client downloaded from Google Cloud Console (never commit this file)
+    GOOGLE_CLIENT_SECRETS_FILE: str = "credentials.json"
+
+    # Fernet key that encrypts advisors' Google OAuth tokens in the database.
+    # Generate one with:
+    # python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+    GOOGLE_TOKEN_ENCRYPTION_KEY: str = INSECURE_DEFAULT_GOOGLE_TOKEN_KEY
 
     # Frontend
     FRONTEND_URL: str = "http://localhost:5173"
@@ -57,6 +70,7 @@ class Settings(BaseSettings):
         if self.ENVIRONMENT in ("staging", "production") and (
             self.SECRET_KEY == INSECURE_DEFAULT_SECRET
             or self.ORBIT_ANONYMIZATION_SECRET == INSECURE_DEFAULT_ANONYMIZATION_SECRET
+            or self.GOOGLE_TOKEN_ENCRYPTION_KEY == INSECURE_DEFAULT_GOOGLE_TOKEN_KEY
             or self.VITE_API_URL == "http://localhost:8001"
         ):
             raise ValueError("Environment variables must be set in staging/production")
