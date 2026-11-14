@@ -62,7 +62,7 @@ def upgrade() -> None:
         END;
         $$ LANGUAGE plpgsql;
 
-        CREATE TABLE feature_flags (
+        CREATE TABLE IF NOT EXISTS feature_flags (
             name VARCHAR(127) PRIMARY KEY,
             enabled BOOLEAN NOT NULL DEFAULT FALSE,
             rollout_percent INTEGER NOT NULL DEFAULT 0
@@ -72,9 +72,23 @@ def upgrade() -> None:
             updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
         );
 
-        CREATE TRIGGER trg_feature_flags_updated_at
-        BEFORE UPDATE ON feature_flags
-        FOR EACH ROW EXECUTE FUNCTION trigger_set_updated_at();
+        ALTER TABLE feature_flags
+            ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT now();
+
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1
+                FROM pg_trigger
+                WHERE tgname = 'trg_feature_flags_updated_at'
+                  AND tgrelid = 'feature_flags'::regclass
+            ) THEN
+                CREATE TRIGGER trg_feature_flags_updated_at
+                BEFORE UPDATE ON feature_flags
+                FOR EACH ROW EXECUTE FUNCTION trigger_set_updated_at();
+            END IF;
+        END
+        $$;
         """)
 
     op.execute("""
