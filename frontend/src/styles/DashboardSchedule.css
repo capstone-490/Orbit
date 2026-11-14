@@ -24,7 +24,6 @@
   border-radius: 0;
 }
 
-
 .dashboard-schedule .schedule-header h2 {
   margin: 0;
   padding: 0;
@@ -34,7 +33,6 @@
   line-height: 1.4;
   color: #1a1a1a;
 }
-
 
 .schedule-item {
   display: flex;
@@ -181,7 +179,6 @@
   cursor: default;
 }
 
-
 .reschedule-button {
   color: #0052cc;
   border-color: #cbdaf6;
@@ -215,7 +212,6 @@
   font-weight: 600;
   white-space: nowrap;
 }
-
 
 @media (max-width: 900px) {
   .schedule-item {
@@ -262,5 +258,3 @@
     padding: 7px 9px;
   }
 }
-
-

@@ -1,4 +1,4 @@
-import { FiUsers, FiCalendar, FiClipboard, FiZap, FiClock } from 'react-icons/fi'
+import { FiCalendar, FiClipboard, FiClock, FiUsers, FiZap } from 'react-icons/fi'
 import '../../styles/DashboardSummary.css'
 
 const isTaskOverdue = (task, now) => {
@@ -14,9 +14,7 @@ const parseMeetingTime = (meeting) => {
   if (!meeting.time) return null
 
   const safeString =
-    typeof meeting.time === 'string'
-      ? meeting.time.replace(' ', 'T')
-      : meeting.time
+    typeof meeting.time === 'string' ? meeting.time.replace(' ', 'T') : meeting.time
 
   const meetingTime = new Date(safeString)
 
@@ -38,10 +36,7 @@ const isUpcomingMeeting = (meeting, now) => {
 const formatMeetingTime = (timestamp) => {
   if (!timestamp) return 'No upcoming meetings'
 
-  const safeString =
-    typeof timestamp === 'string'
-      ? timestamp.replace(' ', 'T')
-      : timestamp
+  const safeString = typeof timestamp === 'string' ? timestamp.replace(' ', 'T') : timestamp
 
   const date = new Date(safeString)
 
@@ -58,8 +53,7 @@ const formatMeetingTime = (timestamp) => {
 function DashboardSummary({ dashboardSummaryData, tasks, schedule, clients }) {
   const now = new Date()
 
-  const clientCount =
-    clients?.length ?? dashboardSummaryData.totalClient
+  const clientCount = clients?.length ?? dashboardSummaryData.totalClient
 
   const clientNewCount =
     clients?.filter((client) => {
@@ -68,9 +62,7 @@ function DashboardSummary({ dashboardSummaryData, tasks, schedule, clients }) {
       if (!rawTimestamp) return false
 
       const isoString =
-        typeof rawTimestamp === 'string'
-          ? rawTimestamp.replace(' ', 'T')
-          : rawTimestamp
+        typeof rawTimestamp === 'string' ? rawTimestamp.replace(' ', 'T') : rawTimestamp
 
       const clientDate = new Date(isoString)
 
@@ -83,13 +75,9 @@ function DashboardSummary({ dashboardSummaryData, tasks, schedule, clients }) {
 
   const upcomingMeetings = schedule
     ?.filter((meeting) => isUpcomingMeeting(meeting, now))
-    .sort(
-      (first, second) =>
-        parseMeetingTime(first) - parseMeetingTime(second),
-    )
+    .sort((first, second) => parseMeetingTime(first) - parseMeetingTime(second))
 
-  const meetingCount =
-    upcomingMeetings?.length ?? dashboardSummaryData.nbMeetings
+  const meetingCount = upcomingMeetings?.length ?? dashboardSummaryData.nbMeetings
 
   const nextMeeting = upcomingMeetings
     ? upcomingMeetings.length > 0
@@ -100,14 +88,10 @@ function DashboardSummary({ dashboardSummaryData, tasks, schedule, clients }) {
       : 'No upcoming meetings'
 
   const pendingTaskCount =
-    tasks?.filter((task) => !task.completed).length ??
-    dashboardSummaryData.pendingTasks
+    tasks?.filter((task) => !task.completed).length ?? dashboardSummaryData.pendingTasks
 
   const overdueTaskCount = tasks
-    ? tasks.filter(
-        (task) =>
-          !task.completed && isTaskOverdue(task, now),
-      ).length
+    ? tasks.filter((task) => !task.completed && isTaskOverdue(task, now)).length
     : typeof dashboardSummaryData.overdueTasks === 'number'
       ? dashboardSummaryData.overdueTasks
       : 0
@@ -129,9 +113,7 @@ function DashboardSummary({ dashboardSummaryData, tasks, schedule, clients }) {
           <div className="card-body">
             <span className="primary-value">{clientCount}</span>
 
-            <span className="secondary-value clients-status">
-              +{clientNewCount} this month
-            </span>
+            <span className="secondary-value clients-status">+{clientNewCount} this month</span>
           </div>
         </div>
 
@@ -203,4 +185,3 @@ function DashboardSummary({ dashboardSummaryData, tasks, schedule, clients }) {
 }
 
 export default DashboardSummary
-

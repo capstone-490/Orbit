@@ -45,9 +45,7 @@ function BookingDetailsStep({
 
   const consultationName =
     meetingName ??
-    (selectedType === 'follow-up'
-      ? 'Follow-up Consultation'
-      : 'Introduction Meeting')
+    (selectedType === 'follow-up' ? 'Follow-up Consultation' : 'Introduction Meeting')
 
   const formattedDate = selectedDate
     ? selectedDate.toLocaleDateString('en-US', {
@@ -113,17 +111,11 @@ function BookingDetailsStep({
         </button>
       </div>
 
-      <form
-        className="booking-details-form"
-        onSubmit={handleSubmit}
-      >
+      <form className="booking-details-form" onSubmit={handleSubmit}>
         <div className="details-heading">
           <div>
             <h2>Your Contact Details</h2>
-            <p>
-              Enter your information to receive secure meeting
-              access credentials.
-            </p>
+            <p>Enter your information to receive secure meeting access credentials.</p>
           </div>
           <span>STEP 3 OF 3</span>
         </div>
@@ -190,8 +182,7 @@ function BookingDetailsStep({
 
           <div className="form-group full-width">
             <label htmlFor="notes">
-              Anything you'd like the advisor to know?{' '}
-              <em>(Optional)</em>
+              Anything you'd like the advisor to know? <em>(Optional)</em>
             </label>
             <textarea
               id="notes"
@@ -206,9 +197,8 @@ function BookingDetailsStep({
         <div className="security-notice">
           <FiShield />
           <p>
-            Your contact details will be used to process your
-            booking. Please refer to the applicable privacy
-            policy for information about data handling.
+            Your contact details will be used to process your booking. Please refer to the
+            applicable privacy policy for information about data handling.
           </p>
         </div>
 
@@ -219,24 +209,13 @@ function BookingDetailsStep({
         )}
 
         <div className="details-actions">
-          <button
-            type="button"
-            className="back-button"
-            onClick={onBack}
-            disabled={isSubmitting}
-          >
+          <button type="button" className="back-button" onClick={onBack} disabled={isSubmitting}>
             <FiArrowLeft />
             Back to Date & Time
           </button>
 
-          <button
-            type="submit"
-            className="confirm-booking-button"
-            disabled={isSubmitting}
-          >
-            {isSubmitting
-              ? 'Scheduling...'
-              : 'Confirm & Schedule Meeting'}
+          <button type="submit" className="confirm-booking-button" disabled={isSubmitting}>
+            {isSubmitting ? 'Scheduling...' : 'Confirm & Schedule Meeting'}
             <FiArrowRight />
           </button>
         </div>

@@ -122,7 +122,6 @@
   color: #168a5b;
 }
 
-
 .dashboard-summary .meetings-icon {
   background: #eaf4ff;
   color: #3685d8;
@@ -142,7 +141,6 @@
   color: #e33c53;
 }
 
-
 .dashboard-summary .fna-icon {
   background: #f3eaff;
   color: #9b4ee4;
@@ -151,7 +149,6 @@
 .dashboard-summary .fna-status {
   color: #7846d8;
 }
-
 
 @media (max-width: 1250px) {
   .dashboard-summary {
@@ -197,5 +194,3 @@
     font-size: 10px;
   }
 }
-
-

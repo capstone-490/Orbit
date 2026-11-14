@@ -1,7 +1,7 @@
 import '../../styles/DashboardTasks.css'
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
 import { FiCheckCircle } from 'react-icons/fi'
+import { Link } from 'react-router-dom'
 
 function DashboardTasks({ priorityTasks, onTaskUpdated }) {
   const [updatingTaskIds, setUpdatingTaskIds] = useState(() => new Set())
@@ -120,4 +120,3 @@ function DashboardTasks({ priorityTasks, onTaskUpdated }) {
 }
 
 export default DashboardTasks
-

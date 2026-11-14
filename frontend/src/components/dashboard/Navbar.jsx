@@ -48,14 +48,30 @@ function Navbar({ user }) {
         className={`navbar-content ${menuOpen ? 'navbar-content-open' : ''}`}
       >
         <div className="navbar-links">
-          <NavLink to="/dashboard" onClick={closeMenu}>Dashboard</NavLink>
-          <NavLink to="/clients" onClick={closeMenu}>Clients</NavLink>
-          <NavLink to="/calendar" onClick={closeMenu}>Calendar</NavLink>
-          <NavLink to="/follow-ups" onClick={closeMenu}>Follow-Ups</NavLink>
-          <NavLink to="/tasks" onClick={closeMenu}>Tasks</NavLink>
-          <NavLink to="/documents" onClick={closeMenu}>Documents</NavLink>
-          <NavLink to="/ai-review" onClick={closeMenu}>AI Review</NavLink>
-          <NavLink to="/activity" onClick={closeMenu}>Activity</NavLink>
+          <NavLink to="/dashboard" onClick={closeMenu}>
+            Dashboard
+          </NavLink>
+          <NavLink to="/clients" onClick={closeMenu}>
+            Clients
+          </NavLink>
+          <NavLink to="/calendar" onClick={closeMenu}>
+            Calendar
+          </NavLink>
+          <NavLink to="/follow-ups" onClick={closeMenu}>
+            Follow-Ups
+          </NavLink>
+          <NavLink to="/tasks" onClick={closeMenu}>
+            Tasks
+          </NavLink>
+          <NavLink to="/documents" onClick={closeMenu}>
+            Documents
+          </NavLink>
+          <NavLink to="/ai-review" onClick={closeMenu}>
+            AI Review
+          </NavLink>
+          <NavLink to="/activity" onClick={closeMenu}>
+            Activity
+          </NavLink>
         </div>
 
         <div className="navbar-profile">

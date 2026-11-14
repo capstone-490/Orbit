@@ -1,7 +1,7 @@
 import '../../styles/DashboardSchedule.css'
 import { useState } from 'react'
-import BriefingNotesModal from './BriefingNotesModal'
 import { FiCalendar } from 'react-icons/fi'
+import BriefingNotesModal from './BriefingNotesModal'
 import RescheduleMeetingModal from './RescheduleMeetingModal'
 
 const formatShortTime = (timestamp) => {
@@ -58,10 +58,10 @@ function DashboardSchedule({ scheduleData, onMeetingRescheduled }) {
   return (
     <div className="dashboard-schedule">
       {/* Schedule Header */}
-       <div className="schedule-header">
-           <FiCalendar className="schedule-header-icon" />
-           <h2>Today's Schedule & Consultations</h2>
-       </div>
+      <div className="schedule-header">
+        <FiCalendar className="schedule-header-icon" />
+        <h2>Today's Schedule & Consultations</h2>
+      </div>
 
       {scheduleData.map((item, index) => {
         const overdue = isMeetingOverdue(item)
@@ -88,9 +88,7 @@ function DashboardSchedule({ scheduleData, onMeetingRescheduled }) {
 
               <div className="item-agenda"> Agenda: {item.agenda}</div>
 
-              <div className={`item-status${overdue ? ' overdue-status' : ''}`}>
-                {statusLabel}
-              </div>
+              <div className={`item-status${overdue ? ' overdue-status' : ''}`}>{statusLabel}</div>
 
               {item.locationOrPlatform && (
                 <div className="item-location">{item.locationOrPlatform}</div>
@@ -142,4 +140,3 @@ function DashboardSchedule({ scheduleData, onMeetingRescheduled }) {
 }
 
 export default DashboardSchedule
-
