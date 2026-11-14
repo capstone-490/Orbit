@@ -1,8 +1,9 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from psycopg import Error as PsycopgError
 
 from app.classes.task import TaskCreate, TaskResponse
 from app.dependencies.db import get_connection
+from app.auth import get_current_advisor
 from app.services.sla_cal import (
     URGENCY_COLOR,
     compute_urgency,
@@ -11,16 +12,18 @@ from app.services.sla_cal import (
     get_timezone,
 )
 
+
+
 router = APIRouter()
 
 
-@router.get("/api/v1/data/tasks", response_model=list[TaskResponse])
-def get_tasks(client_id: int, user_timezone: str = "UTC"):
+@router.get("/tasks", response_model=list[TaskResponse])
+def get_tasks(client_id: int, user_timezone: str = "UTC", advisor: dict[str, int] = Depends(get_current_advisor)):
 
     try:
         timezone_zi = get_timezone(user_timezone)
 
-        with get_connection() as conn:
+        with get_connection(advisor["id"], "Advisor") as conn:
             rows = conn.execute(
                 """
                 SELECT
@@ -32,10 +35,12 @@ def get_tasks(client_id: int, user_timezone: str = "UTC"):
                     due_date,
                     last_contact_date
                 FROM tasks_advisor
-                WHERE client_id = %s
+                INNER JOIN clients c ON c.id = t.client_id
+                WHERE t.client_id = %s
+                  AND c.advisor_id = %s
                 ORDER BY due_date ASC
             """,
-                (client_id,),
+                (client_id, advisor["id"]),
             ).fetchall()
 
         tasks = []
@@ -54,8 +59,8 @@ def get_tasks(client_id: int, user_timezone: str = "UTC"):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/api/v1/data/tasks", response_model=TaskResponse, status_code=201)
-def create_task(task: TaskCreate, user_timezone: str = "UTC"):
+@router.post("/tasks", response_model=TaskResponse, status_code=201)
+def create_task(task: TaskCreate, user_timezone: str = "UTC", advisor: dict[str, int] = Depends(get_current_advisor)):
 
     try:
         # Validate timezone-aware datetimes
@@ -68,7 +73,7 @@ def create_task(task: TaskCreate, user_timezone: str = "UTC"):
 
         timezone_zi = get_timezone(user_timezone)
 
-        with get_connection() as conn:
+        with get_connection(advisor["id"], "Advisor") as conn:
             row = conn.execute(
                 """
                 INSERT INTO tasks_advisor (
@@ -81,6 +86,9 @@ def create_task(task: TaskCreate, user_timezone: str = "UTC"):
                 )
                 VALUES (%s, %s, %s, %s, %s,
                         COALESCE(%s, NOW()))
+                FROM clients c
+                WHERE c.id = %s
+                  AND c.advisor_id = %s
                 RETURNING
                     id,
                     title,
@@ -97,8 +105,15 @@ def create_task(task: TaskCreate, user_timezone: str = "UTC"):
                     task.status.value,
                     due_date,
                     last_contact_date,
+                    advisor["id"],
                 ),
             ).fetchone()
+
+            if row is None:
+                raise HTTPException(
+                    status_code=403,
+                    detail="No access to client",
+                )
 
         return build_task_response(row, timezone_zi)
 
