@@ -1,9 +1,19 @@
+.advisor-dashboard {
+  width: 100%;
+  padding: 24px 32px;
+  box-sizing: border-box;
+}
+
+.advisor-dashboard .dashboard-summary {
+  margin-bottom: 20px;
+}
+
 .dashboard-overview {
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-  gap: 1rem;
+  gap: 20px;
   box-sizing: border-box;
-  margin: 20px;
+  margin: 0;
 }
 
 .dashboard-card {
@@ -16,8 +26,23 @@
   box-sizing: border-box;
 }
 
+@media (max-width: 1024px) {
+  .advisor-dashboard {
+    padding: 20px 24px;
+  }
+}
+
 @media (max-width: 760px) {
+  .advisor-dashboard {
+    padding: 16px;
+  }
+
   .dashboard-overview {
     grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .dashboard-card {
+    padding: 16px;
   }
 }

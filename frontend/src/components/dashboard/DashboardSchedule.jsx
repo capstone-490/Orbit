@@ -1,5 +1,6 @@
 import '../../styles/DashboardSchedule.css'
 import { useState } from 'react'
+import { FiCalendar } from 'react-icons/fi'
 import BriefingNotesModal from './BriefingNotesModal'
 import RescheduleMeetingModal from './RescheduleMeetingModal'
 
@@ -56,7 +57,12 @@ function DashboardSchedule({ scheduleData, onMeetingRescheduled }) {
   const [meetingForBriefing, setMeetingForBriefing] = useState(null)
   return (
     <div className="dashboard-schedule">
-      <h2>Schedule & Consultations</h2>
+      {/* Schedule Header */}
+      <div className="schedule-header">
+        <FiCalendar className="schedule-header-icon" />
+        <h2>Today's Schedule & Consultations</h2>
+      </div>
+
       {scheduleData.map((item, index) => {
         const overdue = isMeetingOverdue(item)
         const statusLabel = getMeetingStatusLabel(item, overdue)
@@ -73,17 +79,22 @@ function DashboardSchedule({ scheduleData, onMeetingRescheduled }) {
               <div className="item-duration">{item.duration}</div>
               <div className="item-date">{formatShortDate(item.time)}</div>
             </span>
+
             <span className="meeting-details">
               <div className="item-client-name-category">
                 <span className="item-client-name">{item.clientName}</span>
                 <span className="item-category">{item.category}</span>
               </div>
+
               <div className="item-agenda"> Agenda: {item.agenda}</div>
+
               <div className={`item-status${overdue ? ' overdue-status' : ''}`}>{statusLabel}</div>
+
               {item.locationOrPlatform && (
                 <div className="item-location">{item.locationOrPlatform}</div>
               )}
             </span>
+
             <div className="schedule-actions">
               {item.id != null && (
                 <button
@@ -110,6 +121,7 @@ function DashboardSchedule({ scheduleData, onMeetingRescheduled }) {
           </div>
         )
       })}
+
       {meetingToReschedule && (
         <RescheduleMeetingModal
           meeting={meetingToReschedule}
