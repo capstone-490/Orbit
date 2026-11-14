@@ -541,7 +541,6 @@ def test_briefing_notes_meeting_not_found(mock_db):
     assert response.json()["detail"] == "Meeting not found."
     assert mock_db.execute.call_count == 1
 
-
 def test_briefing_notes_requires_authentication(mock_db):
     unauthenticated_client = TestClient(app)
 
@@ -549,6 +548,24 @@ def test_briefing_notes_requires_authentication(mock_db):
 
     assert response.status_code == 401
     mock_db.execute.assert_not_called()
+
+
+def test_get_briefing_notes_unauthorized_advisor(mock_db):
+    """Prevent advisors from accessing meetings they do not own."""
+    mock_db.fetchone.return_value = None
+
+    response = client.get("/meetings/10/briefing-notes")
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Meeting not found."
+
+    query, params = mock_db.execute.call_args.args
+
+    assert "m.advisor_id = %(advisor_id)s" in query
+    assert "c.advisor_id = %(advisor_id)s" in query
+    assert params["advisor_id"] == 1
+
+    mock_db.fetchall.assert_not_called()
 
 
 def test_briefing_notes_rejects_invalid_meeting_id(mock_db):
