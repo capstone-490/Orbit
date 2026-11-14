@@ -1,5 +1,6 @@
 import '../../styles/DashboardSchedule.css'
 import { useState } from 'react'
+import { FiCalendar } from 'react-icons/fi'
 import RescheduleMeetingModal from './RescheduleMeetingModal'
 
 const formatShortTime = (timestamp) => {
@@ -63,9 +64,15 @@ const getActionLabel = (item) => {
 
 function DashboardSchedule({ scheduleData, onMeetingRescheduled }) {
   const [meetingToReschedule, setMeetingToReschedule] = useState(null)
+
   return (
     <div className="dashboard-schedule">
-      <h2>Schedule & Consultations</h2>
+      {/* Schedule Header */}
+       <div className="schedule-header">
+           <FiCalendar className="schedule-header-icon" />
+           <h2>Today's Schedule & Consultations</h2>
+       </div>
+
       {scheduleData.map((item, index) => {
         const overdue = isMeetingOverdue(item)
         const statusLabel = getMeetingStatusLabel(item, overdue)
@@ -82,17 +89,24 @@ function DashboardSchedule({ scheduleData, onMeetingRescheduled }) {
               <div className="item-duration">{item.duration}</div>
               <div className="item-date">{formatShortDate(item.time)}</div>
             </span>
+
             <span className="meeting-details">
               <div className="item-client-name-category">
                 <span className="item-client-name">{item.clientName}</span>
                 <span className="item-category">{item.category}</span>
               </div>
+
               <div className="item-agenda"> Agenda: {item.agenda}</div>
-              <div className={`item-status${overdue ? ' overdue-status' : ''}`}>{statusLabel}</div>
+
+              <div className={`item-status${overdue ? ' overdue-status' : ''}`}>
+                {statusLabel}
+              </div>
+
               {item.locationOrPlatform && (
                 <div className="item-location">{item.locationOrPlatform}</div>
               )}
             </span>
+
             <div className="schedule-actions">
               <span className="action-button">{getActionLabel(item)}</span>
 
@@ -112,6 +126,7 @@ function DashboardSchedule({ scheduleData, onMeetingRescheduled }) {
           </div>
         )
       })}
+
       {meetingToReschedule && (
         <RescheduleMeetingModal
           meeting={meetingToReschedule}
@@ -124,3 +139,4 @@ function DashboardSchedule({ scheduleData, onMeetingRescheduled }) {
 }
 
 export default DashboardSchedule
+

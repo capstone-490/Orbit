@@ -1,11 +1,10 @@
 // Substantial AI assistance used; verified with frontend tests and production build.
-
 import { useState } from 'react'
 import { FiArrowRight } from 'react-icons/fi'
 import { useNavigate } from 'react-router-dom'
 import orbitLogo from '../assets/orbit-logo.png'
 import AdvisoryStageStep from '../components/booking/AdvisoryStageStep'
-import BookingDetailsStep from '../components/booking/BookingDetailsStep'
+import BookingDetailsStep from '../components/booking/BookingDetailsStep' 
 import BookingSteps from '../components/booking/BookingSteps'
 import BookingTabs from '../components/booking/BookingTabs'
 import DateTimeStep from '../components/booking/DateTimeStep'

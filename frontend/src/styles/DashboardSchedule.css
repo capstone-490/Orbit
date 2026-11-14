@@ -1,14 +1,40 @@
-.dashboard-schedule h2 {
-  margin-top: 0;
-  margin-bottom: 1rem;
-  padding-bottom: 8px;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #1a1a1a;
+.dashboard-schedule .schedule-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 0 10px;
+  margin-bottom: 12px;
+  background: transparent;
+  border: none;
   border-bottom: 1px solid #e9ecef;
+  border-radius: 0;
 }
 
-/* Meeting row */
+.dashboard-schedule .schedule-header-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  color: #3685d8;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+}
+
+
+.dashboard-schedule .schedule-header h2 {
+  margin: 0;
+  padding: 0;
+  border: none;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #1a1a1a;
+}
+
 
 .schedule-item {
   display: flex;
@@ -25,8 +51,6 @@
   border-color: #dc3545;
   background-color: #fff5f5;
 }
-
-/* Meeting date and time */
 
 .meeting-time {
   display: flex;
@@ -63,8 +87,6 @@
   color: #6c757d;
   font-size: 12px;
 }
-
-/* Meeting details */
 
 .meeting-details {
   display: flex;
@@ -125,8 +147,6 @@
   line-height: 1.4;
 }
 
-/* Meeting actions */
-
 .schedule-actions {
   display: flex;
   align-items: center;
@@ -136,8 +156,6 @@
   margin-left: auto;
   padding-left: 16px;
 }
-
-/* Existing View Details action — visual styling only */
 
 .action-button,
 .reschedule-button {
@@ -162,7 +180,6 @@
   cursor: default;
 }
 
-/* Reschedule action */
 
 .reschedule-button {
   color: #0052cc;
@@ -183,8 +200,6 @@
   outline-offset: 3px;
 }
 
-/* Retained for compatibility with existing styles */
-
 .full-blue {
   display: inline-flex;
   align-items: center;
@@ -200,7 +215,6 @@
   white-space: nowrap;
 }
 
-/* Responsive layout */
 
 @media (max-width: 900px) {
   .schedule-item {
@@ -216,6 +230,10 @@
 }
 
 @media (max-width: 480px) {
+  .dashboard-schedule .schedule-header h2 {
+    font-size: 14px;
+  }
+
   .schedule-item {
     align-items: flex-start;
     gap: 10px;
@@ -242,3 +260,5 @@
     padding: 7px 9px;
   }
 }
+
+

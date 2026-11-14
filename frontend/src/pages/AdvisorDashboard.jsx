@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import '../styles/AdvisorDashboard.css'
+import DashboardHeader from '../components/dashboard/DashboardHeader'
 import DashboardSchedule from '../components/dashboard/DashboardSchedule'
 import DashboardSummary from '../components/dashboard/DashboardSummary'
 import DashboardTasks from '../components/dashboard/DashboardTasks'
@@ -114,6 +115,7 @@ function AdvisorDashboard() {
 
   return (
     <main className="advisor-dashboard">
+      <DashboardHeader />
       <DashboardSummary
         dashboardSummaryData={dashboardData.dashboardSummaryData}
         tasks={tasks}

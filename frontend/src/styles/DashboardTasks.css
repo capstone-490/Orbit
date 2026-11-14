@@ -1,10 +1,55 @@
-.dashboard-tasks h2 {
-  margin-top: 0;
-  margin-bottom: 1rem;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #1a1a1a;
+
+.dashboard-tasks .section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 0 0 10px;
+  margin-bottom: 12px;
   border-bottom: 1px solid #e9ecef;
+  background: transparent;
+}
+.dashboard-tasks .priority-task-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.dashboard-tasks .priority-task-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: #e44760;
+}
+
+.dashboard-tasks .priority-task-title {
+  margin: 0;
+  padding: 0;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #1a1a1a;
+}
+
+.dashboard-tasks .all-tasks-link {
+  margin: 0 0 0 auto;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #2779cc;
+  cursor: pointer;
+  text-decoration: underline;
+  white-space: nowrap;
+}
+
+.dashboard-tasks .all-tasks-link:hover {
+  color: #0052cc;
+}
+
+.dashboard-tasks .task-divider {
+  display: none;
 }
 
 .task-checkbox {
@@ -36,8 +81,20 @@
   content: '';
   width: 10px;
   height: 10px;
-  clip-path: polygon(14% 44%, 0 58%, 38% 90%, 100% 16%, 86% 2%, 38% 62%);
+  clip-path: polygon(
+    14% 44%,
+    0 58%,
+    38% 90%,
+    100% 16%,
+    86% 2%,
+    38% 62%
+  );
   background-color: white;
+}
+
+.task-checkbox:focus-visible {
+  outline: 2px solid #0d6efd;
+  outline-offset: 3px;
 }
 
 .task-item {
@@ -57,6 +114,7 @@
   flex-direction: column;
   flex-grow: 1;
   gap: 2px;
+  min-width: 0;
 }
 
 .task-title {
@@ -65,51 +123,25 @@
   color: #101828;
   margin: 0;
 }
-.priority-task-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: #101828;
-}
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  margin-bottom: -12px;
-}
-.priority-task-title,
-.all-tasks-link {
-  margin-bottom: 0;
-  padding-bottom: 0;
-  line-height: 1; /* Tightens up vertical text height */
-}
-.task-divider {
-  border: none;
-  height: 1px;
-  background-color: #e5e7eb; /* Light gray */
-  margin: 16px 0;
-}
 
-.all-tasks-link {
-  font-size: 12px;
-  color: #2779cc;
-  cursor: pointer;
-  margin-left: auto;
-  text-decoration: underline;
-  font-weight: 600;
+.task-client {
+  font-size: 13px;
+  color: #6c757d;
+  margin: 0;
 }
 
 .task-due-date {
   font-size: 10px;
   margin-right: 10px;
-  /* Adds space between due date and badge */
   margin-left: auto;
+  margin-bottom: 6px;
   background-color: #e2eefa;
   color: #2779cc;
-  margin-bottom: 6px;
   border: 1px solid #477db3;
   padding: 2px 6px;
   border-radius: 4px;
   font-weight: 600;
+  flex-shrink: 0;
 }
 
 .task-due-date.overdue {
@@ -118,8 +150,42 @@
   color: #dc3545;
 }
 
-.task-client {
-  font-size: 13px;
-  color: #6c757d;
-  margin: 0;
+
+@media (max-width: 760px) {
+  .dashboard-tasks .priority-task-title {
+    font-size: 15px;
+  }
+
+  .task-title {
+    font-size: 14px;
+  }
+
+  .task-client {
+    font-size: 12px;
+  }
 }
+
+@media (max-width: 480px) {
+  .dashboard-tasks .section-header {
+    gap: 8px;
+  }
+
+  .dashboard-tasks .priority-task-title {
+    font-size: 14px;
+  }
+
+  .dashboard-tasks .all-tasks-link {
+    font-size: 11px;
+  }
+
+  .task-item {
+    gap: 8px;
+    padding: 10px 0;
+  }
+
+  .task-due-date {
+    margin-right: 0;
+    font-size: 9px;
+  }
+}
+
