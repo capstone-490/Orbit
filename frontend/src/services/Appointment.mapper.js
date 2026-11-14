@@ -1,5 +1,7 @@
 //Above 50% AI generated
 
+import { TIMELINE_TO_SESSION_TYPE } from '../constants/sessionTypes'
+
 export const mapAppointment = (appointmentData) => {
   // Determine when the appointment starts
   const startDate = new Date(appointmentData.start ?? appointmentData.meeting_date)
@@ -20,7 +22,11 @@ export const mapAppointment = (appointmentData) => {
     status: appointmentData.completion_status ?? null,
     title: appointmentData.title ?? '',
     kind: appointmentData.kind ?? 'session',
-    typeId: appointmentData.typeId ?? appointmentData.type_id ?? null,
+    typeId:
+      appointmentData.typeId ??
+      appointmentData.type_id ??
+      TIMELINE_TO_SESSION_TYPE[appointmentData.client_timeline] ??
+      null,
     client: appointmentData.client ?? appointmentData.client_name ?? '',
     start: startDate,
     end: endDate,

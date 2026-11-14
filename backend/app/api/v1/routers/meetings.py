@@ -166,7 +166,8 @@ def list_meetings(
                 m.completion_status,
                 m.meeting_uri,
                 m.meeting_code,
-                c.name AS client_name
+                c.name AS client_name,
+                c.timeline::text AS client_timeline
             FROM meetings m
             JOIN clients c ON c.id = m.client_id
             WHERE m.advisor_id = %(advisor_id)s
