@@ -46,9 +46,7 @@ def test_get_tasks_success(mock_db, mock_task_row):
 
     mock_db.execute.return_value.fetchall.return_value = [mock_task_row]
 
-    response = client.get(
-        "/tasks", params={"client_id": 10, "user_timezone": "UTC"}
-    )
+    response = client.get("/tasks", params={"client_id": 10, "user_timezone": "UTC"})
 
     assert response.status_code == 200
 
@@ -276,9 +274,7 @@ def test_get_task_due_now_red(mock_db):
 
     mock_db.execute.return_value.fetchall.return_value = [row]
 
-    response = client.get(
-        "/tasks", params={"client_id": 10, "user_timezone": "UTC"}
-    )
+    response = client.get("/tasks", params={"client_id": 10, "user_timezone": "UTC"})
 
     assert response.status_code == 200
 
@@ -301,9 +297,7 @@ def test_get_task_upcoming_yellow(mock_db):
 
     mock_db.execute.return_value.fetchall.return_value = [row]
 
-    response = client.get(
-        "/tasks", params={"client_id": 10, "user_timezone": "UTC"}
-    )
+    response = client.get("/tasks", params={"client_id": 10, "user_timezone": "UTC"})
 
     assert response.status_code == 200
 
@@ -323,9 +317,7 @@ def test_get_task_past_due_red(mock_db):
 
     mock_db.execute.return_value.fetchall.return_value = [row]
 
-    response = client.get(
-        "/tasks", params={"client_id": 10, "user_timezone": "UTC"}
-    )
+    response = client.get("/tasks", params={"client_id": 10, "user_timezone": "UTC"})
 
     assert response.status_code == 200
 
@@ -345,9 +337,7 @@ def test_get_resolved_task_green(mock_db):
 
     mock_db.execute.return_value.fetchall.return_value = [row]
 
-    response = client.get(
-        "/tasks", params={"client_id": 10, "user_timezone": "UTC"}
-    )
+    response = client.get("/tasks", params={"client_id": 10, "user_timezone": "UTC"})
 
     assert response.status_code == 200
 
@@ -447,9 +437,7 @@ def test_create_task_returns_computed_urgency(mock_db):
         "last_contact_date": None,
     }
 
-    response = client.post(
-        "/tasks", params={"user_timezone": "UTC"}, json=payload
-    )
+    response = client.post("/tasks", params={"user_timezone": "UTC"}, json=payload)
 
     assert response.status_code == 201
 
@@ -513,6 +501,7 @@ def test_create_resolved_task_returns_green(mock_db):
 
     assert task["urgency_state"] == "RESOLVED"
     assert task["urgency_color"] == "Green"
+
 
 def test_create_task_unauthorized_client(mock_db, valid_task_payload):
 

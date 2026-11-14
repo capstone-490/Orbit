@@ -143,7 +143,7 @@ def list_clients(advisor: dict[str, int] = Depends(get_current_advisor)):
     return [dict(zip(columns, row)) for row in rows]
 
 
-#Temporary patch as US-15.1 needed a patch client API for testing purposes
+# Temporary patch as US-15.1 needed a patch client API for testing purposes
 @router.patch("/{client_id}")
 def update_client(
     client_id: int,
@@ -161,11 +161,7 @@ def update_client(
         "timeline",
     }
 
-    updates = {
-        key: value
-        for key, value in client.items()
-        if key in allowed_fields
-    }
+    updates = {key: value for key, value in client.items() if key in allowed_fields}
 
     if not updates:
         raise HTTPException(
@@ -173,10 +169,7 @@ def update_client(
             detail="No valid fields provided for update",
         )
 
-    set_clause = ", ".join(
-        f"{field} = %({field})s"
-        for field in updates
-    )
+    set_clause = ", ".join(f"{field} = %({field})s" for field in updates)
 
     set_clause += ", updated_at = NOW() AT TIME ZONE 'UTC'"
 

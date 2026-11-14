@@ -16,8 +16,8 @@ def existing_advisor():
     email = f"test_advisor_{uuid4().hex[:8]}@example.com"
 
     with psycopg.connect(settings.psycopg_database_uri) as conn, conn.cursor() as cur:
-            cur.execute(
-                """
+        cur.execute(
+            """
                 INSERT INTO advisors (
                     username,
                     email,
@@ -26,17 +26,17 @@ def existing_advisor():
                 VALUES (%s, %s, %s)
                 RETURNING id
                 """,
-                ("test_advisor", email, "test_password_hash"),
-            )
-            advisor_id = cur.fetchone()[0]
+            ("test_advisor", email, "test_password_hash"),
+        )
+        advisor_id = cur.fetchone()[0]
 
     yield {"id": advisor_id}
 
     with psycopg.connect(settings.psycopg_database_uri) as conn, conn.cursor() as cur:
-            cur.execute(
-                "DELETE FROM advisors WHERE id = %s",
-                (advisor_id,),
-            )
+        cur.execute(
+            "DELETE FROM advisors WHERE id = %s",
+            (advisor_id,),
+        )
 
 
 @pytest.fixture
@@ -56,8 +56,8 @@ def existing_client(existing_advisor):
     phone = f"555{uuid4().int % 10**7:07d}"
 
     with psycopg.connect(settings.psycopg_database_uri) as conn, conn.cursor() as cur:
-            cur.execute(
-                """
+        cur.execute(
+            """
                 INSERT INTO clients (
                     name,
                     phone_number,
@@ -67,15 +67,15 @@ def existing_client(existing_advisor):
                 VALUES (%s, %s, %s, %s)
                 RETURNING id, name
                 """,
-                (
-                    "Original Client",
-                    phone,
-                    email,
-                    existing_advisor["id"],
-                ),
-            )
+            (
+                "Original Client",
+                phone,
+                email,
+                existing_advisor["id"],
+            ),
+        )
 
-            result = cur.fetchone()
+        result = cur.fetchone()
 
     client_record = {
         "id": result[0],
@@ -85,10 +85,10 @@ def existing_client(existing_advisor):
     yield client_record
 
     with psycopg.connect(settings.psycopg_database_uri) as conn, conn.cursor() as cur:
-            cur.execute(
-                "DELETE FROM clients WHERE id = %s",
-                (client_record["id"],),
-            )
+        cur.execute(
+            "DELETE FROM clients WHERE id = %s",
+            (client_record["id"],),
+        )
 
 
 def test_patch_client_creates_exactly_one_audit_event(

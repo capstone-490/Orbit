@@ -26,7 +26,7 @@ def get_connection(user_id: str | None = None, user_type: str = "System"):
                 set_config('audit.user_id', %s, true),
                 set_config('audit.user_type', %s, true)
             """,
-            (str(user_id) if user_id else '', user_type)
+            (str(user_id) if user_id else "", user_type),
         )
 
     return conn
