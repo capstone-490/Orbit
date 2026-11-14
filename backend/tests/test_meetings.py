@@ -473,3 +473,162 @@ def test_reschedule_requires_authentication(mock_db):
 
     assert response.status_code == 401
     mock_db.execute.assert_not_called()
+
+
+
+# ---------------------------------------------------------
+# US-27.2: Meeting Preparation Briefing Notes Service
+# ---------------------------------------------------------
+
+BRIEFING_NOTES_URL = "/meetings/10/briefing-notes"
+
+
+def mock_briefing_notes(mock_db, notes):
+    """Mock meeting ownership lookup and notes retrieval."""
+    mock_db.fetchone.return_value = (10, 7)
+
+    mock_db.description = [
+        SimpleNamespace(name="id"),
+        SimpleNamespace(name="title"),
+        SimpleNamespace(name="content"),
+        SimpleNamespace(name="client_id"),
+        SimpleNamespace(name="author_id"),
+        SimpleNamespace(name="author_type"),
+        SimpleNamespace(name="created_at"),
+        SimpleNamespace(name="updated_at"),
+    ]
+
+    mock_db.fetchall.return_value = notes
+
+
+def test_get_briefing_notes_success(mock_db):
+    """Retrieve existing notes for an authorized meeting."""
+    mock_briefing_notes(
+        mock_db,
+        [
+            (
+                1, "Investment Goals", "Discuss retirement plans",
+                7, 1, "advisor",
+                "2026-11-10T10:00:00Z",
+                "2026-11-10T10:00:00Z",
+            ),
+        ],
+    )
+
+    response = client.get(BRIEFING_NOTES_URL)
+
+    assert response.status_code == 200
+
+    data = response.json()
+    assert data["meeting_id"] == 10
+    assert data["client_id"] == 7
+    assert len(data["notes"]) == 1
+    assert data["notes"][0]["title"] == "Investment Goals"
+    assert data["notes"][0]["content"] == "Discuss retirement plans"
+
+    assert mock_db.execute.call_count == 2
+
+
+def test_get_briefing_notes_multiple_notes(mock_db):
+    """Retrieve multiple notes associated with the same client."""
+    mock_briefing_notes(
+        mock_db,
+        [
+            (
+                1, "First Note", "First discussion",
+                7, 1, "advisor",
+                "2026-11-10T10:00:00Z",
+                "2026-11-10T10:00:00Z",
+            ),
+            (
+                2, "Second Note", "Second discussion",
+                7, 1, "advisor",
+                "2026-11-11T10:00:00Z",
+                "2026-11-11T10:00:00Z",
+            ),
+        ],
+    )
+
+    response = client.get(BRIEFING_NOTES_URL)
+
+    assert response.status_code == 200
+
+    notes = response.json()["notes"]
+    assert len(notes) == 2
+    assert {note["id"] for note in notes} == {1, 2}
+    assert all(note["client_id"] == 7 for note in notes)
+
+
+def test_get_briefing_notes_empty(mock_db):
+    """Return an empty list when a meeting's client has no notes."""
+    mock_briefing_notes(mock_db, [])
+
+    response = client.get(BRIEFING_NOTES_URL)
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "meeting_id": 10,
+        "client_id": 7,
+        "notes": [],
+    }
+
+
+def test_get_briefing_notes_invalid_meeting(mock_db):
+    """Return 404 when the requested meeting does not exist."""
+    mock_db.fetchone.return_value = None
+
+    response = client.get("/meetings/99999/briefing-notes")
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Meeting not found."
+
+    assert mock_db.execute.call_count == 1
+    mock_db.fetchall.assert_not_called()
+
+
+def test_get_briefing_notes_unauthorized_advisor(mock_db):
+    """Prevent advisors from accessing meetings they do not own."""
+    # The meeting lookup returns no result because the
+    # meeting does not belong to the authenticated advisor.
+    mock_db.fetchone.return_value = None
+
+    response = client.get(BRIEFING_NOTES_URL)
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Meeting not found."
+
+    query, params = mock_db.execute.call_args.args
+
+    assert "m.advisor_id = %(advisor_id)s" in query
+    assert "c.advisor_id = %(advisor_id)s" in query
+    assert params["advisor_id"] == 1
+
+    mock_db.fetchall.assert_not_called()
+
+
+def test_get_briefing_notes_requires_authentication(mock_db):
+    """Reject requests without an authentication token."""
+    unauthenticated_client = TestClient(app)
+
+    response = unauthenticated_client.get(BRIEFING_NOTES_URL)
+
+    assert response.status_code == 401
+    mock_db.execute.assert_not_called()
+
+
+def test_get_briefing_notes_read_only(mock_db):
+    """Ensure retrieving briefing notes does not modify stored data."""
+    mock_briefing_notes(mock_db, [])
+
+    response = client.get(BRIEFING_NOTES_URL)
+
+    assert response.status_code == 200
+    assert mock_db.execute.call_count == 2
+
+    for call in mock_db.execute.call_args_list:
+        query = call.args[0].strip().upper()
+
+        assert query.startswith("SELECT")
+        assert "INSERT INTO" not in query
+        assert "UPDATE " not in query
+        assert "DELETE FROM" not in query
