@@ -11,11 +11,15 @@ from google.auth.exceptions import RefreshError
 from googleapiclient.errors import HttpError
 
 from app.api.v1.routers import google_meet_integration as gmi
+from app.api.versions import APIVersion, api_prefix
 from app.auth import create_access_token
+from app.core.config import settings
 from app.core.security.token_cipher import decrypt_token, encrypt_token
 from app.main import app
 
-PREFIX = "/google-meet-integration"
+API_VERSION = APIVersion.V1
+PREFIX = f"{api_prefix(API_VERSION)}/google-meet-integration"
+
 
 # Stored credentials are encrypted at rest
 CREDS_ROW = (encrypt_token(json.dumps({"token": "t"})),)
@@ -112,7 +116,7 @@ def test_authorize_redirects_to_google_and_sets_state_cookie(mock_flow):
         access_type="offline", prompt="consent"
     )
     assert mock_flow.flow.redirect_uri == (
-        f"{gmi.settings.BACKEND_URL}{PREFIX}/oauth2callback"
+        f"{settings.api_url(API_VERSION)}/google-meet-integration/oauth2callback"
     )
 
 
@@ -139,6 +143,7 @@ def test_callback_stores_credentials(mock_flow, mock_db):
 
     assert response.status_code == 303
     assert response.headers["location"] == f"{PREFIX}/authorized"
+
     # The state cookie is cleared once it has been used
     assert f'{gmi.OAUTH_STATE_COOKIE}=""' in response.headers["set-cookie"]
 
@@ -322,7 +327,7 @@ def _executed(mock_db, sql: str):
 
 
 def _insert_calls(mock_db):
-    return _executed(mock_db, "INSERT INTO meetings")
+    return _executed(mock_db, "INSERT INTO t_meetings")
 
 
 def _calendar_id_updates(mock_db):
@@ -400,7 +405,7 @@ def test_create_meeting_saves_orbit_meeting(mock_db, stored_creds, mock_calendar
 
     assert response.status_code == 201
     # The client must belong to the advisor
-    [(_, client_params)] = _executed(mock_db, "FROM clients")
+    [(_, client_params)] = _executed(mock_db, "FROM t_clients")
     assert client_params == (7, 1)
 
     [(_, params)] = _insert_calls(mock_db)
@@ -584,7 +589,7 @@ def test_book_meeting_for_existing_client(mock_db, stored_creds, mock_calendar):
     assert body["start"] == {"dateTime": "2030-01-15T14:00:00-05:00"}
     assert body["end"] == {"dateTime": "2030-01-15T15:00:00-05:00"}
 
-    assert _executed(mock_db, "INSERT INTO clients") == []
+    assert _executed(mock_db, "INSERT INTO t_clients") == []
     [(_, params)] = _insert_calls(mock_db)
     assert params[:2] == (1, 7)
     assert params[3:] == ("https://meet.google.com/abc-defg-hij", "abc-defg-hij", 60)
@@ -603,7 +608,7 @@ def test_book_meeting_creates_new_client(mock_db, stored_creds, mock_calendar):
     response = public_client.post(f"{PREFIX}/book/1", json=BOOKING)
 
     assert response.status_code == 201
-    [(_, client_params)] = _executed(mock_db, "INSERT INTO clients")
+    [(_, client_params)] = _executed(mock_db, "INSERT INTO t_clients")
     assert client_params == ("Jane Doe", "jane@example.com", "555-0100", 1)
     [(_, meeting_params)] = _insert_calls(mock_db)
     assert meeting_params[:2] == (1, 8)
@@ -688,7 +693,7 @@ def test_book_meeting_with_taken_phone_number_returns_409(
     mock_db.fetchone.side_effect = [CREDS_ROW, None]
 
     def execute(query, params=None):
-        if "INSERT INTO clients" in query:
+        if "INSERT INTO t_clients" in query:
             raise gmi.UniqueViolation()
 
     mock_db.execute.side_effect = execute

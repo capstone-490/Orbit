@@ -18,15 +18,12 @@ from googleapiclient.errors import HttpError
 from psycopg.errors import UniqueViolation
 from pydantic import AwareDatetime, BaseModel, EmailStr, Field
 
+from app.api.versions import APIVersion, api_prefix
 from app.auth import get_current_advisor
 from app.core.config import settings
-from app.core.security.token_cipher import (
-    InvalidToken,
-    decrypt_token,
-    encrypt_token,
-)
+from app.core.security.token_cipher import InvalidToken, decrypt_token, encrypt_token
 from app.dependencies.db import get_connection
-from app.logging_config import get_logger
+from app.observability.logging_config import get_logger
 
 logger = get_logger("google_meet_integration")
 
@@ -96,7 +93,7 @@ def authorize():
         value=f"{state}:{flow.code_verifier}",
         max_age=OAUTH_STATE_MAX_AGE,
         httponly=True,
-        secure=os.environ.get("ORBIT_COOKIE_SECURE", "false").lower() == "true",
+        secure=os.environ.get("COOKIE_SECURE", "false").lower() == "true",
         samesite="lax",
         path=router.prefix,
     )
@@ -135,7 +132,10 @@ def oauth2callback(
 
     # Redirect so the one-time code leaves the address bar and a refresh
     # doesn't try to exchange it again.
-    response = RedirectResponse(router.url_path_for("authorized"), status_code=303)
+    response = RedirectResponse(
+        f"{api_prefix(APIVersion.V1)}{router.url_path_for('authorized')}",
+        status_code=303,
+    )
     response.delete_cookie(OAUTH_STATE_COOKIE, path=router.prefix)
     return response
 
@@ -244,7 +244,7 @@ def book_meeting(advisor_id: int, booking: BookingCreate):
 def _get_or_create_booking_client(advisor_id: int, booking: BookingCreate) -> int:
     with get_connection() as conn, conn.cursor() as cur:
         cur.execute(
-            "SELECT id, advisor_id FROM clients WHERE lower(email) = lower(%s)",
+            "SELECT id, advisor_id FROM t_clients WHERE lower(email) = lower(%s)",
             (booking.email,),
         )
         row = cur.fetchone()
@@ -260,7 +260,7 @@ def _get_or_create_booking_client(advisor_id: int, booking: BookingCreate) -> in
         try:
             cur.execute(
                 """
-                    INSERT INTO clients (name, email, phone_number, advisor_id)
+                    INSERT INTO t_clients (name, email, phone_number, advisor_id)
                     VALUES (%s, %s, %s, %s)
                     RETURNING id
                     """,
@@ -318,7 +318,7 @@ def _schedule_calendar_event(
     # isn't this advisor's.
     with get_connection() as conn, conn.cursor() as cur:
         cur.execute(
-            "SELECT 1 FROM clients WHERE id = %s AND advisor_id = %s",
+            "SELECT 1 FROM t_clients WHERE id = %s AND advisor_id = %s",
             (client_id, advisor_id),
         )
         if cur.fetchone() is None:
@@ -348,7 +348,7 @@ def _schedule_calendar_event(
     with get_connection() as conn, conn.cursor() as cur:
         cur.execute(
             """
-                INSERT INTO meetings (
+                INSERT INTO t_meetings (
                     advisor_id,
                     client_id,
                     meeting_date,
@@ -449,7 +449,9 @@ def _build_flow(state: str | None = None, code_verifier: str | None = None) -> F
     # Google redirects back to this backend's oauth2callback route. It must
     # exactly match an authorized redirect URI on the OAuth client in the Google
     # Cloud Console, and Google requires an absolute URI, hence the backend host.
-    flow.redirect_uri = f"{settings.BACKEND_URL}{router.url_path_for('oauth2callback')}"
+    flow.redirect_uri = (
+        f"{settings.api_url(APIVersion.V1)}{router.url_path_for('oauth2callback')}"
+    )
     return flow
 
 

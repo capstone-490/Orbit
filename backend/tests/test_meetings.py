@@ -42,7 +42,7 @@ def mock_db(monkeypatch):
 def test_list_meetings_empty(mock_db):
     mock_db.fetchall.return_value = []
 
-    response = client.get("/meetings/1")
+    response = client.get("/api/v1/meetings/1")
 
     assert response.status_code == 200
     assert response.json() == []
@@ -50,8 +50,8 @@ def test_list_meetings_empty(mock_db):
     mock_db.execute.assert_called_once()
     query, params = mock_db.execute.call_args.args
 
-    assert "FROM meetings m" in query
-    assert "JOIN clients c ON c.id = m.client_id" in query
+    assert "FROM t_meetings m" in query
+    assert "JOIN t_clients c ON c.id = m.client_id" in query
     assert "m.duration_minutes" in query
     assert "c.name AS client_name" in query
     assert params["advisor_id"] == 1
@@ -72,7 +72,7 @@ def test_create_continuing_session_for_existing_client(mock_db):
     ]
 
     response = client.post(
-        "/meetings/continuing-session",
+        "/api/v1/meetings/continuing-session",
         json={"client_id": 7, "meeting_date": "2026-12-01T10:00:00Z"},
     )
 
@@ -86,7 +86,7 @@ def test_create_continuing_session_for_existing_client(mock_db):
     }
     assert mock_db.execute.call_count == 4
     insert_query, insert_params = mock_db.execute.call_args.args
-    assert "INSERT INTO meetings" in insert_query
+    assert "INSERT INTO t_meetings" in insert_query
     assert insert_params["advisor_id"] == 1
     assert insert_params["client_id"] == 7
 
@@ -95,7 +95,7 @@ def test_continuing_session_requires_client_belonging_to_advisor(mock_db):
     mock_db.fetchone.return_value = None
 
     response = client.post(
-        "/meetings/continuing-session",
+        "/api/v1/meetings/continuing-session",
         json={"client_id": 7, "meeting_date": "2026-12-01T10:00:00Z"},
     )
 
@@ -124,8 +124,8 @@ def test_continuing_session_rejects_unavailable_time_slot(mock_db):
         "meeting_date": "2026-12-01T10:00:00Z",
     }
 
-    first_response = client.post("/meetings/continuing-session", json=request)
-    second_response = client.post("/meetings/continuing-session", json=request)
+    first_response = client.post("/api/v1/meetings/continuing-session", json=request)
+    second_response = client.post("/api/v1/meetings/continuing-session", json=request)
 
     assert first_response.status_code == 201
     assert second_response.status_code == 409
@@ -137,7 +137,7 @@ def test_continuing_session_rejects_overlapping_one_hour_meeting(mock_db):
     mock_db.fetchone.side_effect = [(7,), (11,)]
 
     response = client.post(
-        "/meetings/continuing-session",
+        "/api/v1/meetings/continuing-session",
         json={"client_id": 7, "meeting_date": "2026-11-07T10:30:00Z"},
     )
 
@@ -152,7 +152,7 @@ def test_continuing_session_rejects_overlapping_one_hour_meeting(mock_db):
 
 def test_continuing_session_requires_timezone(mock_db):
     response = client.post(
-        "/meetings/continuing-session",
+        "/api/v1/meetings/continuing-session",
         json={"client_id": 7, "meeting_date": "2026-12-01T10:00:00"},
     )
 
@@ -161,7 +161,7 @@ def test_continuing_session_requires_timezone(mock_db):
 
 
 def test_cannot_read_another_advisors_meetings(mock_db):
-    response = client.get("/meetings/2")
+    response = client.get("/api/v1/meetings/2")
 
     assert response.status_code == 403
     mock_db.execute.assert_not_called()
@@ -194,7 +194,7 @@ def test_list_meetings_with_data(mock_db):
         SimpleNamespace(name="client_name"),
     ]
 
-    response = client.get("/meetings/1")
+    response = client.get("/api/v1/meetings/1")
 
     assert response.status_code == 200
     assert response.json() == [
@@ -225,8 +225,8 @@ def test_list_meetings_with_data(mock_db):
     mock_db.execute.assert_called_once()
     query, params = mock_db.execute.call_args.args
 
-    assert "FROM meetings m" in query
-    assert "JOIN clients c ON c.id = m.client_id" in query
+    assert "FROM t_meetings m" in query
+    assert "JOIN t_clients c ON c.id = m.client_id" in query
     assert "m.duration_minutes" in query
     assert "c.name AS client_name" in query
     assert "m.meeting_uri" in query
@@ -246,7 +246,7 @@ def test_list_scheduled_meetings(mock_db):
         SimpleNamespace(name="completion_status"),
     ]
 
-    response = client.get("/meetings/scheduled/1")
+    response = client.get("/api/v1/meetings/scheduled/1")
 
     assert response.status_code == 200
     assert response.json() == [
@@ -278,7 +278,7 @@ def test_list_completed_meetings(mock_db):
         SimpleNamespace(name="completion_status"),
     ]
 
-    response = client.get("/meetings/completed/1")
+    response = client.get("/api/v1/meetings/completed/1")
 
     assert response.status_code == 200
     assert response.json() == [
@@ -311,7 +311,7 @@ def test_list_meetings_for_client(mock_db):
         SimpleNamespace(name="completion_status"),
     ]
 
-    response = client.get("/meetings/1/1")
+    response = client.get("/api/v1/meetings/1/1")
 
     assert response.status_code == 200
     assert response.json() == [
@@ -339,7 +339,7 @@ def test_list_meetings_for_client(mock_db):
     assert params["client_id"] == 1
 
 
-RESCHEDULE_URL = "/meetings/1/reschedule"
+RESCHEDULE_URL = "/api/v1/meetings/1/reschedule"
 FUTURE_START = "2030-06-01T10:00:00+00:00"
 
 
@@ -387,7 +387,7 @@ def test_reschedule_meeting_success(mock_db):
 
     assert mock_db.execute.call_count == 4
     update_query = mock_db.execute.call_args_list[-1].args[0]
-    assert "UPDATE meetings" in update_query
+    assert "UPDATE t_meetings" in update_query
 
 
 def test_reschedule_meeting_conflict(mock_db):
@@ -498,7 +498,7 @@ def test_briefing_notes_returns_client_notes(mock_db):
         for name in ("id", "title", "content", "created_at", "updated_at")
     ]
 
-    response = client.get("/meetings/5/briefing-notes")
+    response = client.get("/api/v1/meetings/5/briefing-notes")
 
     assert response.status_code == 200
     assert len(response.json()) == 2
@@ -513,7 +513,7 @@ def test_briefing_notes_returns_client_notes(mock_db):
     assert ownership_params == {"meeting_id": 5, "advisor_id": 1}
 
     notes_query, notes_params = mock_db.execute.call_args_list[1].args
-    assert "FROM notes" in notes_query
+    assert "FROM t_notes" in notes_query
     assert "ORDER BY created_at DESC, id DESC" in notes_query
     assert notes_params == {"client_id": 7}
 
@@ -526,7 +526,7 @@ def test_briefing_notes_empty(mock_db):
         for name in ("id", "title", "content", "created_at", "updated_at")
     ]
 
-    response = client.get("/meetings/5/briefing-notes")
+    response = client.get("/api/v1/meetings/5/briefing-notes")
 
     assert response.status_code == 200
     assert response.json() == []
@@ -535,7 +535,7 @@ def test_briefing_notes_empty(mock_db):
 def test_briefing_notes_meeting_not_found(mock_db):
     mock_db.fetchone.return_value = None
 
-    response = client.get("/meetings/999/briefing-notes")
+    response = client.get("/api/v1/meetings/999/briefing-notes")
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Meeting not found."
@@ -545,14 +545,14 @@ def test_briefing_notes_meeting_not_found(mock_db):
 def test_briefing_notes_requires_authentication(mock_db):
     unauthenticated_client = TestClient(app)
 
-    response = unauthenticated_client.get("/meetings/5/briefing-notes")
+    response = unauthenticated_client.get("/api/v1/meetings/5/briefing-notes")
 
     assert response.status_code == 401
     mock_db.execute.assert_not_called()
 
 
 def test_briefing_notes_rejects_invalid_meeting_id(mock_db):
-    response = client.get("/meetings/not-a-number/briefing-notes")
+    response = client.get("/api/v1/meetings/not-a-number/briefing-notes")
 
     assert response.status_code == 422
     mock_db.execute.assert_not_called()

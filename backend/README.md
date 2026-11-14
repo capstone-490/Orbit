@@ -210,7 +210,7 @@ export DB_PASSWORD=your-local-db-password
 
 export SECRET_KEY=local-only-insecure-secret
 export ORBIT_ANONYMIZATION_SECRET=your-local-anonymization-secret
-
+export ORBIT_AUTH_SECRET=...
 export ENABLE_DEBUG_ROUTES=false
 export METRICS_ENABLED=1
 ```
@@ -293,7 +293,7 @@ pnpm install --frozen-lockfile
 
 ```bash
 cd frontend
-VITE_API_URL=http://localhost:8001 pnpm dev
+VITE_API_URL=http://localhost:8001/api/v1 pnpm dev
 ```
 
 #### 3. Frontend Lint & Format (`biome`)

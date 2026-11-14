@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { loginAdvisor, logoutAdvisor, registerAdvisor } from '../services/AuthApi'
 
+export const API_BASE_URL = import.meta.env.VITE_API_URL
+
 afterEach(() => {
   vi.unstubAllGlobals()
 })
@@ -74,7 +76,7 @@ describe('registerAdvisor', () => {
 
     await expect(registerAdvisor(advisor)).resolves.toEqual(responseData)
 
-    expect(fetchMock).toHaveBeenCalledWith('http://localhost:8001/auth/register', {
+    expect(fetchMock).toHaveBeenCalledWith(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -137,7 +139,7 @@ describe('logoutAdvisor', () => {
 
     await logoutAdvisor()
 
-    expect(fetchMock).toHaveBeenCalledWith('http://localhost:8001/auth/logout', {
+    expect(fetchMock).toHaveBeenCalledWith(`${API_BASE_URL}/auth/logout`, {
       credentials: 'include',
       method: 'POST',
     })

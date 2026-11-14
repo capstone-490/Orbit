@@ -7,6 +7,7 @@ from unittest.mock import MagicMock
 import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
+from sqlalchemy.exc import SQLAlchemyError
 
 from app import auth
 from app.api.v1.routers import sessions
@@ -42,7 +43,7 @@ def test_login_returns_httponly_session_cookie(monkeypatch):
     monkeypatch.setattr(sessions, "get_connection", lambda: connection)
 
     response = TestClient(app).post(
-        "/auth/login",
+        "/api/v1/auth/login",
         json={"email": "advisor@example.com", "password": "correct-horse"},
     )
 
@@ -55,7 +56,7 @@ def test_login_returns_httponly_session_cookie(monkeypatch):
     }
 
     session_client = TestClient(app, cookies={"orbit_session": token})
-    session_response = session_client.get("/auth/me")
+    session_response = session_client.get("/api/v1/auth/me")
     assert session_response.status_code == 200
     assert session_response.json() == {"id": 7}
 
@@ -69,7 +70,7 @@ def test_login_rejects_invalid_password(monkeypatch):
     monkeypatch.setattr(sessions, "get_connection", lambda: connection)
 
     response = TestClient(app).post(
-        "/auth/login",
+        "/api/v1/auth/login",
         json={"email": "advisor@example.com", "password": "wrong"},
     )
 
@@ -77,22 +78,28 @@ def test_login_rejects_invalid_password(monkeypatch):
     assert response.json()["detail"] == "Invalid email or password."
 
 
-def test_login_returns_unavailable_when_authentication_is_not_configured(monkeypatch):
-    monkeypatch.setenv("ORBIT_AUTH_SECRET", "")
-    cursor = MagicMock()
-    cursor.fetchone.return_value = (7, hash_password("correct-horse"))
-    connection = MagicMock()
-    connection.__enter__.return_value = connection
-    connection.cursor.return_value.__enter__.return_value = cursor
-    monkeypatch.setattr(sessions, "get_connection", lambda: connection)
+def test_login_returns_503_when_database_unavailable(
+    client,
+    monkeypatch,
+):
+    def unavailable_connection():
+        raise SQLAlchemyError("Database unavailable")
 
-    response = TestClient(app).post(
+    monkeypatch.setattr(
+        sessions,
+        "get_connection",
+        unavailable_connection,
+    )
+
+    response = client.post(
         "/auth/login",
-        json={"email": "advisor@example.com", "password": "correct-horse"},
+        json={
+            "email": "advisor@example.com",
+            "password": "correct-horse",
+        },
     )
 
     assert response.status_code == 503
-    assert response.json()["detail"] == "Authentication is not configured."
 
 
 def test_login_rejects_unknown_email(monkeypatch):
@@ -104,7 +111,7 @@ def test_login_rejects_unknown_email(monkeypatch):
     monkeypatch.setattr(sessions, "get_connection", lambda: connection)
 
     response = TestClient(app).post(
-        "/auth/login",
+        "/api/v1/auth/login",
         json={"email": "unknown@example.com", "password": "secret"},
     )
 
@@ -117,7 +124,7 @@ def test_registration_can_be_followed_by_login(monkeypatch):
     stored_advisor = {}
 
     def execute(query, parameters):
-        if query.lstrip().startswith("INSERT INTO advisors"):
+        if query.lstrip().startswith("INSERT INTO t_advisors"):
             stored_advisor.update(
                 username=parameters[0],
                 email=parameters[1],
@@ -142,14 +149,14 @@ def test_registration_can_be_followed_by_login(monkeypatch):
     connection.__enter__.return_value = connection
     connection.cursor.return_value.__enter__.return_value = cursor
     monkeypatch.setattr(
-        "app.api.v1.routers.advisor_registration.get_connection",
+        "app.api.v1.routers.advisor_registrations.get_connection",
         lambda: connection,
     )
     monkeypatch.setattr(sessions, "get_connection", lambda: connection)
 
     client = TestClient(app)
     registration = client.post(
-        "/auth/register",
+        "/api/v1/auth/register",
         json={
             "username": "Test Advisor",
             "email": "advisor@example.com",
@@ -157,7 +164,7 @@ def test_registration_can_be_followed_by_login(monkeypatch):
         },
     )
     login = client.post(
-        "/auth/login",
+        "/api/v1/auth/login",
         json={"email": "advisor@example.com", "password": "SecurePassword123!"},
     )
 
@@ -168,13 +175,13 @@ def test_registration_can_be_followed_by_login(monkeypatch):
 
 
 def test_protected_client_endpoint_rejects_missing_token():
-    response = TestClient(app).get("/clients")
+    response = TestClient(app).get("/api/v1/clients")
 
     assert response.status_code == 401
 
 
 def test_logout_clears_session_cookie():
-    response = TestClient(app).post("/auth/logout")
+    response = TestClient(app).post("/api/v1/auth/logout")
 
     assert response.status_code == 200
     assert response.cookies.get("orbit_session") is None

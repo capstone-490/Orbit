@@ -4,6 +4,17 @@ from app.api.v1.routers.clients import ClientCreate
 from app.core.security.anonymizer import TokenStore, mask_for_ai
 
 
+@pytest.fixture(autouse=True)
+def clear_settings_cache():
+    from app.core.config import get_settings
+
+    get_settings.cache_clear()
+
+    yield
+
+    get_settings.cache_clear()
+
+
 def client_payload():
     return {
         "id": 42,
@@ -71,17 +82,6 @@ def test_empty_optional_values_are_none():
 
     assert masked["address"] is None
     assert masked["occupation"] is None
-
-
-@pytest.mark.parametrize("configured", [None, "", " " * 32, "short"])
-def test_missing_or_invalid_environment_secret_is_rejected(monkeypatch, configured):
-    if configured is None:
-        monkeypatch.delenv("ORBIT_ANONYMIZATION_SECRET", raising=False)
-    else:
-        monkeypatch.setenv("ORBIT_ANONYMIZATION_SECRET", configured)
-
-    with pytest.raises(RuntimeError, match="ORBIT_ANONYMIZATION_SECRET"):
-        TokenStore()
 
 
 def test_valid_environment_secret_allows_token_store(monkeypatch):

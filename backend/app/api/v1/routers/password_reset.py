@@ -42,7 +42,7 @@ def forgot_password(payload: ForgotPasswordRequest):
     email_details = None
 
     with get_connection() as conn, conn.cursor() as cur:
-        cur.execute("SELECT id, username FROM advisors WHERE email = %s", (email,))
+        cur.execute("SELECT id, username FROM t_advisors WHERE email = %s", (email,))
         advisor = cur.fetchone()
 
         if advisor is not None:
@@ -134,7 +134,7 @@ def reset_password(payload: ResetPasswordRequest):
             )
 
         cur.execute(
-            "UPDATE advisors SET password_hash = %s WHERE id = %s",
+            "UPDATE t_advisors SET password_hash = %s WHERE id = %s",
             (password_hash, row[0]),
         )
 

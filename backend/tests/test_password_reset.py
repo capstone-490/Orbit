@@ -65,7 +65,7 @@ class FakeCursor:
         now = datetime.now(UTC)
         self._row = None
 
-        if sql.startswith("SELECT id, username FROM advisors WHERE email"):
+        if sql.startswith("SELECT id, username FROM t_advisors WHERE email"):
             for advisor in self.db.advisors:
                 if advisor["email"] == params[0]:
                     self._row = (advisor["id"], advisor["username"])
@@ -112,7 +112,7 @@ class FakeCursor:
                     self._row = (token["advisor_id"],)
                     break
 
-        elif sql.startswith("UPDATE advisors SET password_hash"):
+        elif sql.startswith("UPDATE t_advisors SET password_hash"):
             password_hash, advisor_id = params
             for advisor in self.db.advisors:
                 if advisor["id"] == advisor_id:
@@ -145,12 +145,12 @@ def sent_emails(monkeypatch):
 @pytest.fixture
 def client(db, sent_emails):
     app = FastAPI()
-    app.include_router(password_reset.router)
+    app.include_router(password_reset.router, prefix="/api/v1")
     return TestClient(app)
 
 
 def request_reset(client, sent_emails, email=EMAIL):
-    response = client.post("/auth/forgot-password", json={"email": email})
+    response = client.post("/api/v1/auth/forgot-password", json={"email": email})
     assert response.status_code == 200
     return sent_emails[-1]["body"] if sent_emails else None
 
@@ -165,7 +165,7 @@ def extract_token(body):
 
 
 def test_forgot_password_sends_reset_link_to_registered_email(client, sent_emails):
-    response = client.post("/auth/forgot-password", json={"email": EMAIL})
+    response = client.post("/api/v1/auth/forgot-password", json={"email": EMAIL})
 
     assert response.status_code == 200
     assert len(sent_emails) == 1
@@ -175,7 +175,7 @@ def test_forgot_password_sends_reset_link_to_registered_email(client, sent_email
 
 def test_forgot_password_is_case_insensitive(client, sent_emails):
     response = client.post(
-        "/auth/forgot-password", json={"email": "Advisor@Example.COM"}
+        "/api/v1/auth/forgot-password", json={"email": "Advisor@Example.COM"}
     )
 
     assert response.status_code == 200
@@ -183,8 +183,10 @@ def test_forgot_password_is_case_insensitive(client, sent_emails):
 
 
 def test_forgot_password_gives_same_response_for_unknown_email(client, sent_emails, db):
-    known = client.post("/auth/forgot-password", json={"email": EMAIL})
-    unknown = client.post("/auth/forgot-password", json={"email": "nobody@example.com"})
+    known = client.post("/api/v1/auth/forgot-password", json={"email": EMAIL})
+    unknown = client.post(
+        "/api/v1/auth/forgot-password", json={"email": "nobody@example.com"}
+    )
 
     assert unknown.status_code == known.status_code == 200
     assert unknown.json() == known.json()
@@ -197,7 +199,7 @@ def test_forgot_password_gives_same_response_for_unknown_email(client, sent_emai
     "bad_email", ["", "not-an-email", "missing@tld", "@example.com"]
 )
 def test_forgot_password_rejects_invalid_email(client, sent_emails, bad_email):
-    response = client.post("/auth/forgot-password", json={"email": bad_email})
+    response = client.post("/api/v1/auth/forgot-password", json={"email": bad_email})
 
     assert response.status_code == 422
     assert sent_emails == []
@@ -218,12 +220,14 @@ def test_new_request_invalidates_previous_link(client, sent_emails):
 
     assert first != second
     assert (
-        client.get("/auth/reset-password/validate", params={"token": first}).status_code
+        client.get(
+            "/api/v1/auth/reset-password/validate", params={"token": first}
+        ).status_code
         == 400
     )
     assert (
         client.get(
-            "/auth/reset-password/validate", params={"token": second}
+            "/api/v1/auth/reset-password/validate", params={"token": second}
         ).status_code
         == 200
     )
@@ -235,13 +239,17 @@ def test_new_request_invalidates_previous_link(client, sent_emails):
 def test_validate_accepts_fresh_token(client, sent_emails):
     token = extract_token(request_reset(client, sent_emails))
 
-    response = client.get("/auth/reset-password/validate", params={"token": token})
+    response = client.get(
+        "/api/v1/auth/reset-password/validate", params={"token": token}
+    )
 
     assert response.status_code == 200
 
 
 def test_validate_rejects_unknown_token(client):
-    response = client.get("/auth/reset-password/validate", params={"token": "x" * 43})
+    response = client.get(
+        "/api/v1/auth/reset-password/validate", params={"token": "x" * 43}
+    )
 
     assert response.status_code == 400
     assert "invalid or has expired" in response.json()["detail"]
@@ -251,7 +259,9 @@ def test_validate_rejects_expired_token(client, sent_emails, db):
     token = extract_token(request_reset(client, sent_emails))
     db.tokens[0]["expires_at"] = datetime.now(UTC) - timedelta(minutes=1)
 
-    response = client.get("/auth/reset-password/validate", params={"token": token})
+    response = client.get(
+        "/api/v1/auth/reset-password/validate", params={"token": token}
+    )
 
     assert response.status_code == 400
 
@@ -263,7 +273,7 @@ def test_reset_password_updates_password_so_new_one_works(client, sent_emails, d
     token = extract_token(request_reset(client, sent_emails))
 
     response = client.post(
-        "/auth/reset-password", json={"token": token, "password": NEW_PASSWORD}
+        "/api/v1/auth/reset-password", json={"token": token, "password": NEW_PASSWORD}
     )
 
     assert response.status_code == 200
@@ -276,10 +286,11 @@ def test_reset_token_cannot_be_used_twice(client, sent_emails, db):
     token = extract_token(request_reset(client, sent_emails))
 
     first = client.post(
-        "/auth/reset-password", json={"token": token, "password": NEW_PASSWORD}
+        "/api/v1/auth/reset-password", json={"token": token, "password": NEW_PASSWORD}
     )
     second = client.post(
-        "/auth/reset-password", json={"token": token, "password": "AnotherPass789!!"}
+        "/api/v1/auth/reset-password",
+        json={"token": token, "password": "AnotherPass789!!"},
     )
 
     assert first.status_code == 200
@@ -293,7 +304,7 @@ def test_reset_rejects_expired_token(client, sent_emails, db):
     db.tokens[0]["expires_at"] = datetime.now(UTC) - timedelta(seconds=1)
 
     response = client.post(
-        "/auth/reset-password", json={"token": token, "password": NEW_PASSWORD}
+        "/api/v1/auth/reset-password", json={"token": token, "password": NEW_PASSWORD}
     )
 
     assert response.status_code == 400
@@ -302,7 +313,8 @@ def test_reset_rejects_expired_token(client, sent_emails, db):
 
 def test_reset_rejects_unknown_token(client, db):
     response = client.post(
-        "/auth/reset-password", json={"token": "z" * 43, "password": NEW_PASSWORD}
+        "/api/v1/auth/reset-password",
+        json={"token": "z" * 43, "password": NEW_PASSWORD},
     )
 
     assert response.status_code == 400
@@ -314,7 +326,7 @@ def test_reset_enforces_password_requirements(client, sent_emails, db, bad_passw
     token = extract_token(request_reset(client, sent_emails))
 
     response = client.post(
-        "/auth/reset-password", json={"token": token, "password": bad_password}
+        "/api/v1/auth/reset-password", json={"token": token, "password": bad_password}
     )
 
     assert response.status_code == 422

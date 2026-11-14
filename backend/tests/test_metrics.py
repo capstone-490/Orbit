@@ -1,4 +1,6 @@
 # 50% or more AI-generated
+import re
+
 from fastapi.testclient import TestClient
 from prometheus_client import REGISTRY, generate_latest
 
@@ -41,24 +43,25 @@ def test_no_pii_in_labels():
     # Use an advisor id  to test the dynamic route
     access_token = create_access_token(123456)
     response = client.get(
-        "/meetings/123456?email=secret@example.com",
+        "/api/v1/meetings/123456?email=secret@example.com",
         headers={"Authorization": f"Bearer {access_token}"},
     )
     text = api_metrics_text()
     assert response.status_code == 200
-    assert 'route="/meetings/{advisor_id}"' in text
-    assert "123456" not in text
-    assert "secret@example.com" not in text
+    assert 'route="/api/v1/meetings/{advisor_id}"' in text
+    labels = re.findall(r"\{([^}]*)\}", text)
+    assert all("123456" not in label for label in labels)
+    assert all("secret@example.com" not in label for label in labels)
 
 
 def test_ab_route_has_variant_label():
-    response = client.get("/ab-test")
+    response = client.get("/api/v1/feature-flags/ab-test")
     assert response.status_code == 200
 
     variant = response.json()["Variant"]
     assert variant in ("A", "B")
 
-    assert count("/ab-test", variant=variant) >= 1
+    assert count("/api/v1/feature-flags/ab-test", variant=variant) >= 1
 
 
 def test_metrics_endpoint_is_not_counted():

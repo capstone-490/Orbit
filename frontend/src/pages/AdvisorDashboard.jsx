@@ -7,7 +7,7 @@ import { getAdvisorDashboard } from '../services/AdvisorDashboardApi'
 import { getCurrentAdvisor } from '../services/AuthApi'
 import { getAdvisorMeetings } from '../services/MeetingApi'
 
-const API_BASE_URL = 'http://localhost:8001'
+const API_BASE_URL = import.meta.env.VITE_API_URL
 
 const mapMeetingsToSchedule = (meetings) =>
   meetings.map((meeting) => ({
@@ -33,7 +33,7 @@ function AdvisorDashboard() {
   useEffect(() => {
     let active = true
 
-    const fetchData = async () => {
+    const fetchAllDashboardData = async () => {
       try {
         if (active) {
           setLoading(true)
@@ -43,7 +43,7 @@ function AdvisorDashboard() {
         const advisor = await getCurrentAdvisor()
         const advisorId = advisor.id
 
-        const [tasksRes, meetingsData, clientsRes] = await Promise.all([
+        const [tasksRes, meetingsData, clientsRes, summaryData] = await Promise.all([
           fetch(`${API_BASE_URL}/advisors/${advisorId}/tasks`, {
             credentials: 'include',
           }),
@@ -51,6 +51,7 @@ function AdvisorDashboard() {
           fetch(`${API_BASE_URL}/advisors/${advisorId}/clients`, {
             credentials: 'include',
           }),
+          getAdvisorDashboard(),
         ])
 
         if (!tasksRes.ok || !clientsRes.ok) {
@@ -66,6 +67,7 @@ function AdvisorDashboard() {
           setTasks(tasksData)
           setSchedule(mappedSchedule)
           setClients(clientsData)
+          setDashboardData(summaryData)
         }
       } catch (err) {
         if (active) setError(err.message)
@@ -74,7 +76,7 @@ function AdvisorDashboard() {
       }
     }
 
-    void fetchData()
+    void fetchAllDashboardData()
 
     return () => {
       active = false
@@ -93,22 +95,11 @@ function AdvisorDashboard() {
     setSchedule(mapMeetingsToSchedule(meetingsData))
   }, [])
 
-  useEffect(() => {
-    const loadDashboard = async () => {
-      const data = await getAdvisorDashboard()
-      setDashboardData(data)
-    }
-
-    loadDashboard().catch((error) => {
-      console.error('Failed to load dashboard:', error)
-    })
-  }, [])
-
-  if (loading || !dashboardData) {
+  if (loading) {
     return <p>Please wait</p>
   }
 
-  if (error) {
+  if (error || !dashboardData) {
     return <p role="alert">Could not load dashboard data: {error}</p>
   }
 

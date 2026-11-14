@@ -3,6 +3,13 @@ name: orbit-test
 x-test-env: &test-env
   ENVIRONMENT: test
   DEBUG: True
+  ENABLE_DEBUG_ROUTES: ${ENABLE_DEBUG_ROUTES:-false}
+  METRICS_ENABLED: ${METRICS_ENABLED:-1}
+  LOG_LEVEL: INFO
+
+  COOKIE_SECURE: false
+
+
 
   DB_NAME: test_db
   DB_USER: orbit_test
@@ -16,10 +23,16 @@ x-test-env: &test-env
   SECRET_KEY: test-only-secret-key
   ORBIT_ANONYMIZATION_SECRET: test-only-orbit-anonymization-secret-2026
   ORBIT_AUTH_SECRET: test-only-orbit-auth-super-secret-2026
-  ENABLE_DEBUG_ROUTES: ${ENABLE_DEBUG_ROUTES:-false}
-  METRICS_ENABLED: ${METRICS_ENABLED:-1}
 
-  VITE_API_URL: http://localhost:8001
+  VITE_API_URL: http://127.0.0.1:8001/api/v1
+  BACKEND_URL: http://127.0.0.1:8001
+  FRONTEND_URL: http://127.0.0.1:5173
+
+  GOOGLE_TOKEN_ENCRYPTION_KEY: ${GOOGLE_TOKEN_ENCRYPTION_KEY:-bG9jYWwtYW5kLWNpLW9ubHktZ29vZ2xlLWtleS0zMmI=}
+  GOOGLE_CLIENT_SECRETS_FILE: credentials.json
+
+  DB_POOL_SIZE: "10"
+  DB_MAX_OVERFLOW: "20"
 
 x-backend-bind: &backend-bind
   type: bind
@@ -123,7 +136,7 @@ services:
       target: dev
     environment:
       CI: "true"
-      VITE_API_URL: http://localhost:8001
+      VITE_API_URL: http://127.0.0.1:8001/api/v1
     volumes:
       - type: bind
         source: ./frontend
