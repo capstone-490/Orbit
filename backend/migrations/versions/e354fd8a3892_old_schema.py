@@ -497,9 +497,9 @@ def upgrade() -> None:
         )
     """)
 
-    #Audit log triggers (each future table except audit_events should be added
-    #here if we want to get logs of it. It also should have an id otherwise, the 
-    #function will not work)
+    # Audit log triggers (each future table except audit_events should be added
+    # here if we want to get logs of it. It also should have an id otherwise, the
+    # function will not work)
 
     op.execute("""
     CREATE TRIGGER audit_events_trigger

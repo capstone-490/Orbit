@@ -115,6 +115,7 @@ def test_application_role_has_no_update_or_delete_permissions(
     assert can_update is False
     assert can_delete is False
 
+
 def test_client_insert_creates_audit_event(db_session):
     db_session.execute(
         text("""
@@ -142,8 +143,9 @@ def test_client_insert_creates_audit_event(db_session):
 
     client_id = result.scalar_one()
 
-    event = db_session.execute(
-        text("""
+    event = (
+        db_session.execute(
+            text("""
             SELECT
                 resource_type,
                 resource_id,
@@ -156,8 +158,11 @@ def test_client_insert_creates_audit_event(db_session):
             WHERE resource_type = 'clients'
               AND resource_id = :client_id
         """),
-        {"client_id": str(client_id)},
-    ).mappings().one()
+            {"client_id": str(client_id)},
+        )
+        .mappings()
+        .one()
+    )
 
     assert event["resource_type"] == "clients"
     assert event["resource_id"] == str(client_id)
@@ -188,8 +193,9 @@ def test_client_insert_no_config_create_systes_user(db_session):
 
     client_id = result.scalar_one()
 
-    event = db_session.execute(
-        text("""
+    event = (
+        db_session.execute(
+            text("""
             SELECT
                 resource_type,
                 resource_id,
@@ -202,8 +208,11 @@ def test_client_insert_no_config_create_systes_user(db_session):
             WHERE resource_type = 'clients'
               AND resource_id = :client_id
         """),
-        {"client_id": str(client_id)},
-    ).mappings().one()
+            {"client_id": str(client_id)},
+        )
+        .mappings()
+        .one()
+    )
 
     assert event["resource_type"] == "clients"
     assert event["resource_id"] == str(client_id)
@@ -213,6 +222,7 @@ def test_client_insert_no_config_create_systes_user(db_session):
 
     assert event["before_state"] == {}
     assert event["after_state"]["name"] == "Audit Test Client"
+
 
 def test_client_insert_wrong_user_type(db_session):
     db_session.execute(
@@ -240,7 +250,6 @@ def test_client_insert_wrong_user_type(db_session):
         )
 
     assert "audit_events_actor_type_check" in str(exc_info.value)
-
 
 
 def test_client_update_creates_accurate_audit_diff(db_session):
@@ -278,24 +287,24 @@ def test_client_update_creates_accurate_audit_diff(db_session):
         {"client_id": client_id},
     )
 
-    event = db_session.execute(
-        text("""
+    event = (
+        db_session.execute(
+            text("""
             SELECT before_state, after_state
             FROM audit_events
             WHERE resource_type = 'clients'
               AND resource_id = :client_id
               AND action_type = 'UPDATE'
         """),
-        {"client_id": str(client_id)},
-    ).mappings().one()
+            {"client_id": str(client_id)},
+        )
+        .mappings()
+        .one()
+    )
 
-    assert event["before_state"] == {
-        "name": "Carrot"
-    }
+    assert event["before_state"] == {"name": "Carrot"}
 
-    assert event["after_state"] == {
-        "name": "Updated Name"
-    }
+    assert event["after_state"] == {"name": "Updated Name"}
 
 
 def test_audit_event_rolls_back_with_business_transaction(db_session):
