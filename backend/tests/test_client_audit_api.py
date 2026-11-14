@@ -15,8 +15,7 @@ def existing_advisor():
 
     email = f"test_advisor_{uuid4().hex[:8]}@example.com"
 
-    with psycopg.connect(settings.psycopg_database_uri) as conn:
-        with conn.cursor() as cur:
+    with psycopg.connect(settings.psycopg_database_uri) as conn, conn.cursor() as cur:
             cur.execute(
                 """
                 INSERT INTO advisors (
@@ -33,8 +32,7 @@ def existing_advisor():
 
     yield {"id": advisor_id}
 
-    with psycopg.connect(settings.psycopg_database_uri) as conn:
-        with conn.cursor() as cur:
+    with psycopg.connect(settings.psycopg_database_uri) as conn, conn.cursor() as cur:
             cur.execute(
                 "DELETE FROM advisors WHERE id = %s",
                 (advisor_id,),
@@ -57,8 +55,7 @@ def existing_client(existing_advisor):
     email = f"test_client_{uuid4().hex[:8]}@example.com"
     phone = f"555{uuid4().int % 10**7:07d}"
 
-    with psycopg.connect(settings.psycopg_database_uri) as conn:
-        with conn.cursor() as cur:
+    with psycopg.connect(settings.psycopg_database_uri) as conn, conn.cursor() as cur:
             cur.execute(
                 """
                 INSERT INTO clients (
@@ -87,8 +84,7 @@ def existing_client(existing_advisor):
 
     yield client_record
 
-    with psycopg.connect(settings.psycopg_database_uri) as conn:
-        with conn.cursor() as cur:
+    with psycopg.connect(settings.psycopg_database_uri) as conn, conn.cursor() as cur:
             cur.execute(
                 "DELETE FROM clients WHERE id = %s",
                 (client_record["id"],),
