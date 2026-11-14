@@ -556,3 +556,46 @@ def test_briefing_notes_rejects_invalid_meeting_id(mock_db):
 
     assert response.status_code == 422
     mock_db.execute.assert_not_called()
+
+
+def test_briefing_notes_unauthorized_advisor(mock_db):
+    """An advisor cannot retrieve notes for a meeting they do not own."""
+    mock_db.fetchone.return_value = None
+
+    response = client.get("/meetings/5/briefing-notes")
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Meeting not found."
+
+    mock_db.execute.assert_called_once()
+    query, params = mock_db.execute.call_args.args
+
+    assert "m.advisor_id = %(advisor_id)s" in query
+    assert "c.advisor_id = %(advisor_id)s" in query
+    assert params == {"meeting_id": 5, "advisor_id": 1}
+
+    mock_db.fetchall.assert_not_called()
+
+
+def test_briefing_notes_read_only(mock_db):
+    """Retrieving briefing notes must not modify stored information."""
+    mock_db.fetchone.return_value = (7,)
+    mock_db.fetchall.return_value = []
+    mock_db.description = [
+        SimpleNamespace(name=name)
+        for name in ("id", "title", "content", "created_at", "updated_at")
+    ]
+
+    response = client.get("/meetings/5/briefing-notes")
+
+    assert response.status_code == 200
+    assert response.json() == []
+    assert mock_db.execute.call_count == 2
+
+    for call in mock_db.execute.call_args_list:
+        query = call.args[0].strip().upper()
+
+        assert query.startswith("SELECT")
+        assert "INSERT INTO" not in query
+        assert "UPDATE " not in query
+        assert "DELETE FROM" not in query
