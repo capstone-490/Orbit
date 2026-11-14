@@ -374,7 +374,7 @@
 .cal-page .cell {
   display: block;
   width: 100%;
-  min-height: 100px;
+  min-height: 120px;
   min-width: 0;
   padding: 6px;
   font: inherit;
@@ -389,7 +389,7 @@
 
 .cal-page .tg-scroll {
   overflow: auto;
-  max-height: 60vh;
+  max-height: 75vh;
 }
 .cal-page .side {
   padding: 16px;
