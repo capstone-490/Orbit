@@ -158,7 +158,8 @@
 }
 
 .action-button,
-.reschedule-button {
+.reschedule-button,
+.briefing-notes-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -255,7 +256,8 @@
   }
 
   .action-button,
-  .reschedule-button {
+  .reschedule-button,
+  .briefing-notes-button {
     font-size: 11px;
     padding: 7px 9px;
   }

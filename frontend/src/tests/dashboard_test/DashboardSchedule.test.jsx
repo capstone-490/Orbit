@@ -1,7 +1,12 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import '@testing-library/jest-dom/vitest'
 import DashboardSchedule from '../../components/dashboard/DashboardSchedule'
+import { getMeetingBriefingNotes } from '../../services/MeetingApi'
+
+vi.mock('../../services/MeetingApi', () => ({
+  getMeetingBriefingNotes: vi.fn(),
+}))
 
 beforeEach(() => {
   vi.useFakeTimers()
@@ -70,11 +75,41 @@ describe('DashboardSchedule Component', () => {
     expect(screen.getByText('Conference Room B')).toBeInTheDocument()
   })
 
-  test('derives action labels from the meeting platform', () => {
+  test('renders View Details actions for eligible meetings', () => {
     render(<DashboardSchedule scheduleData={mockScheduleData} />)
 
-    expect(screen.getByText('Join Call')).toBeInTheDocument()
-    expect(screen.getByText('View Details')).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'View Details' })).toHaveLength(2)
+
+    expect(screen.queryByText('Join Call')).not.toBeInTheDocument()
+  })
+
+  test('allows viewing details and briefing notes for cancelled meetings', () => {
+    getMeetingBriefingNotes.mockReturnValue(new Promise(() => {}))
+
+    const cancelledMeeting = {
+      ...mockScheduleData[0],
+      id: 99,
+      completionStatus: 'Cancelled',
+    }
+
+    render(<DashboardSchedule scheduleData={[cancelledMeeting]} />)
+
+    expect(screen.getByText('Cancelled')).toBeInTheDocument()
+
+    const viewDetailsButton = screen.getByRole('button', {
+      name: 'View Details',
+    })
+
+    fireEvent.click(viewDetailsButton)
+
+    const dialog = screen.getByRole('dialog', {
+      name: 'Meeting Details',
+    })
+
+    expect(dialog).toBeInTheDocument()
+    expect(within(dialog).getByText('Alice Johnson')).toBeInTheDocument()
+    expect(within(dialog).getByText('Cancelled')).toBeInTheDocument()
+    expect(getMeetingBriefingNotes).toHaveBeenCalledWith(99)
   })
 
   test('renders an empty schedule without meeting items', () => {
@@ -138,5 +173,27 @@ describe('DashboardSchedule Component', () => {
 
     expect(screen.getByText('Cancelled')).toBeInTheDocument()
     expect(document.querySelector('.schedule-item.overdue')).not.toBeInTheDocument()
+  })
+
+  test('opens meeting details with briefing notes for the selected meeting', () => {
+    getMeetingBriefingNotes.mockReturnValue(new Promise(() => {}))
+
+    render(<DashboardSchedule scheduleData={mockScheduleData} />)
+
+    const briefingButtons = screen.getAllByRole('button', {
+      name: 'View Details',
+    })
+
+    expect(briefingButtons).toHaveLength(2)
+
+    fireEvent.click(briefingButtons[0])
+
+    const dialog = screen.getByRole('dialog', {
+      name: 'Meeting Details',
+    })
+
+    expect(dialog).toBeInTheDocument()
+    expect(within(dialog).getByText('Alice Johnson')).toBeInTheDocument()
+    expect(getMeetingBriefingNotes).toHaveBeenCalledWith(1)
   })
 })

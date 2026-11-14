@@ -16,6 +16,54 @@ router = APIRouter(
 )
 
 
+@router.get("/{meeting_id}/briefing-notes")
+def get_meeting_briefing_notes(
+    meeting_id: int,
+    advisor: dict[str, int] = Depends(get_current_advisor),
+):
+    """Retrieve a meeting's client notes for the authenticated advisor."""
+    with get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT m.client_id
+            FROM meetings AS m
+            JOIN clients AS c ON c.id = m.client_id
+            WHERE m.id = %(meeting_id)s
+              AND m.advisor_id = %(advisor_id)s
+              AND c.advisor_id = %(advisor_id)s
+            """,
+            {
+                "meeting_id": meeting_id,
+                "advisor_id": advisor["id"],
+            },
+        )
+
+        meeting = cur.fetchone()
+
+        if meeting is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Meeting not found.",
+            )
+
+        client_id = meeting[0]
+
+        cur.execute(
+            """
+            SELECT id, title, content, created_at, updated_at
+            FROM notes
+            WHERE client_id = %(client_id)s
+            ORDER BY created_at DESC, id DESC
+            """,
+            {"client_id": client_id},
+        )
+
+        columns = [column.name for column in cur.description]
+        rows = cur.fetchall()
+
+    return [dict(zip(columns, row)) for row in rows]
+
+
 class RescheduleMeetingRequest(BaseModel):
     new_start: datetime
 
