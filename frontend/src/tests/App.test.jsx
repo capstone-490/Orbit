@@ -72,9 +72,9 @@ describe('App routes', () => {
       ['Activity', 'Activity'],
     ]
 
-    for (const [linkName, pageName] of destinations) {
+    for (const [linkName] of destinations) {
       fireEvent.click(screen.getByRole('link', { name: linkName }))
-      expect(screen.getByText(pageName)).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: linkName })).toHaveAttribute('aria-current', 'page')
     }
 
     expect(screen.getByRole('link', { name: 'Dashboard' })).toHaveAttribute('href', '/dashboard')
