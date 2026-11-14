@@ -312,7 +312,7 @@ def upgrade() -> None:
             resource_id TEXT NOT NULL,
             action_type TEXT NOT NULL,
             changed_at TIMESTAMPTZ DEFAULT NOW(),
-            actor_type TEXT NOT NULL,
+            actor_type TEXT NOT NULL CHECK (actor_type IN ('Advisor', 'Client', 'Agent', 'System')),
             actor_id TEXT,
             before_state JSONB,
             after_state JSONB
@@ -380,12 +380,12 @@ def upgrade() -> None:
 
         IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE' THEN
             INSERT INTO audit_events (resource_type, resource_id, action_type, actor_id, actor_type, before_state, after_state, changed_at)
-            VALUES (TG_TABLE_NAME, NEW.id, TG_OP, user_id, user_type, old_values, new_values, NOW());
+            VALUES (TG_TABLE_NAME, NEW.id, TG_OP, user_id, user_type, old_values, new_values, NOW() AT TIME ZONE 'UTC');
 
             RETURN NEW;
         ELSE
             INSERT INTO audit_events (resource_type, resource_id, action_type, actor_id, actor_type, before_state, after_state, changed_at)
-            VALUES (TG_TABLE_NAME, OLD.id, TG_OP, user_id, user_type, old_values, new_values, NOW());
+            VALUES (TG_TABLE_NAME, OLD.id, TG_OP, user_id, user_type, old_values, new_values, NOW() AT TIME ZONE 'UTC');
 
             RETURN OLD;
         END IF;

@@ -141,3 +141,78 @@ def list_clients(advisor: dict[str, int] = Depends(get_current_advisor)):
         rows = cur.fetchall()
 
     return [dict(zip(columns, row)) for row in rows]
+
+
+#Temporary patch as US-15.1 needed a patch client API for testing purposes
+@router.patch("/{client_id}")
+def update_client(
+    client_id: int,
+    client: dict,
+    advisor: dict[str, int] = Depends(get_current_advisor),
+):
+
+    allowed_fields = {
+        "name",
+        "phone_number",
+        "email",
+        "address",
+        "age",
+        "occupation",
+        "timeline",
+    }
+
+    updates = {
+        key: value
+        for key, value in client.items()
+        if key in allowed_fields
+    }
+
+    if not updates:
+        raise HTTPException(
+            status_code=400,
+            detail="No valid fields provided for update",
+        )
+
+    set_clause = ", ".join(
+        f"{field} = %({field})s"
+        for field in updates
+    )
+
+    set_clause += ", updated_at = NOW() AT TIME ZONE 'UTC'"
+
+    query = f"""
+        UPDATE clients
+        SET {set_clause}
+        WHERE id = %(client_id)s
+          AND advisor_id = %(advisor_id)s
+        RETURNING id, name, phone_number, email, address,
+                  age, occupation, timeline, created_at, updated_at
+    """
+
+    updates["client_id"] = client_id
+    updates["advisor_id"] = advisor["id"]
+
+    with get_connection(advisor["id"], "Advisor") as conn, conn.cursor() as cur:
+        cur.execute(query, updates)
+
+        updated_client = cur.fetchone()
+
+        if updated_client is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Client not found",
+            )
+
+    return {
+        "id": updated_client[0],
+        "name": updated_client[1],
+        "phone_number": updated_client[2],
+        "email": updated_client[3],
+        "address": updated_client[4],
+        "age": updated_client[5],
+        "occupation": updated_client[6],
+        "timeline": updated_client[7],
+        "created_at": updated_client[8],
+        "updated_at": updated_client[9],
+        "message": "Client updated successfully",
+    }
