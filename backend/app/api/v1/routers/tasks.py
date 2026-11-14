@@ -25,7 +25,7 @@ def get_tasks(
     try:
         timezone_zi = get_timezone(user_timezone)
 
-        with get_connection(advisor["id"], "Advisor") as conn:
+        with get_connection(str(advisor["id"]), "Advisor") as conn:
             rows = conn.execute(
                 """
                 SELECT
@@ -79,7 +79,7 @@ def create_task(
 
         timezone_zi = get_timezone(user_timezone)
 
-        with get_connection(advisor["id"], "Advisor") as conn:
+        with get_connection(str(advisor["id"]), "Advisor") as conn:
             row = conn.execute(
                 """
                 INSERT INTO tasks_advisor (
