@@ -45,9 +45,20 @@ def upgrade() -> None:
     """)
 
     op.execute("""
-        CREATE TRIGGER trg_google_oauth_credentials_updated_at
-        BEFORE UPDATE ON google_oauth_credentials
-        FOR EACH ROW EXECUTE FUNCTION trigger_set_updated_at();
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1
+                FROM pg_trigger
+                WHERE tgname = 'trg_google_oauth_credentials_updated_at'
+                  AND tgrelid = 'google_oauth_credentials'::regclass
+            ) THEN
+                CREATE TRIGGER trg_google_oauth_credentials_updated_at
+                BEFORE UPDATE ON google_oauth_credentials
+                FOR EACH ROW EXECUTE FUNCTION trigger_set_updated_at();
+            END IF;
+        END
+        $$;
     """)
 
 

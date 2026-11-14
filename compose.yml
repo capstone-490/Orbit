@@ -12,7 +12,7 @@ services:
       ENABLE_DEBUG_ROUTES: ${ENABLE_DEBUG_ROUTES:-false}
       METRICS_ENABLED: ${METRICS_ENABLED:-1}
     volumes:
-      - postgres_data:/var/lib/postgresql
+      - pgdata:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
       interval: 10s
@@ -31,6 +31,7 @@ services:
       - .env
     environment:
       DB_HOST: db
+      DB_PORT: 5432
     depends_on:
       db:
         condition: service_healthy
@@ -45,6 +46,9 @@ services:
       target: runtime
     env_file:
       - .env
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
     depends_on:
       db:
         condition: service_healthy
@@ -61,5 +65,4 @@ networks:
     driver: bridge
 
 volumes:
-  postgres_data:
-
+  pgdata:
