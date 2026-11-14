@@ -56,9 +56,18 @@ export const SESSION_TYPES = {
   business: {
     label: 'Business Presentation',
     minutes: 60,
-    bg: '#FDECEF',
-    bd: '#F2BFC8',
-    fg: '#A52F47',
-    dot: '#D64B62',
+    bg: '#FFF8DB',
+    bd: '#EBD98A',
+    fg: '#7A5F00',
+    dot: '#C9A200',
   },
+}
+
+export const TIMELINE_TO_SESSION_TYPE = {
+  'Corporate Introduction': 'introduction',
+  'Investment Education': 'investment',
+  'Tax Education': 'tax',
+  'Insurance Education': 'insurance',
+  'Financial Needs Analysis': 'financial',
+  'Financial Plan': 'planning',
 }
