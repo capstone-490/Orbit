@@ -118,18 +118,9 @@
 .cal-page .chip i {
   margin: 0;
 }
+.cal-page .skel,
 .cal-page .more {
-  font-size: 11px;
-  color: #566;
-  margin-top: 4px;
-}
-.cal-page .skel {
-  height: 22px;
-  margin-top: 6px;
-  border-radius: 4px;
-  background: linear-gradient(90deg, #eef1f6, #f8f9fc, #eef1f6);
-  background-size: 200%;
-  animation: cal-shimmer 1.2s infinite;
+  display: block;
 }
 @keyframes cal-shimmer {
   to {
@@ -381,13 +372,21 @@
   font-weight: 500;
 }
 .cal-page .cell {
+  display: block;
+  width: 100%;
   min-height: 100px;
+  min-width: 0;
+  padding: 6px;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
   border-top: 1px solid #e6eaf2;
   border-right: 1px solid #e6eaf2;
-  padding: 6px;
   cursor: pointer;
-  min-width: 0;
 }
+
 .cal-page .tg-scroll {
   overflow: auto;
   max-height: 60vh;
