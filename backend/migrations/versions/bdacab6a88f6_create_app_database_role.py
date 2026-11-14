@@ -87,13 +87,13 @@ def upgrade() -> None:
 
         op.execute(f"""
             REVOKE UPDATE, DELETE, TRUNCATE
-            ON TABLE audit_log
+            ON TABLE audit_events
             FROM {role};
         """)
 
         op.execute(f"""
             GRANT SELECT, INSERT
-            ON TABLE audit_log
+            ON TABLE audit_events
             TO {role};
         """)
 
