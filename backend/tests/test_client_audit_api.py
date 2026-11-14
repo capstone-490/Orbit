@@ -1,12 +1,12 @@
 # Below 50% AI-generated
-import pytest
-import psycopg
-
 from uuid import uuid4
+
+import psycopg
+import pytest
 from sqlalchemy import text
 
-from app.core.config import settings
 from app.auth import create_access_token
+from app.core.config import settings
 
 
 @pytest.fixture
