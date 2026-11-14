@@ -1,5 +1,6 @@
 import '../../styles/DashboardSchedule.css'
 import { useState } from 'react'
+import BriefingNotesModal from './BriefingNotesModal'
 import RescheduleMeetingModal from './RescheduleMeetingModal'
 
 const formatShortTime = (timestamp) => {
@@ -50,19 +51,9 @@ const getMeetingStatusLabel = (item, overdue) => {
   return overdue ? 'Overdue' : 'Scheduled'
 }
 
-const getActionLabel = (item) => {
-  const status = getCompletionStatus(item)
-  if (status === 'completed' || status === 'cancelled') return 'View Details'
-
-  return /zoom|google meet|microsoft teams|\bteams\b|video|virtual/i.test(
-    item.locationOrPlatform || '',
-  )
-    ? 'Join Call'
-    : 'View Details'
-}
-
 function DashboardSchedule({ scheduleData, onMeetingRescheduled }) {
   const [meetingToReschedule, setMeetingToReschedule] = useState(null)
+  const [meetingForBriefing, setMeetingForBriefing] = useState(null)
   return (
     <div className="dashboard-schedule">
       <h2>Schedule & Consultations</h2>
@@ -94,8 +85,15 @@ function DashboardSchedule({ scheduleData, onMeetingRescheduled }) {
               )}
             </span>
             <div className="schedule-actions">
-              <span className="action-button">{getActionLabel(item)}</span>
-
+              {item.id != null && (
+                <button
+                  type="button"
+                  className="briefing-notes-button"
+                  onClick={() => setMeetingForBriefing(item)}
+                >
+                  View Details
+                </button>
+              )}
               {statusLabel === 'Scheduled' &&
                 item.id != null &&
                 item.time &&
@@ -117,6 +115,12 @@ function DashboardSchedule({ scheduleData, onMeetingRescheduled }) {
           meeting={meetingToReschedule}
           onClose={() => setMeetingToReschedule(null)}
           onSuccess={onMeetingRescheduled}
+        />
+      )}
+      {meetingForBriefing && (
+        <BriefingNotesModal
+          meeting={meetingForBriefing}
+          onClose={() => setMeetingForBriefing(null)}
         />
       )}
     </div>
