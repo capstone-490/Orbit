@@ -1,5 +1,6 @@
 import '../../styles/DashboardTasks.css'
 import { useState } from 'react'
+import { FiCheckCircle } from 'react-icons/fi'
 import { Link } from 'react-router-dom'
 import { isTaskCompleted, TASK_STATUSES } from '../../data/taskStatuses'
 import { API_BASE_URL } from '../../services/AuthApi'
@@ -42,6 +43,7 @@ function DashboardTasks({ priorityTasks, onTaskUpdated }) {
 
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()
   }
+
   // Handle checking/unchecking the task
   const handleCheckboxChange = async (taskId, status) => {
     setUpdatingTaskIds((current) => new Set(current).add(taskId))
@@ -78,13 +80,20 @@ function DashboardTasks({ priorityTasks, onTaskUpdated }) {
   return (
     <div className="dashboard-tasks">
       <div className="section-header">
-        <span className="priority-task-title">Priority Tasks</span>
+        <div className="priority-task-heading">
+          <FiCheckCircle className="priority-task-icon" />
+          <span className="priority-task-title">Priority Tasks</span>
+        </div>
+
         <Link className="all-tasks-link" to="/tasks">
           View All ({priorityTasks.length}) Tasks
         </Link>
       </div>
+
       <hr className="task-divider" />
+
       {updateError && <p role="alert">{updateError}</p>}
+<<<<<<< HEAD
       {priorityTasks
         .filter((item) => !isTaskCompleted(item))
         .slice(0, 3)
@@ -117,6 +126,33 @@ function DashboardTasks({ priorityTasks, onTaskUpdated }) {
             </div>
           )
         })}
+=======
+
+      {priorityTasks.slice(0, 3).map((item) => {
+        const overdue = isTaskOverdue(item)
+
+        return (
+          <div key={item.id} className={`task-item${overdue ? ' overdue' : ''}`}>
+            <input
+              type="checkbox"
+              className="task-checkbox"
+              checked={Boolean(item.completed)}
+              disabled={updatingTaskIds.has(item.id)}
+              onChange={(event) => handleCheckboxChange(item.id, event.target.checked)}
+            />
+
+            <div className="task-details">
+              <span className="task-title">{item.taskTitle}</span>
+              <span className="task-client">{item.clientName || 'No client assigned'}</span>
+            </div>
+
+            <span className={`task-due-date${overdue ? ' overdue' : ''}`}>
+              {overdue ? `OVERDUE · ${formatDueDate(item.dueDate)}` : formatDueDate(item.dueDate)}
+            </span>
+          </div>
+        )
+      })}
+>>>>>>> fd33bdf (Fixed conflicts)
     </div>
   )
 }

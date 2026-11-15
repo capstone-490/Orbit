@@ -67,9 +67,7 @@ describe('DashboardSummary Component', () => {
     )
 
     expect(screen.getByText('2')).toBeInTheDocument()
-    expect(screen.getByText(/Next:/)).toHaveTextContent(
-      new Date('2026-10-30T13:00:00').toLocaleString(),
-    )
+    expect(screen.getByText(/Next:/)).toHaveTextContent('Next: 1:00 PM')
   })
 
   test('counts tasks overdue by date without marking tasks due today overdue', () => {
