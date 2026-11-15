@@ -1,16 +1,11 @@
 import '../../styles/DashboardHeader.css'
 
-function DashboardHeader({ advisorName, meetingCount, criticalActionCount }) {
+function DashboardHeader() {
   return (
-    <section className="dashboard-header">
-      <h1>Good morning, {advisorName}.</h1>
-
-      <p>
-        You have {meetingCount} meetings and{' '}
-        <span className="critical-action">{criticalActionCount} critical fiduciary action</span>{' '}
-        scheduled for today.
-      </p>
-    </section>
+    <header className="dashboard-header">
+      <h1>Dashboard Overview</h1>
+      <p>Your workspace at a glance.</p>
+    </header>
   )
 }
 
