@@ -4,7 +4,7 @@
   flex-wrap: wrap;
   margin: 20px;
 }
-.dashboard-summary span.summary-card {
+.dashboard-summary .summary-card {
   display: flex;
   flex-direction: column;
   align-items: stretch;

@@ -2,6 +2,7 @@ import '../../styles/DashboardTasks.css'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { isTaskCompleted, TASK_STATUSES } from '../../data/taskStatuses'
+import { API_BASE_URL } from '../../services/AuthApi'
 
 function DashboardTasks({ priorityTasks, onTaskUpdated }) {
   const [updatingTaskIds, setUpdatingTaskIds] = useState(() => new Set())
@@ -47,7 +48,7 @@ function DashboardTasks({ priorityTasks, onTaskUpdated }) {
     setUpdateError('')
 
     try {
-      const response = await fetch(`http://localhost:8001/advisors/tasks/${taskId}`, {
+      const response = await fetch(`${API_BASE_URL}/advisors/tasks/${taskId}`, {
         method: 'PATCH',
         credentials: 'include',
         headers: {
@@ -96,6 +97,7 @@ function DashboardTasks({ priorityTasks, onTaskUpdated }) {
               <input
                 type="checkbox"
                 className="task-checkbox"
+                aria-label={`Complete ${item.taskTitle}`}
                 checked={isTaskCompleted(item)}
                 disabled={updatingTaskIds.has(item.id)}
                 onChange={(event) =>

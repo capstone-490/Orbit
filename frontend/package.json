@@ -11,7 +11,9 @@
     "test:watch": "vitest",
     "lint": "biome lint . && eslint .",
     "format:check": "biome format .",
-    "check": "pnpm biome check . && pnpm eslint ."
+    "check": "pnpm biome check . && pnpm eslint .",
+    "test:e2e": "playwright test",
+    "test:e2e:report": "playwright show-report"
   },
   "dependencies": {
     "@daypicker/react": "^10.0.2",
@@ -23,6 +25,7 @@
   "devDependencies": {
     "@biomejs/biome": "^2.6.5",
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.65.0",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.8",
@@ -36,6 +39,7 @@
     "eslint-plugin-react-refresh": "^0.5.7",
     "globals": "^17.14.0",
     "jsdom": "^30.1.3",
+    "pg": "^8.23.1",
     "typescript": "^7.0.2",
     "vite": "^8.3.5",
     "vitest": "^5.1.0"

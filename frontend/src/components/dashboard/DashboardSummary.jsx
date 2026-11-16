@@ -73,7 +73,7 @@ function DashboardSummary({ dashboardSummaryData, tasks, schedule, clients }) {
 
   return (
     <section className="dashboard-summary">
-      <span className="summary-card">
+      <article className="summary-card" aria-label="Total clients">
         <span className="card-header">
           <span className="card-title">TOTAL CLIENTS</span>
           <span className="card-icon">👥</span>
@@ -84,8 +84,8 @@ function DashboardSummary({ dashboardSummaryData, tasks, schedule, clients }) {
             +{clientNewCount} this month
           </span>
         </span>
-      </span>
-      <span className="summary-card">
+      </article>
+      <article className="summary-card" aria-label="Upcoming meetings">
         <span className="card-header">
           <span className="card-title">UPCOMING MEETINGS</span>
           <span className="card-icon">📅</span>
@@ -98,8 +98,8 @@ function DashboardSummary({ dashboardSummaryData, tasks, schedule, clients }) {
             Next: {nextMeeting}
           </span>
         </span>
-      </span>
-      <span className="summary-card">
+      </article>
+      <article className="summary-card" aria-label="Pending tasks">
         <span className="card-header">
           <span className="card-title">PENDING TASKS</span>
           <span className="card-icon">📋</span>
@@ -112,8 +112,8 @@ function DashboardSummary({ dashboardSummaryData, tasks, schedule, clients }) {
             {overdueTaskCount} overdue
           </span>
         </span>
-      </span>
-      <span className="summary-card">
+      </article>
+      <article className="summary-card" aria-label="Pending FNA / plans">
         <span className="card-header">
           <span className="card-title">PENDING FNA / PLANS</span>{' '}
           {/*to be updated with actual data from the backend*/}
@@ -127,7 +127,7 @@ function DashboardSummary({ dashboardSummaryData, tasks, schedule, clients }) {
             {dashboardSummaryData.currentFNAPlans} FNA / Plans in progress
           </span>
         </span>
-      </span>
+      </article>
     </section>
   )
 }
