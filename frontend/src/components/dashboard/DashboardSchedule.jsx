@@ -62,9 +62,10 @@ function DashboardSchedule({ scheduleData, onMeetingRescheduled }) {
         const statusLabel = getMeetingStatusLabel(item, overdue)
 
         return (
-          <div
+          <article
             key={item.id || `${item.time}-${item.clientName}`}
             className={`schedule-item${overdue ? ' overdue' : ''}`}
+            aria-label={`Meeting with ${item.clientName}`}
           >
             <span className="meeting-time">
               <div className={`item-time ${index === 0 ? 'text-blue' : 'item-time'}`}>
@@ -107,7 +108,7 @@ function DashboardSchedule({ scheduleData, onMeetingRescheduled }) {
                   </button>
                 )}
             </div>
-          </div>
+          </article>
         )
       })}
       {meetingToReschedule && (

@@ -7,10 +7,8 @@ import DashboardSummary from '../components/dashboard/DashboardSummary'
 import DashboardTasks from '../components/dashboard/DashboardTasks'
 import { usePriorityActions } from '../hooks/usePriorityActions'
 import { getAdvisorDashboard } from '../services/AdvisorDashboardApi'
-import { getCurrentAdvisor } from '../services/AuthApi'
+import { API_BASE_URL, getCurrentAdvisor } from '../services/AuthApi'
 import { getAdvisorMeetings } from '../services/MeetingApi'
-
-const API_BASE_URL = 'http://localhost:8001'
 
 const mapMeetingsToSchedule = (meetings) =>
   meetings.map((meeting) => ({
