@@ -1418,37 +1418,115 @@ CREATE INDEX idx_approval_requests_pending
     ON approval_requests (organization_id, subscription_id, status, expires_at)
     WHERE status = 'pending';
 
-CREATE TABLE audit_log (
+CREATE TABLE audit_events (
     id UUID PRIMARY KEY DEFAULT uuidv7(),
-    -- nullable for platform events (global feature flag changes)
     organization_id UUID
         REFERENCES organizations(id),
     subscription_id UUID,
+    
     actor_type TEXT NOT NULL
-        CHECK (actor_type IN ('user', 'agent', 'platform', 'system')),
-    actor_id TEXT NOT NULL,
-    effective_subject_id TEXT NOT NULL,
-    action TEXT NOT NULL,
-    target_type TEXT NOT NULL,
-    target_id TEXT NOT NULL,
-    authorization_decision TEXT NOT NULL
-        CHECK (authorization_decision IN ('allow', 'deny', 'not_applicable')),
+        CHECK (actor_type IN ('membership', 'agent', 'prospect', 'platform', 'system')),
+    actor_id TEXT, -- UUID of membership, agent, prospect, or identity; NULL only for pure system jobs
+    effective_subject_id TEXT, -- Human membership on whose behalf an agent or delegate is acting
     delegation_id UUID,
+    approval_request_id UUID,
+    
+    event_source TEXT NOT NULL DEFAULT 'db_trigger'
+        CHECK (event_source IN ('db_trigger', 'application', 'system_cascade')),
+    action_type TEXT NOT NULL, -- 'INSERT', 'UPDATE', 'DELETE', or app verbs ('VIEW', 'EXPORT', 'APPROVE', etc.)
+    resource_type TEXT NOT NULL,
+    resource_id TEXT NOT NULL,
+    
+    authorization_decision TEXT NOT NULL DEFAULT 'allow'
+        CHECK (authorization_decision IN ('allow', 'deny', 'not_applicable')),
+    outcome TEXT NOT NULL DEFAULT 'success'
+        CHECK (outcome IN ('success', 'denied', 'error', 'pending_approval')),
+    reason_code TEXT NOT NULL DEFAULT 'mutation_recorded',
+    
     correlation_id TEXT,
     request_id TEXT,
-    occurred_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    outcome TEXT NOT NULL
-        CHECK (outcome IN ('success', 'denied', 'error', 'pending_approval')),
-    reason_code TEXT NOT NULL,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb
+    client_ip INET,
+    user_agent TEXT,
+    
+    changed_fields TEXT[] NOT NULL DEFAULT '{}',
+    before_state JSONB,
+    after_state JSONB,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    
+    occurred_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX idx_audit_log_org_time
-    ON audit_log (organization_id, occurred_at DESC);
+CREATE INDEX idx_audit_events_org_time
+    ON audit_events (organization_id, occurred_at DESC);
 
-CREATE INDEX idx_audit_log_platform_time
-    ON audit_log (occurred_at DESC)
+CREATE INDEX idx_audit_events_resource_lookup
+    ON audit_events (organization_id, resource_type, resource_id, occurred_at DESC);
+
+CREATE INDEX idx_audit_events_actor_lookup
+    ON audit_events (organization_id, actor_type, actor_id, occurred_at DESC);
+
+CREATE INDEX idx_audit_events_platform_time
+    ON audit_events (occurred_at DESC)
     WHERE organization_id IS NULL;
+
+DO $$
+DECLARE
+    t TEXT;
+
+    audited_tables TEXT[] := ARRAY[
+        'feature_flags',
+        'identities',
+        'organizations',
+        'memberships',
+        'advisor_profiles',
+        'staff_profiles',
+        'subscriptions',
+        'agents',
+        'clients',
+        'goals',
+        'notes',
+        'folders',
+        'documents',
+        'meeting_types',
+        'meetings',
+        'tasks',
+        'public_booking_links',
+        'availability_rules',
+        'availability_overrides',
+        'public_prospects',
+        'bookings',
+        'groups',
+        'group_members',
+        'role_definitions',
+        'role_assignments',
+        'agent_delegations',
+        'approval_requests'
+    ];
+
+BEGIN
+    FOREACH t IN ARRAY audited_tables LOOP
+
+        IF to_regclass(t) IS NOT NULL THEN
+
+            EXECUTE format(
+                'DROP TRIGGER IF EXISTS %I ON %I',
+                'trg_' || t || '_audit_events',
+                t
+            );
+
+            EXECUTE format(
+                'CREATE TRIGGER %I
+                AFTER INSERT OR UPDATE OR DELETE
+                ON %I
+                FOR EACH ROW
+                EXECUTE FUNCTION audit_trigger()',
+                'trg_' || t || '_audit_events',
+                t
+            );
+
+    END LOOP;
+END;
+$$;
 
 -- =============================================================================
 -- thin tenant-isolation row-level security

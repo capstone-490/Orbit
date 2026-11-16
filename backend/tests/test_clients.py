@@ -208,3 +208,27 @@ def test_list_clients_empty(mock_db):
 
     assert response.status_code == 200
     assert response.json() == []
+
+
+def test_update_client_not_found(mock_db):
+    mock_db.fetchone.return_value = None
+
+    response = client.patch(
+        "/clients/999",
+        json={"name": "Updated Name"},
+    )
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Client not found"}
+
+    mock_db.execute.assert_called_once()
+
+
+def test_update_client_no_valid_fields():
+    response = client.patch(
+        "/clients/1",
+        json={"invalid_field": "Some value"},
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {"detail": "No valid fields provided for update"}
