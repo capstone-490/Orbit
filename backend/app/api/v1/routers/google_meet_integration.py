@@ -75,6 +75,8 @@ class BookingCreate(BaseModel):
     # Must include a UTC offset, e.g. 2026-11-10T14:00:00-05:00
     start: AwareDatetime
     duration_minutes: int = Field(default=60, ge=1, le=24 * 60)
+    # Shown to the advisor in the calendar event's description
+    notes: str | None = Field(default=None, max_length=2000)
 
 
 @router.get("/authorize")
@@ -201,6 +203,24 @@ def create_meeting(
     }
 
 
+@public_router.get("/advisors")
+def list_bookable_advisors():
+    # Only advisors who connected Google can be booked. Returns just the id and
+    # username; advisors' emails are never exposed publicly.
+    with get_connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+                SELECT a.id, a.username
+                FROM advisors a
+                JOIN google_oauth_credentials g ON g.advisor_id = a.id
+                ORDER BY a.username, a.id
+                """
+        )
+        rows = cur.fetchall()
+
+    return [{"id": row[0], "username": row[1]} for row in rows]
+
+
 @public_router.post("/book/{advisor_id}", status_code=201)
 def book_meeting(advisor_id: int, booking: BookingCreate):
     if booking.start <= datetime.now(UTC):
@@ -220,6 +240,7 @@ def book_meeting(advisor_id: int, booking: BookingCreate):
         booking.start,
         booking.duration_minutes,
         attendees=[{"email": booking.email, "displayName": booking.name}],
+        description=booking.notes,
     )
 
     meeting_id, event = _schedule_calendar_event(
@@ -282,6 +303,7 @@ def _build_event_body(
     start: datetime,
     duration_minutes: int,
     attendees: list[dict] | None = None,
+    description: str | None = None,
 ) -> dict:
     end = start + timedelta(minutes=duration_minutes)
     event_body: dict[str, Any] = {
@@ -298,6 +320,8 @@ def _build_event_body(
     }
     if attendees:
         event_body["attendees"] = attendees
+    if description:
+        event_body["description"] = description
     return event_body
 
 

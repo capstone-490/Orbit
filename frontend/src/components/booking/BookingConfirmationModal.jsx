@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { FiCalendar, FiCheck, FiClock, FiMail, FiUser } from 'react-icons/fi'
+import { FiCalendar, FiCheck, FiClock, FiMail, FiUser, FiVideo } from 'react-icons/fi'
 
 function BookingConfirmationModal({
   meetingName,
@@ -8,6 +8,7 @@ function BookingConfirmationModal({
   selectedTime,
   advisorName,
   email,
+  meetingUri,
   onDone,
 }) {
   const doneButtonRef = useRef(null)
@@ -66,13 +67,25 @@ function BookingConfirmationModal({
             <span>Advisor</span>
             <strong>{advisorName}</strong>
           </div>
+
+          {meetingUri && (
+            <div className="confirmation-row">
+              <FiVideo />
+              <span>Google Meet</span>
+              <strong>
+                <a href={meetingUri} target="_blank" rel="noopener noreferrer">
+                  {meetingUri.replace(/^https?:\/\//, '')}
+                </a>
+              </strong>
+            </div>
+          )}
         </div>
 
         <div className="confirmation-email">
           <FiMail />
           <p>
-            A confirmation email has been sent to <strong>{email}</strong>. It includes your
-            calendar invite and meeting link.
+            A Google Calendar invite has been sent to <strong>{email}</strong>. It includes the
+            meeting link.
           </p>
         </div>
 
