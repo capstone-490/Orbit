@@ -549,6 +549,32 @@ BOOKING = {
 }
 
 
+def test_list_bookable_advisors(mock_db):
+    mock_db.fetchall.return_value = [(1, "nsaba"), (4, "jsmith")]
+
+    response = public_client.get(f"{PREFIX}/advisors")
+
+    assert response.status_code == 200
+    assert response.json() == [
+        {"id": 1, "username": "nsaba"},
+        {"id": 4, "username": "jsmith"},
+    ]
+    mock_db.execute.assert_called_once()
+    query = mock_db.execute.call_args.args[0]
+    # Only advisors with a connected Google account, and never their emails
+    assert "JOIN google_oauth_credentials" in query
+    assert "email" not in query
+
+
+def test_list_bookable_advisors_when_none_connected(mock_db):
+    mock_db.fetchall.return_value = []
+
+    response = public_client.get(f"{PREFIX}/advisors")
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+
 def test_book_meeting_for_existing_client(mock_db, stored_creds, mock_calendar):
     # Credentials, existing client of advisor 1, then _schedule_calendar_event's
     # client check, Orbit calendar and inserted meeting id
@@ -627,9 +653,29 @@ def test_book_meeting_uses_title_and_duration(mock_db, stored_creds, mock_calend
     body = mock_calendar.events.return_value.insert.call_args.kwargs["body"]
     assert body["summary"] == "Retirement planning"
     assert body["end"] == {"dateTime": "2030-01-15T14:30:00-05:00"}
+    # No notes given, so the event has no description
+    assert "description" not in body
     # The duration is also saved on the Orbit meeting
     [(_, params)] = _insert_calls(mock_db)
     assert params[5] == 30
+
+
+def test_book_meeting_puts_notes_in_the_event(mock_db, stored_creds, mock_calendar):
+    mock_db.fetchone.side_effect = [
+        CREDS_ROW,
+        (7, 1),
+        CLIENT_ROW,
+        ("cal-1",),
+        MEETING_ROW,
+    ]
+
+    response = public_client.post(
+        f"{PREFIX}/book/1", json={**BOOKING, "notes": "Questions about my RRSP"}
+    )
+
+    assert response.status_code == 201
+    body = mock_calendar.events.return_value.insert.call_args.kwargs["body"]
+    assert body["description"] == "Questions about my RRSP"
 
 
 def test_book_meeting_in_the_past_returns_422(mock_db, mock_calendar):
@@ -652,6 +698,7 @@ def test_book_meeting_in_the_past_returns_422(mock_db, mock_calendar):
         {"start": "2030-01-15T14:00:00"},  # no UTC offset
         {"duration_minutes": 0},
         {"title": ""},
+        {"notes": "x" * 2001},
     ],
 )
 def test_book_meeting_rejects_invalid_payload(mock_db, mock_calendar, changes):

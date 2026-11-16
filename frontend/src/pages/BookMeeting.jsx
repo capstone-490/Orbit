@@ -1,9 +1,10 @@
 // Substantial AI assistance used; verified with frontend tests and production build.
 
 import { useState } from 'react'
-import { FiArrowRight } from 'react-icons/fi'
+import { FiArrowLeft, FiArrowRight } from 'react-icons/fi'
 import { useNavigate } from 'react-router-dom'
 import orbitLogo from '../assets/orbit-logo.png'
+import AdvisorStep from '../components/booking/AdvisorStep'
 import AdvisoryStageStep from '../components/booking/AdvisoryStageStep'
 import BookingDetailsStep from '../components/booking/BookingDetailsStep'
 import BookingSteps from '../components/booking/BookingSteps'
@@ -15,22 +16,21 @@ import '../styles/BookMeeting.css'
 import AnimatedOrbitBackground from '../components/AnimatedOrbitBackground/AnimatedOrbitBackground'
 
 const INTRODUCTION_MEETING = { name: 'Introduction Meeting', duration: 45 }
-const FOLLOW_UP_STEP_TITLES = ['Advisory Stage', 'Date & Time', 'Client Details']
+const STEP_TITLES = ['Advisor', 'Select Type', 'Date & Time', 'Details']
+const FOLLOW_UP_STEP_TITLES = ['Advisor', 'Advisory Stage', 'Date & Time', 'Client Details']
+
+const STEPS = { advisor: 1, type: 2, dateTime: 3, details: 4 }
 
 function BookMeeting() {
   const navigate = useNavigate()
 
+  const [selectedAdvisor, setSelectedAdvisor] = useState(null)
   const [selectedType, setSelectedType] = useState('introduction')
-  const [currentStep, setCurrentStep] = useState(1)
+  const [currentStep, setCurrentStep] = useState(STEPS.advisor)
   const [showStagePicker, setShowStagePicker] = useState(false)
   const [selectedStageId, setSelectedStageId] = useState(null)
   const [selectedDate, setSelectedDate] = useState(undefined)
   const [selectedTime, setSelectedTime] = useState(null)
-
-  const advisor = {
-    firstName: 'Nayiri',
-    lastName: 'Saba',
-  }
 
   const isFollowUp = selectedType === 'follow-up'
   const selectedStage = advisoryStages.find((stage) => stage.id === selectedStageId)
@@ -43,23 +43,26 @@ function BookMeeting() {
 
   // The stepper switches to the follow-up labels once the client is on the stage picker
   const stepTitles =
-    isFollowUp && (showStagePicker || currentStep > 1) ? FOLLOW_UP_STEP_TITLES : undefined
+    isFollowUp && (showStagePicker || currentStep > STEPS.type)
+      ? FOLLOW_UP_STEP_TITLES
+      : STEP_TITLES
 
   // After the client closes the confirmation pop-up, start a fresh booking
   const resetBooking = () => {
+    setSelectedAdvisor(null)
     setSelectedType('introduction')
     setShowStagePicker(false)
     setSelectedStageId(null)
     setSelectedDate(undefined)
     setSelectedTime(null)
-    setCurrentStep(1)
+    setCurrentStep(STEPS.advisor)
   }
 
   const handleTypeContinue = () => {
     if (isFollowUp) {
       setShowStagePicker(true)
     } else {
-      setCurrentStep(2)
+      setCurrentStep(STEPS.dateTime)
     }
   }
 
@@ -83,9 +86,9 @@ function BookMeeting() {
 
       <div
         className={`booking-card ${
-          currentStep === 2
+          currentStep === STEPS.dateTime
             ? 'booking-card-date-time'
-            : currentStep === 3
+            : currentStep === STEPS.details
               ? 'booking-card-details'
               : ''
         }`}
@@ -94,7 +97,16 @@ function BookMeeting() {
 
         <BookingSteps currentStep={currentStep} titles={stepTitles} />
 
-        {currentStep === 1 && !showStagePicker && (
+        {currentStep === STEPS.advisor && (
+          <AdvisorStep
+            selectedAdvisorId={selectedAdvisor?.id ?? null}
+            onSelectAdvisor={setSelectedAdvisor}
+            onContinue={() => setCurrentStep(STEPS.type)}
+            onAdvisorLogin={() => navigate('/login')}
+          />
+        )}
+
+        {currentStep === STEPS.type && !showStagePicker && (
           <div className="booking-content">
             <div className="booking-section-header">
               <h2>What would you like to book?</h2>
@@ -119,36 +131,34 @@ function BookMeeting() {
               />
             </div>
 
-            <div className="booking-actions">
+            <div className="date-time-actions">
+              <button
+                type="button"
+                className="back-button"
+                onClick={() => setCurrentStep(STEPS.advisor)}
+              >
+                <FiArrowLeft />
+                Back to Advisor
+              </button>
+
               <button type="button" className="continue-button" onClick={handleTypeContinue}>
                 {isFollowUp ? 'Choose Your Next Session' : 'Continue to Date & Time'}
                 <FiArrowRight />
               </button>
             </div>
-
-            <div className="booking-login">
-              Already have an advisor account?{' '}
-              <button
-                type="button"
-                className="advisor-login-link"
-                onClick={() => navigate('/login')}
-              >
-                Advisor Login
-              </button>
-            </div>
           </div>
         )}
 
-        {currentStep === 1 && showStagePicker && (
+        {currentStep === STEPS.type && showStagePicker && (
           <AdvisoryStageStep
             stages={advisoryStages}
             selectedStageId={selectedStageId}
             onSelectStage={setSelectedStageId}
             onBack={() => setShowStagePicker(false)}
-            onContinue={() => setCurrentStep(2)}
+            onContinue={() => setCurrentStep(STEPS.dateTime)}
           />
         )}
-        {currentStep === 2 && (
+        {currentStep === STEPS.dateTime && (
           <DateTimeStep
             selectedDate={selectedDate}
             setSelectedDate={setSelectedDate}
@@ -157,20 +167,20 @@ function BookMeeting() {
             meetingName={meeting.name}
             duration={meeting.duration}
             backLabel={isFollowUp ? 'Back to Advisory Stage' : 'Back to Session Type'}
-            onBack={() => setCurrentStep(1)}
-            onContinue={() => setCurrentStep(3)}
+            onBack={() => setCurrentStep(STEPS.type)}
+            onContinue={() => setCurrentStep(STEPS.details)}
           />
         )}
-        {currentStep === 3 && (
+        {currentStep === STEPS.details && selectedAdvisor && (
           <BookingDetailsStep
             selectedType={selectedType}
             meetingName={meeting.name}
             duration={meeting.duration}
             selectedDate={selectedDate}
             selectedTime={selectedTime}
-            advisor={advisor}
-            onBack={() => setCurrentStep(2)}
-            onChangeBooking={() => setCurrentStep(2)}
+            advisor={selectedAdvisor}
+            onBack={() => setCurrentStep(STEPS.dateTime)}
+            onChangeBooking={() => setCurrentStep(STEPS.dateTime)}
             onBookingComplete={resetBooking}
           />
         )}

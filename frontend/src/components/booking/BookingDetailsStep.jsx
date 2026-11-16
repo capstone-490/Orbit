@@ -8,6 +8,7 @@ import {
   FiShield,
   FiUser,
 } from 'react-icons/fi'
+import { bookMeeting, toBookingStart } from '../../services/BookingApi'
 import BookingConfirmationModal from './BookingConfirmationModal'
 
 function BookingDetailsStep({
@@ -22,6 +23,9 @@ function BookingDetailsStep({
   onBookingComplete,
 }) {
   const [isConfirmed, setIsConfirmed] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState(null)
+  const [meetingUri, setMeetingUri] = useState(null)
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -39,9 +43,39 @@ function BookingDetailsStep({
     }))
   }
 
-  const handleSubmit = (event) => {
+  const consultationName =
+    meetingName ??
+    (selectedType === 'follow-up' ? 'Follow-up Consultation' : 'Introduction Meeting')
+
+  const handleSubmit = async (event) => {
     event.preventDefault()
-    setIsConfirmed(true)
+
+    if (isSubmitting) {
+      return
+    }
+
+    setSubmitError(null)
+    setIsSubmitting(true)
+
+    try {
+      const notes = formData.notes.trim()
+      const result = await bookMeeting(advisor.id, {
+        name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
+        email: formData.email.trim(),
+        phone_number: formData.phone.trim(),
+        title: consultationName,
+        start: toBookingStart(selectedDate, selectedTime),
+        duration_minutes: duration,
+        ...(notes && { notes }),
+      })
+
+      setMeetingUri(result.meeting_uri ?? null)
+      setIsConfirmed(true)
+    } catch (error) {
+      setSubmitError(error.message)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const formattedDate = selectedDate
@@ -52,10 +86,6 @@ function BookingDetailsStep({
         year: 'numeric',
       })
     : ''
-
-  const consultationName =
-    meetingName ??
-    (selectedType === 'follow-up' ? 'Follow-up Consultation' : 'Introduction Meeting')
 
   return (
     <div className="booking-details-content">
@@ -87,11 +117,7 @@ function BookingDetailsStep({
 
           <div>
             <span>ADVISOR</span>
-            <p>
-              {' '}
-              {advisor.firstName} {advisor.lastName}
-              {advisor.designation && `, ${advisor.designation}`}
-            </p>
+            <p>{advisor.username}</p>
           </div>
         </div>
 
@@ -109,7 +135,7 @@ function BookingDetailsStep({
             <p>Enter your information to receive secure meeting access credentials.</p>
           </div>
 
-          <span>STEP 3 OF 3</span>
+          <span>STEP 4 OF 4</span>
         </div>
 
         <div className="details-form-grid">
@@ -163,7 +189,7 @@ function BookingDetailsStep({
 
           <div className="form-group">
             <label htmlFor="phone">
-              Phone Number <em>(Optional)</em>
+              Phone Number <span>*</span>
             </label>
 
             <input
@@ -173,6 +199,8 @@ function BookingDetailsStep({
               placeholder="e.g. +1 (503) 555-0167"
               value={formData.phone}
               onChange={handleChange}
+              maxLength={32}
+              required
             />
           </div>
 
@@ -187,6 +215,7 @@ function BookingDetailsStep({
               placeholder="Share topics, questions, or specific accounts you want to cover..."
               value={formData.notes}
               onChange={handleChange}
+              maxLength={2000}
             />
           </div>
         </div>
@@ -200,14 +229,20 @@ function BookingDetailsStep({
           </p>
         </div>
 
+        {submitError && (
+          <p className="booking-error" role="alert">
+            {submitError}
+          </p>
+        )}
+
         <div className="details-actions">
           <button type="button" className="back-button" onClick={onBack}>
             <FiArrowLeft />
             Back to Date & Time
           </button>
 
-          <button type="submit" className="confirm-booking-button">
-            Confirm & Schedule Meeting
+          <button type="submit" className="confirm-booking-button" disabled={isSubmitting}>
+            {isSubmitting ? 'Scheduling...' : 'Confirm & Schedule Meeting'}
             <FiArrowRight />
           </button>
         </div>
@@ -218,8 +253,9 @@ function BookingDetailsStep({
           duration={duration}
           formattedDate={formattedDate}
           selectedTime={selectedTime}
-          advisorName={`${advisor.firstName} ${advisor.lastName}`}
+          advisorName={advisor.username}
           email={formData.email}
+          meetingUri={meetingUri}
           onDone={() => {
             setIsConfirmed(false)
             onBookingComplete?.()
