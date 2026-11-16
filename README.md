@@ -34,12 +34,41 @@ make mon        # run live with metrics
 make test       # test front and backend
 make test-fe    # test frontend
 make test-be    # test backend
+make test-e2e   # run Playwright end-to-end tests
 make down       # stop running containers
 make clean      # remove all containers
 
 ```
 
 **See Backend/Frontend README for detailed instruction**
+
+### End-to-end tests (Playwright)
+
+**Prerequisites:** Docker running, frontend dependencies are installed, and the Playwright browser installed (one-time):
+
+```bash
+cd frontend
+pnpm exec playwright install chromium
+```
+
+**Stop `make dev` before running E2E tests.** The test stack uses the same ports (backend: 8001, frontend: 5173).
+
+**Run everything** from the project root:
+
+```bash
+make test-e2e
+```
+
+**Run Playwright directly**:
+
+```bash
+docker compose -f compose.test.yml up -d --wait --build backend
+cd frontend && pnpm test:e2e
+# when finished:
+docker compose -f compose.test.yml down -v
+```
+
+**View the test report:** `cd frontend && pnpm test:e2e:report`. Traces and screenshots from failed tests are in `frontend/test-results/`.
 
 ## Tech Stack
 

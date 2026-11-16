@@ -120,9 +120,9 @@ export function createMeeting(
 
 // Preset task data for pending, overdue, and completed scenarios.
 export const TASK = {
-  pending: { dueDate: dateOnlyFromNow(3), completed: false },
-  overdue: { dueDate: dateOnlyFromNow(-2), completed: false },
-  done: { dueDate: dateOnlyFromNow(-1), completed: true },
+  pending: { dueDate: dateOnlyFromNow(3), status: 'TO_DO' },
+  overdue: { dueDate: dateOnlyFromNow(-2), status: 'TO_DO' },
+  done: { dueDate: dateOnlyFromNow(-1), status: 'COMPLETED' },
 }
 
 // Create a task for an advisor.
@@ -132,17 +132,17 @@ export function createTask(
   {
     title = `E2E Task ${uid()}`,
     dueDate = dateOnlyFromNow(3),
-    completed = false,
+    status = 'TO_DO',
     clientId = null,
   } = {},
 ) {
   if (!advisorId) throw new Error('createTask: advisorId is required')
 
   return executeQuery(
-    `INSERT INTO tasks (advisor_id, client_id, task_title, due_date, completed)
+    `INSERT INTO tasks (advisor_id, client_id, task_title, due_date, status)
      VALUES ($1, $2, $3, $4, $5)
      RETURNING *`,
-    [advisorId, clientId, title, dueDate, completed],
+    [advisorId, clientId, title, dueDate, status],
   )
 }
 

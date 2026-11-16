@@ -126,14 +126,14 @@ test.describe('Advisor dashboard', () => {
     const res = await saved
     expect(res.ok(), `PATCH task returned ${res.status()}`).toBe(true)
 
-    await expect(checkbox).toBeChecked()
+    await expect(checkbox).toHaveCount(0)
     await expect(pending.getByText('1', { exact: true })).toBeVisible()
 
     await page.reload()
     await expect(
       getSummaryCard(page, 'Pending tasks').getByText('1', { exact: true }),
     ).toBeVisible()
-    await expect(page.getByRole('checkbox', { name: 'Complete Pending task' })).toBeChecked()
+    await expect(page.getByRole('checkbox', { name: 'Complete Pending task' })).toHaveCount(0)
   })
 
   test('an overdue task shows "OVERDUE · date"', async ({ page }) => {
