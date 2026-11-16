@@ -50,7 +50,6 @@ PNPM:
 - Open Powershell
 - Copy-Paste the command for Powershell shown on the pnpm webpage and press Enter
 
-
 Run the following block to confirm every tool is ready:
 
 ```bash
@@ -66,10 +65,7 @@ pnpm --version
 
 ## 2. Quickstart
 
-**Prerequisites:** Docker running and dependencies above installed
-
 ```bash
-# open your terminal program and navigate to some empty folder
 
 git clone git@github.com:capstone-490/Orbit.git orbit
 cd orbit/
