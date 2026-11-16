@@ -353,25 +353,23 @@ def upgrade() -> None:
                 END IF;
             END LOOP;
 
-        ELSIF TG_OP = 'DELETE' THEN
-            old_data := to_jsonb(OLD);
-            old_values := old_data;
+        IF new_values = '{}'::jsonb THEN
+            RETURN NEW;
+        END IF;
 
-            FOR key IN SELECT jsonb_object_keys(old_data)
-            LOOP
-                old_values := old_values || jsonb_build_object(key, old_data -> key);
-            END LOOP;
+        ELSIF TG_OP = 'DELETE' THEN
+            old_values := to_jsonb(OLD);
 
         END IF;
 
         IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE' THEN
             INSERT INTO audit_events (resource_type, resource_id, action_type, actor_id, actor_type, before_state, after_state, changed_at)
-            VALUES (TG_TABLE_NAME, NEW.id, TG_OP, user_id, user_type, old_values, new_values, NOW() AT TIME ZONE 'UTC');
+            VALUES (TG_TABLE_NAME, NEW.id, TG_OP, user_id, user_type, old_values, new_values, NOW());
 
             RETURN NEW;
         ELSE
             INSERT INTO audit_events (resource_type, resource_id, action_type, actor_id, actor_type, before_state, after_state, changed_at)
-            VALUES (TG_TABLE_NAME, OLD.id, TG_OP, user_id, user_type, old_values, new_values, NOW() AT TIME ZONE 'UTC');
+            VALUES (TG_TABLE_NAME, OLD.id, TG_OP, user_id, user_type, old_values, new_values, NOW());
 
             RETURN OLD;
         END IF;
@@ -487,100 +485,32 @@ def upgrade() -> None:
     # here if we want to get logs of it. It also should have an id otherwise, the
     # function will not work)
 
-    op.execute("""
-    CREATE TRIGGER audit_events_trigger
-        BEFORE INSERT OR UPDATE OR DELETE 
-    ON advisors
+
+tables = [
+    "advisors",
+    "clients",
+    "documents",
+    "meetings",
+    "goals",
+    "agents",
+    "agent_assignments",
+    "notes",
+    "password_reset_tokens",
+    "consultations",
+    "tasks",
+    "tasks_advisor",
+]
+
+for table in tables:
+    op.execute(f"""
+        DROP TRIGGER IF EXISTS audit_events_trigger ON {table};
+
+        CREATE TRIGGER audit_events_trigger
+        AFTER INSERT OR UPDATE OR DELETE
+        ON {table}
         FOR EACH ROW
-        EXECUTE FUNCTION audit_trigger(); 
+        EXECUTE FUNCTION audit_trigger();
     """)
-
-    op.execute("""
-    CREATE TRIGGER audit_events_trigger
-        BEFORE INSERT OR UPDATE OR DELETE 
-    ON clients
-        FOR EACH ROW
-        EXECUTE FUNCTION audit_trigger(); 
-    """)
-
-    op.execute("""
-        CREATE TRIGGER audit_events_trigger
-            BEFORE INSERT OR UPDATE OR DELETE 
-        ON documents
-            FOR EACH ROW
-            EXECUTE FUNCTION audit_trigger(); 
-        """)
-
-    op.execute("""
-        CREATE TRIGGER audit_events_trigger
-            BEFORE INSERT OR UPDATE OR DELETE 
-        ON meetings
-            FOR EACH ROW
-            EXECUTE FUNCTION audit_trigger(); 
-        """)
-    op.execute("""
-        CREATE TRIGGER audit_events_trigger
-            BEFORE INSERT OR UPDATE OR DELETE 
-        ON goals
-            FOR EACH ROW
-            EXECUTE FUNCTION audit_trigger(); 
-        """)
-
-    op.execute("""
-        CREATE TRIGGER audit_events_trigger
-            BEFORE INSERT OR UPDATE OR DELETE 
-        ON agents
-            FOR EACH ROW
-            EXECUTE FUNCTION audit_trigger(); 
-        """)
-
-    op.execute("""
-        CREATE TRIGGER audit_events_trigger
-            BEFORE INSERT OR UPDATE OR DELETE 
-        ON agent_assignments
-            FOR EACH ROW
-            EXECUTE FUNCTION audit_trigger(); 
-        """)
-
-    op.execute("""
-        CREATE TRIGGER audit_events_trigger
-            BEFORE INSERT OR UPDATE OR DELETE 
-        ON notes
-            FOR EACH ROW
-            EXECUTE FUNCTION audit_trigger(); 
-        """)
-
-    op.execute("""
-        CREATE TRIGGER audit_events_trigger
-            BEFORE INSERT OR UPDATE OR DELETE 
-        ON password_reset_tokens
-            FOR EACH ROW
-            EXECUTE FUNCTION audit_trigger(); 
-        """)
-
-    op.execute("""
-        CREATE TRIGGER audit_events_trigger
-            BEFORE INSERT OR UPDATE OR DELETE 
-        ON consultations
-            FOR EACH ROW
-            EXECUTE FUNCTION audit_trigger(); 
-        """)
-
-    op.execute("""
-        CREATE TRIGGER audit_events_trigger
-            BEFORE INSERT OR UPDATE OR DELETE 
-        ON tasks
-            FOR EACH ROW
-            EXECUTE FUNCTION audit_trigger(); 
-        """)
-
-    op.execute("""
-        CREATE TRIGGER audit_events_trigger
-            BEFORE INSERT OR UPDATE OR DELETE 
-        ON tasks_advisor 
-            FOR EACH ROW
-            EXECUTE FUNCTION audit_trigger(); 
-        """)
 
 
 def downgrade() -> None:
