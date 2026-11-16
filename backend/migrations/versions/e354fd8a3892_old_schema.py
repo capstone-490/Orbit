@@ -495,34 +495,6 @@ def upgrade() -> None:
         )
     """)
 
-    # Audit log triggers (each future table except audit_events should be added
-    # here if we want to get logs of it. It also should have an id otherwise, the
-    # function will not work)
-
-    tables = [
-        "advisors",
-        "clients",
-        "documents",
-        "meetings",
-        "goals",
-        "agents",
-        "agent_assignments",
-        "notes",
-        "password_reset_tokens",
-        "consultations",
-        "tasks",
-        "tasks_advisor",
-    ]
-
-    for table in tables:
-        op.execute(f"""
-            CREATE TRIGGER audit_events_trigger
-            AFTER INSERT OR UPDATE OR DELETE
-            ON {table}
-            FOR EACH ROW
-            EXECUTE FUNCTION audit_trigger();
-        """)
-
 
 def downgrade() -> None:
     """Downgrade schema."""
