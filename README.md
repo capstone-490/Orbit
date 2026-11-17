@@ -54,7 +54,14 @@ Then, click on download zip which will download a zip file of the application
 
 ### Running the program
 
-
+- Unzip the downloaded folder that should be name Orbit-main.zip
+- Open the unzipped folder and continue till you reach a directory that has a folder name 'backend' and 'frontend' among many others
+- Ctrl + right click anywhere inside the folder
+- Click on the option of either Terminal, Command Pannel or Windows Powershell
+- Enter the command: make dev
+- Hit enter
+- Wait till you see something along of the lines of http//:localhost...
+- Click on this link. It should open a new webpage on your browser of our application.
 
 ## Developer getting started guide
 
