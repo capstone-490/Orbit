@@ -93,7 +93,6 @@ function DashboardTasks({ priorityTasks, onTaskUpdated }) {
       <hr className="task-divider" />
 
       {updateError && <p role="alert">{updateError}</p>}
-<<<<<<< HEAD
       {priorityTasks
         .filter((item) => !isTaskCompleted(item))
         .slice(0, 3)
@@ -126,7 +125,6 @@ function DashboardTasks({ priorityTasks, onTaskUpdated }) {
             </div>
           )
         })}
-=======
 
       {priorityTasks.slice(0, 3).map((item) => {
         const overdue = isTaskOverdue(item)
@@ -152,7 +150,6 @@ function DashboardTasks({ priorityTasks, onTaskUpdated }) {
           </div>
         )
       })}
->>>>>>> fd33bdf (Fixed conflicts)
     </div>
   )
 }

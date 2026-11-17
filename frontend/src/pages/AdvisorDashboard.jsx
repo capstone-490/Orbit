@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import '../styles/AdvisorDashboard.css'
-<<<<<<< HEAD
 import DashboardAiCopilot from '../components/dashboard/DashboardAiCopilot'
 import DashboardPriorityActions from '../components/dashboard/DashboardPriorityActions'
-=======
 import DashboardHeader from '../components/dashboard/DashboardHeader'
->>>>>>> fd33bdf (Fixed conflicts)
+import DashboardHeader from '../components/dashboard/DashboardHeader'
 import DashboardSchedule from '../components/dashboard/DashboardSchedule'
 import DashboardSummary from '../components/dashboard/DashboardSummary'
 import DashboardTasks from '../components/dashboard/DashboardTasks'

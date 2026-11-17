@@ -55,23 +55,6 @@ function DashboardSummary({ dashboardSummaryData, tasks, schedule, clients }) {
   const now = new Date()
 
   const clientCount = clients?.length ?? dashboardSummaryData.totalClient
-<<<<<<< HEAD
-  const upcomingMeetings = schedule
-    ?.filter((meeting) => isUpcomingMeeting(meeting, now))
-    .sort((first, second) => parseMeetingTime(first) - parseMeetingTime(second))
-  const meetingCount = upcomingMeetings?.length ?? dashboardSummaryData.nbMeetings
-  const nextMeeting = upcomingMeetings
-    ? upcomingMeetings.length > 0
-      ? formatMeetingTime(upcomingMeetings[0].time)
-      : 'No upcoming meetings'
-    : dashboardSummaryData.nextMeeting
-  const pendingTaskCount =
-    tasks?.filter((task) => !isTaskCompleted(task)).length ?? dashboardSummaryData.pendingTasks
-  const overdueTaskCount = tasks
-    ? tasks.filter((task) => !isTaskCompleted(task) && isTaskOverdue(task, new Date())).length
-    : dashboardSummaryData.overdueTasks
-=======
->>>>>>> fd33bdf (Fixed conflicts)
 
   const clientNewCount =
     clients?.filter((client) => {
@@ -106,10 +89,10 @@ function DashboardSummary({ dashboardSummaryData, tasks, schedule, clients }) {
       : 'No upcoming meetings'
 
   const pendingTaskCount =
-    tasks?.filter((task) => !task.completed).length ?? dashboardSummaryData.pendingTasks
+    tasks?.filter((task) => !isTaskCompleted(task)).length ?? dashboardSummaryData.pendingTasks
 
   const overdueTaskCount = tasks
-    ? tasks.filter((task) => !task.completed && isTaskOverdue(task, now)).length
+    ? tasks.filter((task) => !isTaskCompleted(task) && isTaskOverdue(task, now)).length
     : typeof dashboardSummaryData.overdueTasks === 'number'
       ? dashboardSummaryData.overdueTasks
       : 0
@@ -123,65 +106,8 @@ function DashboardSummary({ dashboardSummaryData, tasks, schedule, clients }) {
 
   return (
     <section className="dashboard-summary">
-<<<<<<< HEAD
-      <article className="summary-card" aria-label="Total clients">
-        <span className="card-header">
-          <span className="card-title">TOTAL CLIENTS</span>
-          <span className="card-icon">👥</span>
-        </span>
-        <span className="card-body">
-          <span className="primary-value">{clientCount}</span>
-          <span className={`secondary-value ${clientNewCount > 0 ? 'alert' : ''}`}>
-            +{clientNewCount} this month
-          </span>
-        </span>
-      </article>
-      <article className="summary-card" aria-label="Upcoming meetings">
-        <span className="card-header">
-          <span className="card-title">UPCOMING MEETINGS</span>
-          <span className="card-icon">📅</span>
-        </span>
-        <span className="card-body">
-          <span className="primary-value">{meetingCount}</span>
-          <span
-            className={`secondary-value ${dashboardSummaryData.nextMeeting.alert ? 'alert' : ''}`}
-          >
-            Next: {nextMeeting}
-          </span>
-        </span>
-      </article>
-      <article className="summary-card" aria-label="Pending tasks">
-        <span className="card-header">
-          <span className="card-title">PENDING TASKS</span>
-          <span className="card-icon">📋</span>
-        </span>
-        <span className="card-body">
-          <span className="primary-value">{pendingTaskCount}</span>
-          <span
-            className={`secondary-value ${dashboardSummaryData.overdueTasks.alert ? 'alert' : ''}`}
-          >
-            {overdueTaskCount} overdue
-          </span>
-        </span>
-      </article>
-      <article className="summary-card" aria-label="Pending FNA / plans">
-        <span className="card-header">
-          <span className="card-title">PENDING FNA / PLANS</span>{' '}
-          {/*to be updated with actual data from the backend*/}
-          <span className="card-icon">✨</span>
-        </span>
-        <span className="card-body">
-          <span className="primary-value">{dashboardSummaryData.pendingFNAPlans}</span>
-          <span
-            className={`secondary-value ${dashboardSummaryData.currentFNAPlans.alert ? 'alert' : ''}`}
-          >
-            {dashboardSummaryData.currentFNAPlans} FNA / Plans in progress
-          </span>
-        </span>
-      </article>
-=======
       {/* Total Clients */}
-      <div className="summary-card">
+      <article className="summary-card" aria-label="Total clients">
         <div className="summary-card-content">
           <span className="card-title">TOTAL CLIENTS</span>
 
@@ -195,10 +121,10 @@ function DashboardSummary({ dashboardSummaryData, tasks, schedule, clients }) {
         <div className="card-icon clients-icon">
           <FiUsers />
         </div>
-      </div>
+      </article>
 
       {/* Upcoming Meetings */}
-      <div className="summary-card">
+      <article className="summary-card" aria-label="Upcoming meetings">
         <div className="summary-card-content">
           <span className="card-title">UPCOMING MEETINGS</span>
 
@@ -215,10 +141,10 @@ function DashboardSummary({ dashboardSummaryData, tasks, schedule, clients }) {
         <div className="card-icon meetings-icon">
           <FiCalendar />
         </div>
-      </div>
+      </article>
 
       {/* Pending Tasks */}
-      <div className="summary-card">
+      <article className="summary-card" aria-label="Pending tasks">
         <div className="summary-card-content">
           <span className="card-title">PENDING TASKS</span>
 
@@ -235,10 +161,10 @@ function DashboardSummary({ dashboardSummaryData, tasks, schedule, clients }) {
         <div className="card-icon tasks-icon">
           <FiClipboard />
         </div>
-      </div>
+      </article>
 
       {/* Pending FNA / Plans */}
-      <div className="summary-card">
+      <article className="summary-card" aria-label="Pending FNA / plans">
         <div className="summary-card-content">
           <span className="card-title">PENDING FNA / PLANS</span>
 
@@ -254,8 +180,7 @@ function DashboardSummary({ dashboardSummaryData, tasks, schedule, clients }) {
         <div className="card-icon fna-icon">
           <FiZap />
         </div>
-      </div>
->>>>>>> fd33bdf (Fixed conflicts)
+      </article>
     </section>
   )
 }

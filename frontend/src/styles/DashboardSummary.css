@@ -1,5 +1,4 @@
 .dashboard-summary {
-<<<<<<< HEAD
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
@@ -20,7 +19,6 @@
 }
 
 .dashboard-summary .card-header {
-=======
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
@@ -30,13 +28,12 @@
 }
 
 .dashboard-summary .summary-card {
->>>>>>> fd33bdf (Fixed conflicts)
   display: flex;
   flex-direction: row;
   align-items: center;
-<<<<<<< HEAD
   margin-bottom: 8px;
   text-align: left;
+
 }
 
 .dashboard-summary .card-title {
@@ -56,7 +53,6 @@
 
 .dashboard-summary .card-body > span {
   text-align: left;
-=======
   justify-content: space-between;
   gap: 10px;
 
@@ -69,7 +65,33 @@
   border-radius: 6px;
   box-shadow: none;
   box-sizing: border-box;
->>>>>>> fd33bdf (Fixed conflicts)
+}
+
+.dashboard-summary .card-header {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 16px;
+  box-sizing: border-box;
+}
+
+.dashboard-summary .summary-card {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+
+  min-width: 0;
+  min-height: 80px;
+  padding: 12px 14px;
+
+  background: #ffffff;
+  border: 1px solid #e7eaf1;
+  border-radius: 6px;
+  box-shadow: none;
+  box-sizing: border-box;
 }
 
 .dashboard-summary .summary-card-content {
@@ -135,11 +157,10 @@
   white-space: nowrap;
 }
 
-<<<<<<< HEAD
 .card-body .secondary-value.alert {
   color: #3591dc;
   font-weight: 600;
-=======
+}
 .dashboard-summary .secondary-value svg {
   width: 11px;
   height: 11px;
@@ -245,5 +266,4 @@
   .dashboard-summary .secondary-value {
     font-size: 10px;
   }
->>>>>>> fd33bdf (Fixed conflicts)
 }
