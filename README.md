@@ -11,7 +11,7 @@
   
 ## Project summary
 
-Orbit is an AI-powered client and workflow management platform built for financial advisors that focuses on centralizing daily administrative tasks and client management activities to reduce the burden of managing multiple clients. Specialized AI agents support advisors by handling tasks such as drafting messages, summarizing meetings, suggesting tasks, and identifying follow-up actions. Orbit includes a coordination mechanism that detects conflicting, duplicate and stale updates before any changes are committed, while advisors have final approval over important actions.
+Orbit is an AI-powered client and workflow management platform built for financial advisors that focuses on centralizing daily administrative tasks and client management activities to reduce the burden of managing multiple clients. Specialized AI agents support advisors by handling tasks such as drafting messages, suggesting tasks, summarizing information and identifying follow-up actions. Orbit includes a coordination mechanism that detects conflicting, duplicate and stale updates to reconcile AI agents generation before any changes are committed, while advisors have final approval over important actions.
 
 ## Developer getting started guide
 
@@ -22,7 +22,7 @@ Orbit is an AI-powered client and workflow management platform built for financi
 - [pnpm](https://pnpm.io/installation)
 - [docker](https://docs.docker.com/desktop/setup/install/windows-install/)
 
-### Downloading dependencies
+### Downloading dependencies (Windows)
 
 Docker: Here's a [video tutorial](https://www.youtube.com/watch?v=5Mfe54238xE) to simplify the installation of Docker Desktop on a Windows computer. You only need to follow the tutorial until 11:20. Our application only requires Docker Desktop to be installed and running. You don't need to configure anything else.
 
@@ -62,7 +62,7 @@ Then, click on download zip which will download a zip file of the application
 
 <img width="171" height="38" alt="image" src="https://github.com/user-attachments/assets/4af5cd93-d5cd-4371-ad64-609f6a356321" />
 
-### Starting the program
+### Run the program (Windows)
 
 **Prerequisites:** Docker running and dependencies above installed
 
