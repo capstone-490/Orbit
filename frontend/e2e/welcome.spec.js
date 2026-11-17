@@ -5,7 +5,7 @@ const HOME_HEADING = 'Your advisory practice, all in one place.'
 const cards = [
   { name: 'Advisor Login', path: '/login', heading: 'Welcome to Orbit' },
   { name: 'Advisor Registration', path: '/create-account', heading: 'Create your account' },
-  { name: 'Public Booking', path: '/book-meeting', heading: 'What would you like to book?' },
+  { name: 'Public Booking', path: '/book-meeting', heading: 'Who would you like to meet with?' },
 ]
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
