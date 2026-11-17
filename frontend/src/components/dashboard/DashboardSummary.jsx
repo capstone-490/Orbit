@@ -45,10 +45,7 @@ const formatMeetingTime = (timestamp) => {
     return 'No upcoming meetings'
   }
 
-  return date.toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-  })
+  return date.toLocaleString('en-US')
 }
 
 function DashboardSummary({ dashboardSummaryData, tasks, schedule, clients }) {
