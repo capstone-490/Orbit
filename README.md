@@ -13,6 +13,49 @@
 
 Orbit is an AI-powered client and workflow management platform built for financial advisors that focuses on centralizing daily administrative tasks and client management activities to reduce the burden of managing multiple clients. Specialized AI agents support advisors by handling tasks such as drafting messages, summarizing meetings, suggesting tasks, and identifying follow-up actions. Orbit includes a coordination mechanism that detects conflicting, duplicate and stale updates before any changes are committed, while advisors have final approval over important actions.
 
+## Some info for non-developers
+
+Currently, to run this application, you need to install the 4 dependencies below (uv, make, pnpm and docker) and also download the file of the application itself.
+
+### Downloading dependencies
+
+Docker: Here's a [video](https://www.youtube.com/watch?v=5Mfe54238xE) to simplify the installation of Docker Desktop on a Windows computer. You don't need to do anything done after the 11th minutes and 20th second as our application just need Docker Desktop to be open to run. No need to touch anything beyond that.
+
+Make: 
+- Click on make in the Install section which should directly lead you to having an make exe file downloaded on your computer.
+- After download, click on the exe file to install it on your computer.
+- Go to the folder where you installed it. Click on the GnuWin32 folder, then bin folder.
+- Ctrl+c the path
+  Example here the path is C:\Users\Temp\Downloads\GnuWin32\bin
+  <img width="909" height="154" alt="image" src="https://github.com/user-attachments/assets/436f7d92-722d-468c-9577-af43ebf79eb8" />
+- Add this path to your Systems Variables [tutorial here](https://www.youtube.com/watch?v=dTZJQfMCHbg)
+- Good to go with Make.
+
+UV:
+- Click on uv in the Install section
+- Open the Windows Powershell program (It can be found by using the Windows search bar)
+- Copy and Paste the command for Windows shown on the uv webpage to the Windows Powershell program and click enter
+- uv should be downloaded
+
+PNPM:
+- Click on pnpm in the Install section
+- Open the Windows Powershell program
+- Copy-Paste the command for Windows-Powershell shown on the pnpm webpage and click enter
+- pnpm should be installed
+
+### Downloading application
+To download the application, go on the [main page](https://github.com/capstone-490/Orbit) a click on the green <>Code button
+
+<img width="114" height="40" alt="image" src="https://github.com/user-attachments/assets/d3cd920b-ac09-48d2-90b4-7d8a7cc1b3d8" />
+
+Then, click on download zip which will download a zip file of the application
+
+<img width="171" height="38" alt="image" src="https://github.com/user-attachments/assets/4af5cd93-d5cd-4371-ad64-609f6a356321" />
+
+### Running the program
+
+
+
 ## Developer getting started guide
 
 ## Install
