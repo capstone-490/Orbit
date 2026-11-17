@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto'
 import { test as base, expect } from '@playwright/test'
 
 // Application endpoints and test configuration
-export const API_URL = 'http://127.0.0.1:8001'
+export const API_URL = 'http://127.0.0.1/api/v1'
 const FRONTEND_URL = 'http://127.0.0.1:5173'
 
 const REGISTER_ENDPOINT = '/auth/register'

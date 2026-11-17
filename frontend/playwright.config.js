@@ -3,7 +3,7 @@
 import { defineConfig, devices } from '@playwright/test'
 
 const FRONTEND_URL = 'http://127.0.0.1:5173'
-const API_URL = 'http://127.0.0.1:8001'
+const API_URL = 'http://127.0.0.1:8001/api/v1'
 
 export default defineConfig({
   testDir: './e2e',
