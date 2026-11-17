@@ -13,7 +13,7 @@ from typing import Protocol
 
 import httpx
 
-from app.logging_config import get_logger
+from app.observability.logging_config import get_logger
 
 logger = get_logger("app.services.ai_suggestions")
 

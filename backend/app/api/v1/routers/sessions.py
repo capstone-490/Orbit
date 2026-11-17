@@ -42,7 +42,7 @@ def login(credentials: LoginRequest, response: Response):
         value=token,
         max_age=3600,
         httponly=True,
-        secure=os.environ.get("ORBIT_COOKIE_SECURE", "false").lower() == "true",
+        secure=os.environ.get("COOKIE_SECURE", "false").lower() == "true",
         samesite="lax",
         path="/",
     )

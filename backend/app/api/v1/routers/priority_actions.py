@@ -9,7 +9,7 @@ from psycopg.rows import dict_row
 
 from app.auth import get_current_advisor
 from app.dependencies.db import get_connection
-from app.logging_config import get_logger
+from app.observability.logging_config import get_logger
 from app.services.ai_suggestions import get_ai_provider, get_suggestions
 from app.services.priority_actions import (
     ACTIVE_STATUSES,
@@ -33,7 +33,10 @@ def _fetch_candidate_follow_ups(advisor_id: int, horizon: date) -> list[dict]:
     client that is not assigned to the signed-in advisor.
     """
     try:
-        with get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
+        with (
+            get_connection(str(advisor_id), "Advisor") as conn,
+            conn.cursor(row_factory=dict_row) as cur,
+        ):
             cur.execute(
                 """
                 SELECT f.id, f.client_id, c.name AS client_name, f.reason,
@@ -41,7 +44,7 @@ def _fetch_candidate_follow_ups(advisor_id: int, horizon: date) -> list[dict]:
                        f.due_date, f.priority::text AS priority,
                        f.status::text AS status
                 FROM follow_ups f
-                JOIN clients c
+                JOIN t_clients c
                   ON c.id = f.client_id AND c.advisor_id = f.advisor_id
                 WHERE f.advisor_id = %s
                   AND f.status::text = ANY(%s)

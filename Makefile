@@ -1,5 +1,5 @@
-.PHONY: help dev down mon monitoring mon-down monitoring-down mon-logs monitoring-logs prod prod-down \
-        test test-be test-be-cov test-fe test-fe-int test-fe-cov test-e2e \
+.PHONY: help dev down mon monitoring prod prod-mon mon-logs monitoring-logs \
+        test test-cov test-be test-be-cov test-fe test-fe-int test-fe-cov test-e2e \
         migration clean
 # -------------------------------------------------------------------
 
@@ -14,12 +14,12 @@ COMPOSE_TEST     := docker compose -f compose.test.yml
 ifeq ($(OS),Windows_NT)
     SHELL := powershell.exe
     .SHELLFLAGS := -NoProfile -ExecutionPolicy Bypass -Command
-    run_ephemeral = try { $(COMPOSE_TEST) run --rm $(1); $$code = $$LASTEXITCODE } finally { $(COMPOSE_TEST) down -v --remove-orphans }; exit $$code
+    run_ephemeral = try { $(1); $$code = $$LASTEXITCODE; if ($$code -ne 0) { exit $$code } } finally { $(COMPOSE_TEST) down -v --remove-orphans }
     run_e2e = $$code = 1; try { $(COMPOSE_TEST) up -d --wait --build backend; $$code = $$LASTEXITCODE; if ($$code -eq 0) { Push-Location frontend; pnpm exec playwright test $(ARGS); $$code = $$LASTEXITCODE; Pop-Location } } finally { $(COMPOSE_TEST) down -v --remove-orphans }; exit $$code
     CLEAN_CACHES = Get-ChildItem -Path backend -Include __pycache__,.pytest_cache,.mypy_cache,.ruff_cache -Recurse -Directory -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force
 else
     SHELL := /bin/sh
-    run_ephemeral = trap '$(COMPOSE_TEST) down -v --remove-orphans' EXIT INT TERM; $(COMPOSE_TEST) run --rm $(1)
+    run_ephemeral = set -e; trap '$(COMPOSE_TEST) down -v --remove-orphans' EXIT INT TERM; $(1)
     run_e2e = trap '$(COMPOSE_TEST) down -v --remove-orphans' EXIT INT TERM; $(COMPOSE_TEST) up -d --wait --build backend && (cd frontend && pnpm exec playwright test $(ARGS))
     CLEAN_CACHES = find backend -type d \( -name "__pycache__" -o -name ".pytest_cache" -o -name ".mypy_cache" -o -name ".ruff_cache" \) -prune -exec rm -rf {} +
 endif

@@ -500,7 +500,7 @@ def test_briefing_notes_returns_client_notes(mock_db):
         for name in ("id", "title", "content", "created_at", "updated_at")
     ]
 
-    response = client.get("/meetings/5/briefing-notes")
+    response = client.get("/api/v1/meetings/5/briefing-notes")
 
     assert response.status_code == 200
     assert len(response.json()) == 2
@@ -515,7 +515,7 @@ def test_briefing_notes_returns_client_notes(mock_db):
     assert ownership_params == {"meeting_id": 5, "advisor_id": 1}
 
     notes_query, notes_params = mock_db.execute.call_args_list[1].args
-    assert "FROM notes" in notes_query
+    assert "FROM t_notes" in notes_query
     assert "ORDER BY created_at DESC, id DESC" in notes_query
     assert notes_params == {"client_id": 7}
 
@@ -528,7 +528,7 @@ def test_briefing_notes_empty(mock_db):
         for name in ("id", "title", "content", "created_at", "updated_at")
     ]
 
-    response = client.get("/meetings/5/briefing-notes")
+    response = client.get("/api/v1/meetings/5/briefing-notes")
 
     assert response.status_code == 200
     assert response.json() == []
@@ -537,7 +537,7 @@ def test_briefing_notes_empty(mock_db):
 def test_briefing_notes_meeting_not_found(mock_db):
     mock_db.fetchone.return_value = None
 
-    response = client.get("/meetings/999/briefing-notes")
+    response = client.get("/api/v1/meetings/999/briefing-notes")
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Meeting not found."
@@ -547,7 +547,7 @@ def test_briefing_notes_meeting_not_found(mock_db):
 def test_briefing_notes_requires_authentication(mock_db):
     unauthenticated_client = TestClient(app)
 
-    response = unauthenticated_client.get("/meetings/5/briefing-notes")
+    response = unauthenticated_client.get("/api/v1/meetings/5/briefing-notes")
 
     assert response.status_code == 401
     mock_db.execute.assert_not_called()
@@ -557,7 +557,7 @@ def test_get_briefing_notes_unauthorized_advisor(mock_db):
     """Prevent advisors from accessing meetings they do not own."""
     mock_db.fetchone.return_value = None
 
-    response = client.get("/meetings/10/briefing-notes")
+    response = client.get("/api/v1/meetings/10/briefing-notes")
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Meeting not found."
@@ -572,7 +572,7 @@ def test_get_briefing_notes_unauthorized_advisor(mock_db):
 
 
 def test_briefing_notes_rejects_invalid_meeting_id(mock_db):
-    response = client.get("/meetings/not-a-number/briefing-notes")
+    response = client.get("/api/v1/meetings/not-a-number/briefing-notes")
 
     assert response.status_code == 422
     mock_db.execute.assert_not_called()
@@ -582,7 +582,7 @@ def test_briefing_notes_unauthorized_advisor(mock_db):
     """An advisor cannot retrieve notes for a meeting they do not own."""
     mock_db.fetchone.return_value = None
 
-    response = client.get("/meetings/5/briefing-notes")
+    response = client.get("/api/v1/meetings/5/briefing-notes")
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Meeting not found."
@@ -606,7 +606,7 @@ def test_briefing_notes_read_only(mock_db):
         for name in ("id", "title", "content", "created_at", "updated_at")
     ]
 
-    response = client.get("/meetings/5/briefing-notes")
+    response = client.get("/api/v1/meetings/5/briefing-notes")
 
     assert response.status_code == 200
     assert response.json() == []

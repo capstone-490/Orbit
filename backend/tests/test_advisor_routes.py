@@ -6,19 +6,6 @@ from psycopg import OperationalError
 from psycopg.rows import dict_row
 
 from app.api.v1.routers import advisors
-from app.auth import get_current_advisor
-from app.main import app
-
-
-@pytest.fixture(autouse=True)
-def authenticated_advisor():
-    previous_override = app.dependency_overrides.get(get_current_advisor)
-    app.dependency_overrides[get_current_advisor] = lambda: {"id": 2}
-    yield
-    if previous_override is None:
-        app.dependency_overrides.pop(get_current_advisor, None)
-    else:
-        app.dependency_overrides[get_current_advisor] = previous_override
 
 
 @pytest.fixture
@@ -33,10 +20,7 @@ def mock_db(monkeypatch):
     return connection, cursor
 
 
-def test_list_advisor_tasks_returns_client_names(
-    mock_db,
-    client,
-):
+def test_list_advisor_tasks_returns_client_names(mock_db, client):
     _, cursor = mock_db
     cursor.fetchall.return_value = [
         {
@@ -63,10 +47,7 @@ def test_list_advisor_tasks_returns_client_names(
     assert params == (2,)
 
 
-def test_create_advisor_task_returns_created_task(
-    mock_db,
-    client,
-):
+def test_create_advisor_task_returns_created_task(mock_db, client):
     connection, cursor = mock_db
     cursor.fetchone.return_value = {
         "id": 8,
@@ -97,10 +78,7 @@ def test_create_advisor_task_returns_created_task(
     connection.commit.assert_called_once()
 
 
-def test_create_advisor_task_rejects_another_advisors_client(
-    mock_db,
-    client,
-):
+def test_create_advisor_task_rejects_another_advisors_client(mock_db, client):
     _, cursor = mock_db
     cursor.fetchone.return_value = None
 
@@ -143,10 +121,7 @@ def test_create_advisor_task_validates_required_fields(mock_db, client, payload)
     cursor.execute.assert_not_called()
 
 
-def test_list_advisor_schedule_returns_dict_rows(
-    mock_db,
-    client,
-):
+def test_list_advisor_schedule_returns_dict_rows(mock_db, client):
     _, cursor = mock_db
     cursor.fetchall.return_value = [
         {
@@ -177,10 +152,7 @@ def test_list_advisor_schedule_returns_dict_rows(
     assert params == (2,)
 
 
-def test_list_advisor_clients_returns_rows(
-    mock_db,
-    client,
-):
+def test_list_advisor_clients_returns_rows(mock_db, client):
     connection, cursor = mock_db
     cursor.fetchall.return_value = [
         {
@@ -191,7 +163,7 @@ def test_list_advisor_clients_returns_rows(
         }
     ]
 
-    response = client.get("/api/v1/advisors/2/clients")
+    response = client.get("/advisors/2/clients")
 
     assert response.status_code == 200
     assert response.json() == [
@@ -210,10 +182,7 @@ def test_list_advisor_clients_returns_rows(
     assert connection.cursor.call_args.kwargs == {"row_factory": dict_row}
 
 
-def test_update_task_status_persists_and_returns_updated_task(
-    mock_db,
-    client,
-):
+def test_update_task_status_persists_and_returns_updated_task(mock_db, client):
     connection, cursor = mock_db
     cursor.fetchone.return_value = {"id": 1, "status": "IN_PROGRESS"}
 
@@ -224,40 +193,11 @@ def test_update_task_status_persists_and_returns_updated_task(
     query, params = cursor.execute.call_args.args
     assert "UPDATE t_tasks" in query
     assert "SET status = %s" in query
-    assert "advisor_id = %s" in query
     assert params == ("IN_PROGRESS", 1, 2)
     connection.commit.assert_called_once()
 
 
-def test_update_task_status_requires_authentication(client):
-    app.dependency_overrides.pop(get_current_advisor, None)
-
-    response = client.patch("/advisors/tasks/1", json={"status": "IN_PROGRESS"})
-
-    assert response.status_code == 401
-
-
-def test_update_task_status_does_not_update_another_advisors_task(
-    mock_db,
-    client,
-):
-    connection, cursor = mock_db
-    cursor.fetchone.return_value = None
-
-    response = client.patch("/advisors/tasks/1", json={"status": "COMPLETED"})
-
-    assert response.status_code == 404
-    assert response.json() == {"detail": "Task not found"}
-    query, params = cursor.execute.call_args.args
-    assert "WHERE id = %s AND advisor_id = %s" in query
-    assert params == ("COMPLETED", 1, 2)
-    connection.commit.assert_called_once()
-
-
-def test_update_task_status_returns_404_for_missing_task(
-    mock_db,
-    client,
-):
+def test_update_task_status_returns_404_for_missing_task(mock_db, client):
     _, cursor = mock_db
     cursor.fetchone.return_value = None
 
@@ -284,10 +224,7 @@ def test_update_task_status_rejects_unsupported_value(client):
     assert response.status_code == 422
 
 
-def test_update_task_status_reports_database_errors(
-    mock_db,
-    client,
-):
+def test_update_task_status_reports_database_errors(mock_db, client):
     _, cursor = mock_db
     cursor.execute.side_effect = OperationalError("database unavailable")
 

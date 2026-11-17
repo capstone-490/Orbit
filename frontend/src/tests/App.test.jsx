@@ -75,11 +75,7 @@ describe('App routes', () => {
 
     for (const [linkName] of destinations) {
       fireEvent.click(screen.getByRole('link', { name: linkName }))
-<<<<<<< HEAD
       expect(screen.getByRole('link', { name: linkName })).toHaveAttribute('aria-current', 'page')
-=======
-      expect(screen.getAllByText(pageName).length).toBeGreaterThan(0)
->>>>>>> 45a1a3f (Added scrum board in page with test)
     }
 
     expect(screen.getByRole('link', { name: 'Dashboard' })).toHaveAttribute('href', '/dashboard')

@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001'
+const API_BASE_URL = import.meta.env.VITE_API_URL
 
 // Booking times are shown to clients in Eastern Time
 export const BOOKING_TIME_ZONE = 'America/New_York'

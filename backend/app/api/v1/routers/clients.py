@@ -67,18 +67,19 @@ class ClientCreate(BaseModel):
 
 @router.get("")
 def list_clients(advisor: dict[str, int] = Depends(get_current_advisor)):
-    with get_connection() as conn, conn.cursor() as cur:
+    with get_connection(str(advisor["id"]), "Advisor") as conn, conn.cursor() as cur:
         cur.execute(
             """
             SELECT id, name, email, phone_number,
                    address, age, occupation,
                    timeline, created_at
             FROM t_clients
-            WHERE advisor_id = %(advisor_id)s
+                 WHERE advisor_id = %(advisor_id)s
             ORDER BY created_at DESC, id DESC
-            """,
+                 """,
             {"advisor_id": advisor["id"]},
         )
+
         columns = [column.name for column in cur.description]
         rows = cur.fetchall()
 

@@ -209,10 +209,20 @@ def test_get_client(client, mock_db, auth_headers):
 
     response = client.get("/clients/1", headers=auth_headers)
     assert response.status_code == 200
-    assert response.json() == []
+    assert response.json() == {
+        "id": 1,
+        "name": "Alice Smith",
+        "email": "alice@example.com",
+        "phone_number": "514-555-1234",
+        "address": None,
+        "age": None,
+        "occupation": None,
+        "timeline": None,
+        "created_at": "2026-10-15T00:00:00+00:00",
+    }
 
 
-def test_update_client_not_found(mock_db):
+def test_update_client_not_found(mock_db, client):
     mock_db.fetchone.return_value = None
 
     response = client.patch(
@@ -226,7 +236,7 @@ def test_update_client_not_found(mock_db):
     mock_db.execute.assert_called_once()
 
 
-def test_update_client_no_valid_fields():
+def test_update_client_no_valid_fields(client):
     response = client.patch(
         "/clients/1",
         json={"invalid_field": "Some value"},

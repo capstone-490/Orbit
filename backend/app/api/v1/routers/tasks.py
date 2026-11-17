@@ -1,7 +1,7 @@
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from psycopg import Error as PsycopgError
 
 from app.auth import get_current_advisor
@@ -20,10 +20,11 @@ router = APIRouter(prefix="/tasks", tags=["Tasks"])
 
 @router.get("", response_model=list[TaskResponse])
 def get_tasks(
-    client_id: int = Query(..., gt=0),
-    user_timezone: str = Query(default="UTC"),
+    client_id: int,
+    user_timezone: str = "UTC",
     advisor: dict[str, int] = Depends(get_current_advisor),
 ):
+
     try:
         timezone_zi = get_timezone(user_timezone)
 
@@ -35,15 +36,15 @@ def get_tasks(
                     t.title,
                     t.description,
                     t.client_id,
-                    t.status,
+                    t.task_status,
                     t.due_date,
                     t.last_contact_date
                 FROM t_tasks_advisor t
                 INNER JOIN t_clients c ON c.id = t.client_id
                 WHERE t.client_id = %s
                   AND c.advisor_id = %s
-                ORDER BY due_date ASC
-            """,
+                ORDER BY t.due_date ASC
+                """,
                 (client_id, advisor["id"]),
             ).fetchall()
 
@@ -62,14 +63,10 @@ def get_tasks(
         ) from exc
 
 
-@router.post(
-    "",
-    response_model=TaskResponse,
-    status_code=201,
-)
+@router.post("", response_model=TaskResponse, status_code=201)
 def create_task(
     task: TaskCreate,
-    user_timezone: str = Query(default="UTC"),
+    user_timezone: str = "UTC",
     advisor: dict[str, int] = Depends(get_current_advisor),
 ):
 
@@ -87,17 +84,22 @@ def create_task(
         with get_connection(str(advisor["id"]), "Advisor") as conn:
             row = conn.execute(
                 """
-                INSERT INTO t_task_advisor (
+                INSERT INTO tasks_advisor (
                     title,
                     description,
                     client_id,
-                    status,
+                    task_status,
                     due_date,
                     last_contact_date
                 )
-                VALUES (%s, %s, %s, %s, %s,
-                        COALESCE(%s, NOW()))
-                FROM t_clients c
+                SELECT
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    COALESCE(%s, NOW())
+                FROM clients c
                 WHERE c.id = %s
                   AND c.advisor_id = %s
                 RETURNING
@@ -105,10 +107,10 @@ def create_task(
                     title,
                     description,
                     client_id,
-                    status,
+                    task_status,
                     due_date,
                     last_contact_date
-            """,
+                """,
                 (
                     task.title,
                     task.description,
@@ -116,6 +118,7 @@ def create_task(
                     task.status.value,
                     due_date,
                     last_contact_date,
+                    task.client_id,
                     advisor["id"],
                 ),
             ).fetchone()
