@@ -79,6 +79,21 @@ docker compose -f compose.test.yml down -v
 
 [Orbit Project Board](https://github.com/orgs/capstone-490/projects/3/views/2)
 
+# Diversity and Inclusion Statement
+
+We believe that projects like ours thrive when shaped by diverse perspectives, backgrounds, nationalities, and identities. A diverse community creates better, more robust technology.
+
+The Orbit project welcomes and encourages participation by everyone. Our community is based on mutual respect, tolerance, and encouragement, and we are working to help each other live up to these principles. We want our community to be more diverse: whoever you are, and whatever
+your background, we welcome you.
+
+## Our Commitments
+
+* **Inclusive Language:** We encourage and utilize inclusive language in our codebase, documentation, issues, and discussions. This includes avoiding gendered, ableist, or exclusionary terminology.
+* **Representation:** We intentionally seek and welcome contributions from different genders, ethnicities, backgrounds, abilities, and other historically underrepresented groups in technology.
+* **Barrier Reduction:** We work to minimize technical and social barriers to entry. Whether you are fixing a typo, updating documentation, or refactoring code, your contributions are equally valued.
+* **Safe Environments:** We will not officially participate in, align with, or sponsor events unless they operate under and enforce a clear code of conduct.
+
+We recognize that we may not always get everything right, but we are committed to continuous learning, listening, and evolving our processes to ensure an equitable ecosystem.
 
 ## Wiki table of contents
 
