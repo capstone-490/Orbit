@@ -5,10 +5,10 @@ import DashboardPriorityActions from '../components/dashboard/DashboardPriorityA
 import DashboardSchedule from '../components/dashboard/DashboardSchedule'
 import DashboardSummary from '../components/dashboard/DashboardSummary'
 import DashboardTasks from '../components/dashboard/DashboardTasks'
-import { getCurrentAdvisor } from '../services/AuthApi'
-import { getAdvisorMeetings } from '../services/MeetingApi'
 import { usePriorityActions } from '../hooks/usePriorityActions'
 import { getAdvisorDashboard } from '../services/AdvisorDashboardApi'
+import { getCurrentAdvisor } from '../services/AuthApi'
+import { getAdvisorMeetings } from '../services/MeetingApi'
 
 const API_BASE_URL = 'http://localhost:8001'
 
