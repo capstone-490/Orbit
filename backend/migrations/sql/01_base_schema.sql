@@ -613,9 +613,6 @@ CREATE TABLE meetings (
         CHECK (status IN ('provisioning', 'active', 'cancelled', 'deleted')),
     completion_status TEXT NOT NULL DEFAULT 'scheduled'
         CHECK (completion_status IN ('scheduled', 'completed', 'no_show', 'rescheduled')),
-    -- google meet link and code (e.g. abc-defg-hij); NULL when not a google meet
-    meeting_uri TEXT,
-    meeting_code TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     deleted_at TIMESTAMPTZ,
@@ -1418,41 +1415,47 @@ CREATE INDEX idx_approval_requests_pending
     ON approval_requests (organization_id, subscription_id, status, expires_at)
     WHERE status = 'pending';
 
+
+-- Row-Level Security Context Helpers
+CREATE OR REPLACE FUNCTION current_tenant_org_id()
+RETURNS UUID LANGUAGE sql STABLE PARALLEL SAFE AS $$
+    SELECT NULLIF(current_setting('app.current_org_id', true), '')::UUID;
+$$;
+
+CREATE OR REPLACE FUNCTION is_rls_bypassed()
+RETURNS BOOLEAN LANGUAGE sql STABLE PARALLEL SAFE AS $$
+    SELECT current_setting('app.bypass_rls', true) = 'on';
+$$;
+
 CREATE TABLE audit_events (
     id UUID PRIMARY KEY DEFAULT uuidv7(),
     organization_id UUID
-        REFERENCES organizations(id),
+        REFERENCES organizations(id) ON DELETE SET NULL,
     subscription_id UUID,
-    
     actor_type TEXT NOT NULL
         CHECK (actor_type IN ('membership', 'agent', 'prospect', 'platform', 'system')),
     actor_id TEXT, -- UUID of membership, agent, prospect, or identity; NULL only for pure system jobs
     effective_subject_id TEXT, -- Human membership on whose behalf an agent or delegate is acting
     delegation_id UUID,
     approval_request_id UUID,
-    
     event_source TEXT NOT NULL DEFAULT 'db_trigger'
         CHECK (event_source IN ('db_trigger', 'application', 'system_cascade')),
     action_type TEXT NOT NULL, -- 'INSERT', 'UPDATE', 'DELETE', or app verbs ('VIEW', 'EXPORT', 'APPROVE', etc.)
     resource_type TEXT NOT NULL,
     resource_id TEXT NOT NULL,
-    
     authorization_decision TEXT NOT NULL DEFAULT 'allow'
         CHECK (authorization_decision IN ('allow', 'deny', 'not_applicable')),
     outcome TEXT NOT NULL DEFAULT 'success'
         CHECK (outcome IN ('success', 'denied', 'error', 'pending_approval')),
     reason_code TEXT NOT NULL DEFAULT 'mutation_recorded',
-    
     correlation_id TEXT,
     request_id TEXT,
     client_ip INET,
     user_agent TEXT,
-    
     changed_fields TEXT[] NOT NULL DEFAULT '{}',
     before_state JSONB,
     after_state JSONB,
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    
     occurred_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -1469,51 +1472,173 @@ CREATE INDEX idx_audit_events_platform_time
     ON audit_events (occurred_at DESC)
     WHERE organization_id IS NULL;
 
+CREATE OR REPLACE FUNCTION audit_trigger()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    new_data JSONB;
+    old_data JSONB;
+    key TEXT;
+    new_values JSONB := '{}'::jsonb;
+    old_values JSONB := '{}'::jsonb;
+    v_changed_fields TEXT[] := '{}';
+    v_redacted_keys CONSTANT TEXT[] := ARRAY['cancel_token_hash', 'password_hash', 'token'];
+
+    user_id TEXT;
+    user_type TEXT;
+    v_org_id UUID;
+    v_sub_id UUID;
+    v_resource_id TEXT;
+    v_event_source TEXT := 'db_trigger';
+BEGIN
+    -- Support both existing Python 'audit.user_id' and new 'app.actor_id' settings
+    user_id := COALESCE(
+        NULLIF(current_setting('audit.user_id', true), ''),
+        NULLIF(current_setting('app.actor_id', true), '')
+    );
+
+    user_type := COALESCE(
+        NULLIF(current_setting('audit.user_type', true), ''),
+        NULLIF(current_setting('app.actor_type', true), ''),
+        'system'
+    );
+
+    -- Map legacy Title-Case PR actor types while letting invalid types fall through to fail the CHECK constraint
+    user_type := CASE user_type
+        WHEN 'Advisor' THEN 'membership'
+        WHEN 'Staff'   THEN 'membership'
+        WHEN 'User'    THEN 'membership'
+        WHEN 'Client'  THEN 'prospect'
+        WHEN 'Agent'   THEN 'agent'
+        WHEN 'System'  THEN 'system'
+        ELSE user_type
+    END;
+
+    IF pg_trigger_depth() > 1 THEN
+        v_event_source := 'system_cascade';
+    END IF;
+
+    IF TG_OP = 'INSERT' THEN
+        new_data := to_jsonb(NEW) - v_redacted_keys;
+        new_values := new_data;
+        SELECT COALESCE(array_agg(k), '{}') INTO v_changed_fields
+        FROM jsonb_object_keys(new_data) AS k;
+
+    ELSIF TG_OP = 'UPDATE' THEN
+        new_data := to_jsonb(NEW) - v_redacted_keys;
+        old_data := to_jsonb(OLD) - v_redacted_keys;
+
+        FOR key IN
+            SELECT jsonb_object_keys(new_data)
+            INTERSECT
+            SELECT jsonb_object_keys(old_data)
+        LOOP
+            IF (new_data -> key) IS DISTINCT FROM (old_data -> key) THEN
+                new_values := new_values || jsonb_build_object(key, new_data -> key);
+                old_values := old_values || jsonb_build_object(key, old_data -> key);
+                v_changed_fields := array_append(v_changed_fields, key);
+            END IF;
+        END LOOP;
+
+        -- Skip no-op updates
+        IF new_values = '{}'::jsonb THEN
+            RETURN NEW;
+        END IF;
+
+    ELSIF TG_OP = 'DELETE' THEN
+        old_data := to_jsonb(OLD) - v_redacted_keys;
+        old_values := old_data;
+        SELECT COALESCE(array_agg(k), '{}') INTO v_changed_fields
+        FROM jsonb_object_keys(old_data) AS k;
+    END IF;
+
+    -- Extract resource_id (supports 'id' and feature_flags 'name'), organization_id, and subscription_id
+    IF TG_OP IN ('INSERT', 'UPDATE') THEN
+        v_resource_id := COALESCE(new_data ->> 'id', new_data ->> 'name');
+        v_org_id := CASE
+            WHEN TG_TABLE_NAME = 'organizations' THEN (new_data ->> 'id')::UUID
+            ELSE COALESCE((new_data ->> 'organization_id')::UUID, current_tenant_org_id())
+        END;
+        v_sub_id := CASE
+            WHEN TG_TABLE_NAME = 'subscriptions' THEN (new_data ->> 'id')::UUID
+            ELSE (new_data ->> 'subscription_id')::UUID
+        END;
+    ELSE
+        v_resource_id := COALESCE(old_data ->> 'id', old_data ->> 'name');
+        -- If an organization row itself is hard-deleted, set organization_id to NULL so FK doesn't fail
+        v_org_id := CASE
+            WHEN TG_TABLE_NAME = 'organizations' THEN NULL
+            ELSE COALESCE((old_data ->> 'organization_id')::UUID, current_tenant_org_id())
+        END;
+        v_sub_id := CASE
+            WHEN TG_TABLE_NAME = 'subscriptions' THEN (old_data ->> 'id')::UUID
+            ELSE (old_data ->> 'subscription_id')::UUID
+        END;
+    END IF;
+
+    -- Mark that this insert originates from the trusted DB audit trigger
+    PERFORM set_config('app.in_audit_trigger', 'on', true);
+
+    INSERT INTO audit_events (
+        organization_id,
+        subscription_id,
+        resource_type,
+        resource_id,
+        action_type,
+        actor_id,
+        actor_type,
+        effective_subject_id,
+        event_source,
+        changed_fields,
+        before_state,
+        after_state,
+        occurred_at
+    ) VALUES (
+        v_org_id,
+        v_sub_id,
+        TG_TABLE_NAME,
+        v_resource_id,
+        TG_OP,
+        user_id,
+        user_type,
+        COALESCE(NULLIF(current_setting('app.effective_subject_id', true), ''), user_id),
+        v_event_source,
+        v_changed_fields,
+        old_values,
+        new_values,
+        now()
+    );
+
+    PERFORM set_config('app.in_audit_trigger', 'off', true);
+
+    IF TG_OP = 'DELETE' THEN
+        RETURN OLD;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
 DO $$
 DECLARE
     t TEXT;
-
     audited_tables TEXT[] := ARRAY[
-        'feature_flags',
-        'identities',
-        'organizations',
-        'memberships',
-        'advisor_profiles',
-        'staff_profiles',
-        'subscriptions',
-        'agents',
-        'clients',
-        'goals',
-        'notes',
-        'folders',
-        'documents',
-        'meeting_types',
-        'meetings',
-        'tasks',
-        'public_booking_links',
-        'availability_rules',
-        'availability_overrides',
-        'public_prospects',
-        'bookings',
-        'groups',
-        'group_members',
-        'role_definitions',
-        'role_assignments',
-        'agent_delegations',
-        'approval_requests'
+        'feature_flags', 'identities', 'organizations', 'memberships',
+        'advisor_profiles', 'staff_profiles', 'subscriptions', 'agents',
+        'clients', 'goals', 'notes', 'folders', 'documents',
+        'meeting_types', 'meetings', 'tasks', 'public_booking_links',
+        'availability_rules', 'availability_overrides', 'public_prospects',
+        'bookings', 'groups', 'group_members', 'role_definitions',
+        'role_assignments', 'agent_delegations', 'approval_requests'
     ];
-
 BEGIN
     FOREACH t IN ARRAY audited_tables LOOP
-
         IF to_regclass(t) IS NOT NULL THEN
-
             EXECUTE format(
                 'DROP TRIGGER IF EXISTS %I ON %I',
                 'trg_' || t || '_audit_events',
                 t
             );
-
             EXECUTE format(
                 'CREATE TRIGGER %I
                 AFTER INSERT OR UPDATE OR DELETE
@@ -1523,7 +1648,7 @@ BEGIN
                 'trg_' || t || '_audit_events',
                 t
             );
-
+        END IF;
     END LOOP;
 END;
 $$;
@@ -1538,15 +1663,6 @@ $$;
 --   set local app.current_org_id = '<uuid>';
 --   or for background outbox/reaper workers: set local app.bypass_rls = 'on';
 
-CREATE OR REPLACE FUNCTION current_tenant_org_id()
-RETURNS UUID LANGUAGE sql STABLE PARALLEL SAFE AS $$
-    SELECT NULLIF(current_setting('app.current_org_id', true), '')::UUID;
-$$;
-
-CREATE OR REPLACE FUNCTION is_rls_bypassed()
-RETURNS BOOLEAN LANGUAGE sql STABLE PARALLEL SAFE AS $$
-    SELECT current_setting('app.bypass_rls', true) = 'on';
-$$;
 
 DO $$
 DECLARE
@@ -1582,41 +1698,54 @@ END;
 $$;
 
 
-ALTER TABLE audit_log ENABLE ROW LEVEL SECURITY;
-ALTER TABLE audit_log FORCE ROW LEVEL SECURITY;
+ALTER TABLE audit_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE audit_events FORCE ROW LEVEL SECURITY;
+
+-- Explicitly revoke UPDATE, DELETE, and TRUNCATE privileges
+REVOKE UPDATE, DELETE, TRUNCATE ON audit_events FROM PUBLIC, current_user;
 
 -- Tenants can SELECT only their own org's logs; bypass sees all (including NULL org platform logs)
-CREATE POLICY audit_log_select_policy ON audit_log
+CREATE POLICY audit_events_select_policy ON audit_events
 FOR SELECT
 USING (
     (SELECT is_rls_bypassed())
     OR (organization_id IS NOT NULL AND organization_id = (SELECT current_tenant_org_id()))
 );
 
--- Tenants can INSERT logs for their own org; platform workers (with bypass) can insert NULL org logs
-CREATE POLICY audit_log_insert_policy ON audit_log
+-- Tenants can INSERT logs for their own org; audit_trigger() and bypass workers can insert global/system logs
+CREATE POLICY audit_events_insert_policy ON audit_events
 FOR INSERT
 WITH CHECK (
     (SELECT is_rls_bypassed())
+    OR current_setting('app.in_audit_trigger', true) = 'on'
     OR (organization_id IS NOT NULL AND organization_id = (SELECT current_tenant_org_id()))
 );
--- Because no FOR UPDATE or FOR DELETE policy exists, RLS denies all updates and deletes by default.
 
 -- Defense-in-depth trigger: block UPDATE, DELETE, and TRUNCATE even when is_rls_bypassed() = true
-CREATE OR REPLACE FUNCTION prevent_audit_log_mutation()
-RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION prevent_audit_mutation()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
 BEGIN
-    RAISE EXCEPTION 'audit_log is append-only and immutable (% is prohibited)', TG_OP
+    RAISE EXCEPTION
+        'Audit records are immutable: % are prohibited',
+        TG_OP
         USING ERRCODE = '42501'; -- insufficient_privilege
+    RETURN NULL;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
-CREATE TRIGGER trg_audit_log_immutable_row
-BEFORE UPDATE OR DELETE ON audit_log
-FOR EACH ROW
-EXECUTE FUNCTION prevent_audit_log_mutation();
+DROP TRIGGER IF EXISTS trg_audit_events_immutable_row ON audit_events;
+DROP TRIGGER IF EXISTS trg_audit_events_immutable_stmt ON audit_events;
 
-CREATE TRIGGER trg_audit_log_immutable_stmt
-BEFORE TRUNCATE ON audit_log
+-- Statement-level trigger guarantees 42501 is raised before RLS filters out target rows
+CREATE TRIGGER trg_audit_events_immutable_stmt
+BEFORE UPDATE OR DELETE OR TRUNCATE ON audit_events
 FOR EACH STATEMENT
-EXECUTE FUNCTION prevent_audit_log_mutation();
+EXECUTE FUNCTION prevent_audit_mutation();
+
+-- Row-level trigger as secondary guard
+CREATE TRIGGER trg_audit_events_immutable_row
+BEFORE UPDATE OR DELETE ON audit_events
+FOR EACH ROW
+EXECUTE FUNCTION prevent_audit_mutation();

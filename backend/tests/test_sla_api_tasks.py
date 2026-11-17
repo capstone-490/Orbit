@@ -203,7 +203,7 @@ def test_get_tasks_filters_by_client_id(client, mock_db, mock_task_row):
 
     sql_params = mock_db.execute.call_args[0][1]
 
-    assert sql_params == (10, 99)
+    assert sql_params == (10, 2)
 
 
 @pytest.fixture
@@ -499,7 +499,7 @@ def test_create_resolved_task_returns_green(client, mock_db):
     assert task["urgency_color"] == "Green"
 
 
-def test_create_task_unauthorized_client(mock_db, client, valid_task_payload):
+def test_create_task_unauthorized_client(client, mock_db, valid_task_payload):
 
     mock_db.execute.return_value.fetchone.return_value = None
 

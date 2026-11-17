@@ -454,7 +454,7 @@ test.describe('Follow-Up Tracker', () => {
     }) => {
       const client = await createClient(advisor.id)
       const res = await secondAdvisor.context.request.post(`${API_URL}/follow-ups`, {
-        headers: { Origin: 'http://localhost:5173' },
+        headers: { Origin: 'http://127.0.0.1:5173' },
         data: {
           client_id: Number(client.id),
           reason: 'Should not work',

@@ -62,7 +62,6 @@ services:
       - .env
     environment:
       DB_HOST: db
-      DB_PORT: 5432
       ENVIRONMENT: production
       DEBUG: "false"
       ENABLE_DEBUG_ROUTES: "false"

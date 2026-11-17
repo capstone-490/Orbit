@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import TasksPage, { TasksList } from '../pages/Tasks'
 
 vi.mock('../services/AuthApi', () => ({
-  API_BASE_URL: 'http://localhost:8001',
+  API_BASE_URL: 'http://127.0.0.1:8001/api/v1',
   getCurrentAdvisor: vi.fn().mockResolvedValue({ id: 5 }),
 }))
 
@@ -189,7 +189,7 @@ describe('TasksPage', () => {
     expect(await screen.findByText('Call Sarah')).toBeInTheDocument()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:8001/advisors/5/tasks',
+      'http://127.0.0.1:8001/api/v1/advisors/5/tasks',
       expect.objectContaining({
         method: 'POST',
         credentials: 'include',
@@ -254,10 +254,10 @@ describe('TasksPage', () => {
     render(<TasksPage />)
 
     expect(await screen.findByText('Review portfolio')).toBeInTheDocument()
-    expect(fetchMock).toHaveBeenCalledWith('http://localhost:8001/advisors/5/tasks', {
+    expect(fetchMock).toHaveBeenCalledWith('http://127.0.0.1:8001/api/v1/advisors/5/tasks', {
       credentials: 'include',
     })
-    expect(fetchMock).toHaveBeenCalledWith('http://localhost:8001/advisors/5/clients', {
+    expect(fetchMock).toHaveBeenCalledWith('http://127.0.0.1:8001/api/v1/advisors/5/clients', {
       credentials: 'include',
     })
     expect(screen.getByRole('option', { name: 'Sarah Smith' })).toBeInTheDocument()
@@ -307,7 +307,7 @@ describe('TasksPage', () => {
       )
     })
     expect(fetchMock).toHaveBeenLastCalledWith(
-      'http://localhost:8001/advisors/tasks/1',
+      'http://127.0.0.1:8001/api/v1/advisors/tasks/1',
       expect.objectContaining({
         method: 'PATCH',
         credentials: 'include',
