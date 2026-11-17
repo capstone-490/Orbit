@@ -630,5 +630,5 @@ class SqlAlchemyBookingRepository(AbstractBookingRepository):
             cancellation_reason=row["cancellation_reason"],  # type: ignore[arg-type]
             rescheduled_from_id=row["rescheduled_from_id"],  # type: ignore[arg-type]
             idempotency_key=str(row["idempotency_key"]),
-            version=int(row["version"]),  # type: ignore[arg-type]
+            version=row["version"],  # type: ignore[arg-type]
         )
