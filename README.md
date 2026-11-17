@@ -11,7 +11,7 @@
   
 ## Project summary
 
-Orbit is an AI-powered client and workflow management platform built for financial advisors that focuses on centralizing daily administrative tasks and client management activities to reduce the burden of managing multiple clients. Specialized AI agents support advisors by handling tasks such as drafting messages, suggesting tasks, summarizing information and identifying follow-up actions. Orbit includes a coordination mechanism that detects conflicting, duplicate and stale updates to reconcile AI agents generation before any changes are committed, while advisors have final approval over important actions.
+Orbit is an AI-powered client and workflow management platform built for financial advisors that focuses on centralizing daily administrative tasks and client management activities to reduce the burden of managing multiple clients. Specialized AI agents support advisors by handling tasks such as drafting messages, suggesting tasks, summarizing information and identifying follow-up actions. Orbit includes a coordination mechanism that detects conflicting, duplicate and stale updates to reconcile the outputs of different AI agents before any changes are committed, while advisors have final approval over important actions.
 
 ## Developer getting started guide
 
