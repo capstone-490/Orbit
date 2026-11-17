@@ -17,10 +17,10 @@ Orbit is an AI-powered client and workflow management platform built for financi
 
 ## Install
 
-- uv
-- make
-- pnpm
-- docker
+- [uv](https://docs.astral.sh/uv/#highlights)
+- [make](https://gnuwin32.sourceforge.net/downlinks/make.php)
+- [pnpm](https://pnpm.io/installation)
+- [docker](https://docs.docker.com/desktop/setup/install/windows-install/)
   
 ```bash
 cd backend/
