@@ -7,8 +7,6 @@ import AdvisorDashboard from '../../pages/AdvisorDashboard'
 import { API_BASE_URL, getCurrentAdvisor } from '../../services/AuthApi'
 import { getAdvisorMeetings, rescheduleMeeting } from '../../services/MeetingApi'
 
-export const API_BASE_URL = import.meta.env.VITE_API_URL
-
 vi.mock('../../services/AuthApi', () => ({
   API_BASE_URL: 'http://127.0.0.1:8001',
   getCurrentAdvisor: vi.fn(),
