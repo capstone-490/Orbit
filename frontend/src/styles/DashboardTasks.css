@@ -142,7 +142,6 @@
   color: #dc3545;
 }
 
-<<<<<<< HEAD
 .task-client {
   font-size: 13px;
   color: #6c757d;
@@ -176,7 +175,8 @@
   border-color: #b7dfc8;
   background-color: #eaf7ef;
   color: #24804a;
-=======
+}
+
 @media (max-width: 760px) {
   .dashboard-tasks .priority-task-title {
     font-size: 15px;
@@ -213,5 +213,4 @@
     margin-right: 0;
     font-size: 9px;
   }
->>>>>>> fd33bdf (Fixed conflicts)
 }
