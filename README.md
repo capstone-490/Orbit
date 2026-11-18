@@ -1,5 +1,8 @@
 <h1 align="center">Orbit</h1>
 
+## Release 1 Video
+https://drive.google.com/file/d/1v-vE-wtCb19aHuWyVFc6kBANI4IcnZIB/view?usp=sharing 
+
 ## CI Information
 
 **GitHub Actions** is used for continuous integration.
