@@ -132,8 +132,7 @@ describe('Navbar', () => {
     await waitFor(() => {
       expect(logoutAdvisor).toHaveBeenCalledOnce()
 
-      expect(document.getElementById('navbar-navigation'))
-        .not.toHaveClass('navbar-content-open')
+      expect(document.getElementById('navbar-navigation')).not.toHaveClass('navbar-content-open')
 
       expect(screen.getByTestId('current-path')).toHaveTextContent('/login')
     })
