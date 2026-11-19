@@ -5,7 +5,6 @@ import { Link } from 'react-router-dom'
 import { isTaskCompleted, TASK_STATUSES } from '../../data/taskStatuses'
 import { API_BASE_URL } from '../../services/AuthApi'
 
-
 function DashboardTasks({ priorityTasks, onTaskUpdated }) {
   const [updatingTaskIds, setUpdatingTaskIds] = useState(() => new Set())
   const [updateError, setUpdateError] = useState('')
