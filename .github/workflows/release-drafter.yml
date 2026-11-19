@@ -1,0 +1,28 @@
+# No substantial AI-generated code
+name: Update Release Draft
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, reopened, synchronize, edited]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+
+concurrency:
+  group: release-drafter
+  cancel-in-progress: true
+
+jobs:
+  update-draft:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: release-drafter/release-drafter@d1a19e60e81a7e650d00a7de9277f87e439117ea # v7.11.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          config-name: release-drafter.yml
