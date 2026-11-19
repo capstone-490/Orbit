@@ -751,10 +751,6 @@ CREATE TABLE public_booking_links (
         REFERENCES meeting_types(organization_id, subscription_id, id)
 );
 
-CREATE INDEX idx_public_booking_links_active_token
-    ON public_booking_links (public_token)
-    WHERE is_active = TRUE;
-
 CREATE TRIGGER trg_public_booking_links_updated_at
 BEFORE UPDATE ON public_booking_links
 FOR EACH ROW EXECUTE FUNCTION trigger_set_updated_at();
@@ -1109,10 +1105,6 @@ CREATE INDEX idx_bookings_expired_holds
     ON bookings (hold_expires_at)
     WHERE status = 'HELD';
 
-CREATE INDEX idx_bookings_cancel_token_hash
-    ON bookings (cancel_token_hash)
-    WHERE status = 'CONFIRMED' AND cancel_token_hash IS NOT NULL;
-
 CREATE INDEX idx_bookings_client
     ON bookings (organization_id, subscription_id, client_id)
     WHERE client_id IS NOT NULL;
@@ -1428,9 +1420,8 @@ RETURNS BOOLEAN LANGUAGE sql STABLE PARALLEL SAFE AS $$
 $$;
 
 CREATE TABLE audit_events (
-    id UUID PRIMARY KEY DEFAULT uuidv7(),
-    organization_id UUID
-        REFERENCES organizations(id) ON DELETE SET NULL,
+    id UUID DEFAULT uuidv7(),
+    organization_id UUID,
     subscription_id UUID,
     actor_type TEXT NOT NULL
         CHECK (actor_type IN ('membership', 'agent', 'prospect', 'platform', 'system')),
@@ -1456,8 +1447,9 @@ CREATE TABLE audit_events (
     before_state JSONB,
     after_state JSONB,
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    occurred_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
+    occurred_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (id, occurred_at)
+) PARTITION BY RANGE (occurred_at);
 
 CREATE INDEX idx_audit_events_org_time
     ON audit_events (organization_id, occurred_at DESC);
@@ -1472,19 +1464,54 @@ CREATE INDEX idx_audit_events_platform_time
     ON audit_events (occurred_at DESC)
     WHERE organization_id IS NULL;
 
+-- Helper to idempotently create monthly partitions
+CREATE OR REPLACE FUNCTION ensure_audit_events_partitions(months_ahead INT DEFAULT 12)
+RETURNS VOID
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    i INT;
+    start_ts TIMESTAMPTZ;
+    end_ts TIMESTAMPTZ;
+    part_name TEXT;
+BEGIN
+    FOR i IN 0..months_ahead LOOP
+        start_ts := date_trunc('month', now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
+                    + make_interval(months => i);
+        end_ts := start_ts + INTERVAL '1 month';
+        part_name := 'audit_events_' || to_char(start_ts AT TIME ZONE 'UTC', 'YYYY_MM');
+
+        EXECUTE format(
+            'CREATE TABLE IF NOT EXISTS %I PARTITION OF audit_events
+             FOR VALUES FROM (%L) TO (%L)',
+            part_name,
+            start_ts,
+            end_ts
+        );
+    END LOOP;
+END;
+$$;
+
+-- Create partitions for the current month + next 12 months
+SELECT ensure_audit_events_partitions(12);
+
+-- Safety-net default partition so writes never fail if a future partition isn't pre-created
+CREATE TABLE IF NOT EXISTS audit_events_default
+    PARTITION OF audit_events DEFAULT;
+
 CREATE OR REPLACE FUNCTION audit_trigger()
 RETURNS TRIGGER
 LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
 AS $$
 DECLARE
     new_data JSONB;
     old_data JSONB;
-    key TEXT;
     new_values JSONB := '{}'::jsonb;
     old_values JSONB := '{}'::jsonb;
     v_changed_fields TEXT[] := '{}';
     v_redacted_keys CONSTANT TEXT[] := ARRAY['cancel_token_hash', 'password_hash', 'token'];
-
     user_id TEXT;
     user_type TEXT;
     v_org_id UUID;
@@ -1519,41 +1546,41 @@ BEGIN
         v_event_source := 'system_cascade';
     END IF;
 
+    -- Build redacted state snapshots and changed_fields
     IF TG_OP = 'INSERT' THEN
         new_data := to_jsonb(NEW) - v_redacted_keys;
         new_values := new_data;
-        SELECT COALESCE(array_agg(k), '{}') INTO v_changed_fields
+        SELECT COALESCE(array_agg(k), '{}')
+        INTO v_changed_fields
         FROM jsonb_object_keys(new_data) AS k;
 
     ELSIF TG_OP = 'UPDATE' THEN
         new_data := to_jsonb(NEW) - v_redacted_keys;
         old_data := to_jsonb(OLD) - v_redacted_keys;
 
-        FOR key IN
-            SELECT jsonb_object_keys(new_data)
-            INTERSECT
-            SELECT jsonb_object_keys(old_data)
-        LOOP
-            IF (new_data -> key) IS DISTINCT FROM (old_data -> key) THEN
-                new_values := new_values || jsonb_build_object(key, new_data -> key);
-                old_values := old_values || jsonb_build_object(key, old_data -> key);
-                v_changed_fields := array_append(v_changed_fields, key);
-            END IF;
-        END LOOP;
+        -- Single set-based diff instead of a PL/pgSQL loop
+        SELECT
+            COALESCE(array_agg(n.key), '{}'),
+            COALESCE(jsonb_object_agg(n.key, old_data -> n.key), '{}'::jsonb),
+            COALESCE(jsonb_object_agg(n.key, n.value), '{}'::jsonb)
+        INTO v_changed_fields, old_values, new_values
+        FROM jsonb_each(new_data) AS n(key, value)
+        WHERE (old_data -> n.key) IS DISTINCT FROM n.value;
 
         -- Skip no-op updates
-        IF new_values = '{}'::jsonb THEN
+        IF cardinality(v_changed_fields) = 0 THEN
             RETURN NEW;
         END IF;
 
     ELSIF TG_OP = 'DELETE' THEN
         old_data := to_jsonb(OLD) - v_redacted_keys;
         old_values := old_data;
-        SELECT COALESCE(array_agg(k), '{}') INTO v_changed_fields
+        SELECT COALESCE(array_agg(k), '{}')
+        INTO v_changed_fields
         FROM jsonb_object_keys(old_data) AS k;
     END IF;
 
-    -- Extract resource_id (supports 'id' and feature_flags 'name'), organization_id, and subscription_id
+    -- Extract resource_id, organization_id, and subscription_id
     IF TG_OP IN ('INSERT', 'UPDATE') THEN
         v_resource_id := COALESCE(new_data ->> 'id', new_data ->> 'name');
         v_org_id := CASE
@@ -1567,9 +1594,8 @@ BEGIN
         END;
     ELSE
         v_resource_id := COALESCE(old_data ->> 'id', old_data ->> 'name');
-        -- If an organization row itself is hard-deleted, set organization_id to NULL so FK doesn't fail
         v_org_id := CASE
-            WHEN TG_TABLE_NAME = 'organizations' THEN NULL
+            WHEN TG_TABLE_NAME IN ('organizations', 'identities', 'feature_flags') THEN NULL
             ELSE COALESCE((old_data ->> 'organization_id')::UUID, current_tenant_org_id())
         END;
         v_sub_id := CASE
@@ -1577,9 +1603,6 @@ BEGIN
             ELSE (old_data ->> 'subscription_id')::UUID
         END;
     END IF;
-
-    -- Mark that this insert originates from the trusted DB audit trigger
-    PERFORM set_config('app.in_audit_trigger', 'on', true);
 
     INSERT INTO audit_events (
         organization_id,
@@ -1610,8 +1633,6 @@ BEGIN
         new_values,
         now()
     );
-
-    PERFORM set_config('app.in_audit_trigger', 'off', true);
 
     IF TG_OP = 'DELETE' THEN
         RETURN OLD;
@@ -1705,7 +1726,7 @@ ALTER TABLE audit_events FORCE ROW LEVEL SECURITY;
 -- Explicitly revoke UPDATE, DELETE, and TRUNCATE privileges
 REVOKE UPDATE, DELETE, TRUNCATE ON audit_events FROM PUBLIC, current_user;
 
--- Tenants can SELECT only their own org's logs; bypass sees all (including NULL org platform logs)
+-- Tenants read only their own org's logs; bypass workers see all (including NULL org platform logs)
 CREATE POLICY audit_events_select_policy ON audit_events
 FOR SELECT
 USING (
@@ -1713,12 +1734,12 @@ USING (
     OR (organization_id IS NOT NULL AND organization_id = (SELECT current_tenant_org_id()))
 );
 
--- Tenants can INSERT logs for their own org; audit_trigger() and bypass workers can insert global/system logs
+-- Application-level inserts must match the active tenant (or run with bypass_rls);
+-- DB triggers bypass this policy via SECURITY DEFINER
 CREATE POLICY audit_events_insert_policy ON audit_events
 FOR INSERT
 WITH CHECK (
     (SELECT is_rls_bypassed())
-    OR current_setting('app.in_audit_trigger', true) = 'on'
     OR (organization_id IS NOT NULL AND organization_id = (SELECT current_tenant_org_id()))
 );
 
