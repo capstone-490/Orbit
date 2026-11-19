@@ -7,16 +7,16 @@ from app.core.feature_flags import set_flag
 @pytest.mark.parametrize(
     ("rollout_percent", "expected_variant"),
     [
-        (100, "B"),
-        (0, "A"),
+        pytest.param(100, "B", id="full-rollout"),
+        pytest.param(0, "A", id="zero-rollout"),
     ],
-    ids=["full-rollout", "zero-rollout"],
 )
 def test_ab_test_returns_expected_variant(
     client,
-    rollout_percent: int,
-    expected_variant: str,
-) -> None:
+    user_headers,
+    rollout_percent,
+    expected_variant,
+):
     set_flag(
         "demo-ab",
         True,
@@ -25,27 +25,78 @@ def test_ab_test_returns_expected_variant(
     )
 
     response = client.get(
-        "/ab-test",
-        headers={"User-ID": "user1"},
+        "/feature-flags/ab-test",
+        headers=user_headers,
     )
 
     assert response.status_code == 200
     assert response.json() == {"Variant": expected_variant}
 
 
-def test_ab_test_response_excludes_user_id(client) -> None:
-    set_flag("demo-ab", True, 50, changed_by="test_user")
-    response = client.get("/ab-test", headers={"User-ID": "user1"})
+def test_ab_test_response_does_not_expose_user_id(
+    client,
+    user_headers,
+):
+    set_flag(
+        "demo-ab",
+        True,
+        50,
+        changed_by="test_user",
+    )
+    response = client.get(
+        "/feature-flags/ab-test",
+        headers=user_headers,
+    )
     assert response.status_code == 200
-    assert response.json() == {"Variant": response.json()["Variant"]}
-    assert set(response.json()) == {"Variant"}
+    data = response.json()
+    assert set(data.keys()) == {"Variant"}
+    assert data["Variant"] in {"A", "B"}
 
 
-def test_same_user_receives_consistent_variant(client) -> None:
-    set_flag("demo-ab", True, 50, changed_by="test_user")
-    headers = {"User-ID": "user1"}
-    response1 = client.get("/ab-test", headers=headers)
-    response2 = client.get("/ab-test", headers=headers)
-    assert response1.status_code == 200
-    assert response2.status_code == 200
-    assert response1.json() == response2.json()
+def test_same_user_receives_consistent_variant(
+    client,
+    user_headers,
+):
+    set_flag(
+        "demo-ab",
+        True,
+        50,
+        changed_by="test_user",
+    )
+
+    first_response = client.get(
+        "/feature-flags/ab-test",
+        headers=user_headers,
+    )
+    second_response = client.get(
+        "/feature-flags/ab-test",
+        headers=user_headers,
+    )
+    assert first_response.status_code == 200
+    assert second_response.status_code == 200
+    assert first_response.json() == second_response.json()
+
+
+def test_read_named_feature_flag(
+    client,
+    user_headers,
+):
+    set_flag(
+        "new-dashboard",
+        True,
+        100,
+        changed_by="test_user",
+    )
+
+    response = client.get(
+        "/feature-flags/new-dashboard",
+        headers=user_headers,
+    )
+
+    assert response.status_code == 200
+
+    assert response.json() == {
+        "name": "new-dashboard",
+        "variant": "B",
+        "use_new_feature": True,
+    }

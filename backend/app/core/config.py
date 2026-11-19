@@ -1,32 +1,46 @@
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 
 from pydantic import PostgresDsn, computed_field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.api.versions import APIVersion, api_prefix
+
 INSECURE_DEFAULT_SECRET = "local-and-ci-test-only-secret-key"
 INSECURE_DEFAULT_ANONYMIZATION_SECRET = "Supercalifragilisticexpialidocious"
 # Valid Fernet key for local and CI only (base64 of a fixed 32-byte string)
 INSECURE_DEFAULT_GOOGLE_TOKEN_KEY = "bG9jYWwtYW5kLWNpLW9ubHktZ29vZ2xlLWtleS0zMmI="
-from pathlib import Path
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=Path(__file__).resolve().parents[3] / ".env",
+        env_file=(".env", Path(__file__).resolve().parents[3] / ".env"),
         env_file_encoding="utf-8",
         case_sensitive=True,
         extra="ignore",
     )
 
+    CORS_ORIGINS: list[str] = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
+
     ENVIRONMENT: Literal["local", "dev", "test", "staging", "production"] = "local"
     DEBUG: bool = False
-    SECRET_KEY: str = INSECURE_DEFAULT_SECRET
-    ORBIT_ANONYMIZATION_SECRET: str = INSECURE_DEFAULT_ANONYMIZATION_SECRET
-    VITE_API_URL: str = "http://localhost:8001"
+    METRICS_ENABLED: bool = True
+    ENABLE_DEBUG_ROUTES: bool = False
+    COOKIE_SECURE: bool = (
+        False  # Keep False on HTTP IP deployments; set True with HTTPS
+    )
 
-    # Public URL of this FastAPI backend, used to build absolute URLs to its routes
-    BACKEND_URL: str = "http://localhost:8001"
+    SECRET_KEY: str = INSECURE_DEFAULT_SECRET
+    ORBIT_AUTH_SECRET: str = ""
+    ORBIT_ANONYMIZATION_SECRET: str = INSECURE_DEFAULT_ANONYMIZATION_SECRET
+
+    VITE_API_URL: str = "/api/v1"
+    FRONTEND_URL: str = "http://127.0.0.1:5173"
+    BACKEND_URL: str
 
     # OAuth client downloaded from Google Cloud Console (never commit this file)
     GOOGLE_CLIENT_SECRETS_FILE: str = "credentials.json"
@@ -35,9 +49,6 @@ class Settings(BaseSettings):
     # Generate one with:
     # python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
     GOOGLE_TOKEN_ENCRYPTION_KEY: str = INSECURE_DEFAULT_GOOGLE_TOKEN_KEY
-
-    # Frontend
-    FRONTEND_URL: str = "http://localhost:5173"
 
     # Email configuration
     RESEND_API_KEY: str | None = None
@@ -67,19 +78,29 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def enforce_production_secrets(self) -> Settings:
+        if (
+            not self.ORBIT_ANONYMIZATION_SECRET.strip()
+            or len(self.ORBIT_ANONYMIZATION_SECRET.encode("utf-8")) < 32
+        ):
+            raise ValueError(
+                "ORBIT_ANONYMIZATION_SECRET must contain at least 32 bytes"
+            )
+
         if self.ENVIRONMENT in ("staging", "production") and (
             self.SECRET_KEY == INSECURE_DEFAULT_SECRET
+            or not self.ORBIT_AUTH_SECRET
             or self.ORBIT_ANONYMIZATION_SECRET == INSECURE_DEFAULT_ANONYMIZATION_SECRET
             or self.GOOGLE_TOKEN_ENCRYPTION_KEY == INSECURE_DEFAULT_GOOGLE_TOKEN_KEY
-            or self.VITE_API_URL == "http://localhost:8001"
+            or ("localhost" in self.VITE_API_URL or "127.0.0.1" in self.VITE_API_URL)
         ):
-            raise ValueError("Environment variables must be set in staging/production")
-
-        if (
-            self.ENVIRONMENT in ("staging", "production")
-            and self.POSTGRES_PASSWORD == ""
+            raise ValueError(
+                "SECRET_KEY, ORBIT_AUTH_SECRET, ORBIT_ANONYMIZATION_SECRET, "
+                "and VITE_API_URL must be set in staging/production"
+            )
+        if self.ENVIRONMENT in ("staging", "production") and (
+            not self.POSTGRES_PASSWORD or not self.DB_PASSWORD
         ):
-            raise ValueError("POSTGRES_PASSWORD must be configured")
+            raise ValueError("POSTGRES_PASSWORD and DB_PASSWORD must be configured")
 
         return self
 
@@ -100,22 +121,19 @@ class Settings(BaseSettings):
             )
         )
 
+    def api_url(self, version: APIVersion) -> str:
+        return f"{self.BACKEND_URL.rstrip('/')}{api_prefix(version)}"
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def sqlalchemy_database_uri(self) -> str:
-        return (
-            f"{self.DB_DRIVER}://"
-            f"{self.DB_USER}:{self.DB_PASSWORD}"
-            f"@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
-        )
+        return self._build_database_uri(self.DB_USER, self.DB_PASSWORD, self.DB_DRIVER)
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def admin_database_uri(self) -> str:
-        return (
-            f"{self.DB_DRIVER}://"
-            f"{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
-            f"@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+        return self._build_database_uri(
+            self.POSTGRES_USER, self.POSTGRES_PASSWORD, self.DB_DRIVER
         )
 
     @computed_field  # type: ignore[prop-decorator]

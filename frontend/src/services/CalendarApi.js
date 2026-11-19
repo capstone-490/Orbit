@@ -4,7 +4,7 @@ import { mapAppointment } from './Appointment.mapper'
 import { mock } from './CalendarMock'
 import { getAdvisorMeetings } from './MeetingApi'
 
-const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8001'
+const BASE = import.meta.env.VITE_API_URL
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true'
 const GM = '/google-meet-integration'
 

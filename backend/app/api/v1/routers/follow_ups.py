@@ -2,14 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from psycopg import Error as PsycopgError
 from psycopg.rows import dict_row
 
-from app.auth import get_current_advisor
-from app.classes.follow_up import (
+from app.api.v1.schemas.follow_up import (
     FollowUpCreate,
     FollowUpStatusUpdate,
     FollowUpUpdate,
 )
+from app.auth import get_current_advisor
 from app.dependencies.db import get_connection
-from app.logging_config import get_logger
+from app.observability.logging_config import get_logger
 
 router = APIRouter(prefix="/follow-ups", tags=["Follow-Ups"])
 logger = get_logger("app.api.follow_ups")
@@ -58,7 +58,7 @@ def create_follow_up(
                     due_date, priority, status
                 )
                 SELECT %s, id, %s, %s, %s, %s, %s
-                FROM clients
+                FROM t_clients
                 WHERE id = %s AND advisor_id = %s
                 RETURNING id, advisor_id, client_id, reason,
                           financial_planning_stage::text AS financial_planning_stage,

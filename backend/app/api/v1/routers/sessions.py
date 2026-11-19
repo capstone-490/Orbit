@@ -1,8 +1,9 @@
 # Substantial AI assistance used; verified with backend tests and live auth smoke test.
 import os
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pydantic import BaseModel, EmailStr
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.auth import create_access_token, get_current_advisor
 from app.dependencies.db import get_connection
@@ -18,30 +19,30 @@ class LoginRequest(BaseModel):
 
 @router.post("/login")
 def login(credentials: LoginRequest, response: Response):
-    with get_connection() as conn, conn.cursor() as cur:
-        cur.execute(
-            "SELECT id, password_hash FROM advisors WHERE lower(email) = lower(%s)",
-            (str(credentials.email),),
-        )
-        advisor = cur.fetchone()
+    try:
+        with get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "SELECT id, password_hash FROM t_advisors WHERE lower(email) = lower(%s)",
+                (str(credentials.email),),
+            )
+            advisor = cur.fetchone()
+    except SQLAlchemyError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Database unavailable",
+        ) from exc
 
     if advisor is None or not verify_password(credentials.password, advisor[1]):
         raise HTTPException(status_code=401, detail="Invalid email or password.")
 
-    try:
-        token = create_access_token(advisor[0])
-    except RuntimeError:
-        raise HTTPException(
-            status_code=503,
-            detail="Authentication is not configured.",
-        ) from None
+    token = create_access_token(advisor[0])
 
     response.set_cookie(
         key="orbit_session",
         value=token,
         max_age=3600,
         httponly=True,
-        secure=os.environ.get("ORBIT_COOKIE_SECURE", "false").lower() == "true",
+        secure=os.environ.get("COOKIE_SECURE", "false").lower() == "true",
         samesite="lax",
         path="/",
     )

@@ -196,17 +196,19 @@ def mock_db(monkeypatch):
     cursor = MagicMock()
     conn.__enter__.return_value = conn
     conn.cursor.return_value.__enter__.return_value = cursor
-    monkeypatch.setattr(priority_actions, "get_connection", lambda: conn)
+    monkeypatch.setattr(
+        priority_actions, "get_connection", lambda *args, **kwargs: conn
+    )
     monkeypatch.setattr(priority_actions, "_today", lambda: TODAY)
     monkeypatch.setattr(priority_actions, "get_ai_provider", lambda: None)
-    app.dependency_overrides[get_current_advisor] = lambda: {"id": 7}
+    app.dependency_overrides[get_current_advisor] = lambda: {"id": 2}
     yield cursor
     app.dependency_overrides.pop(get_current_advisor, None)
 
 
 @pytest.fixture
 def client():
-    with TestClient(app) as test_client:
+    with TestClient(app, base_url="http://testserver/api/v1") as test_client:
         yield test_client
 
 
@@ -225,7 +227,7 @@ def test_priority_actions_are_scoped_to_current_advisor(mock_db, client):
     query, params = mock_db.execute.call_args.args
     assert "WHERE f.advisor_id = %s" in query
     assert "c.advisor_id = f.advisor_id" in query
-    assert params[0] == 7
+    assert params[0] == 2
     assert params[2] == TODAY + timedelta(days=7)
 
 

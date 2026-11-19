@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { withAuthCredentials } from '../services/AuthApi'
 import '../styles/Clients.css'
 
-const API_URL = 'http://localhost:8001'
+export const API_BASE_URL = import.meta.env.VITE_API_URL
 
 const isValidPhoneNumber = (value) => {
   const phone = value.trim()
@@ -43,7 +43,7 @@ function Clients() {
     let active = true
     const fetchClients = async () => {
       try {
-        const response = await fetch(`${API_URL}/clients`, withAuthCredentials())
+        const response = await fetch(`${API_BASE_URL}/clients`, withAuthCredentials())
         if (!response.ok) throw new Error('Failed to load clients.')
         const data = await response.json()
         if (active) setClients(data)
@@ -110,7 +110,7 @@ function Clients() {
 
     try {
       const response = await fetch(
-        `${API_URL}/clients`,
+        `${API_BASE_URL}/clients`,
         withAuthCredentials({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -129,7 +129,7 @@ function Clients() {
       const created = await response.json()
       // Re-fetch so the list always reflects the database.
       try {
-        const listResponse = await fetch(`${API_URL}/clients`, withAuthCredentials())
+        const listResponse = await fetch(`${API_BASE_URL}/clients`, withAuthCredentials())
         if (!listResponse.ok) throw new Error('Refresh failed')
         setClients(await listResponse.json())
         setLoadError('')

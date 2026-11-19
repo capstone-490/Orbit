@@ -1,7 +1,7 @@
 """create app database role
 
 Revision ID: bdacab6a88f6
-Revises: e354fd8a3892
+Revises: 16857beb813e
 Create Date: 2026-10-31 21:28:23.515694
 
 """
@@ -12,7 +12,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "bdacab6a88f6"
-down_revision: str | Sequence[str] | None = "e354fd8a3892"
+down_revision: str | Sequence[str] | None = "16857beb813e"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
