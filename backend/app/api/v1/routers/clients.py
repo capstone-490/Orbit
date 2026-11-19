@@ -1,3 +1,4 @@
+# Substantial AI assistance used; verified with backend tests and livetime import date
 import re
 from datetime import date
 from typing import Literal
@@ -27,6 +28,7 @@ def calculate_age(birth_date: date | None, today: date | None = None) -> int | N
     )
 
 
+# Client data model and validation
 class ClientCreate(BaseModel):
     name: str = Field(min_length=1)
     email: EmailStr
@@ -50,10 +52,12 @@ class ClientCreate(BaseModel):
     @classmethod
     def validate_phone_number(cls, value: str) -> str:
         phone = value.strip()
+
         if not re.fullmatch(r"\+?[\d\s().-]+", phone):
             raise ValueError("Please enter a valid Canadian or US phone number.")
 
         digits = re.sub(r"\D", "", phone)
+
         if len(digits) == 11 and digits.startswith("1"):
             digits = digits[1:]
         elif len(digits) != 10:
@@ -74,7 +78,7 @@ def list_clients(advisor: dict[str, int] = Depends(get_current_advisor)):
                    address, age, occupation,
                    timeline, created_at
             FROM t_clients
-                 WHERE advisor_id = %(advisor_id)s
+            WHERE advisor_id = %(advisor_id)s
             ORDER BY created_at DESC, id DESC
                  """,
             {"advisor_id": advisor["id"]},
@@ -91,7 +95,7 @@ def get_client(
     client_id: int,
     advisor: dict[str, int] = Depends(get_current_advisor),
 ):
-    with get_connection() as conn, conn.cursor() as cur:
+    with get_connection(str(advisor["id"]), "Advisor") as conn, conn.cursor() as cur:
         cur.execute(
             """
             SELECT id, name, email, phone_number,
@@ -110,6 +114,7 @@ def get_client(
         return dict(zip(columns, row))
 
 
+# Create a new client
 @router.post("", status_code=201)
 def create_client(
     client: ClientCreate,
@@ -120,7 +125,13 @@ def create_client(
     data["age"] = calculate_age(client.date_of_birth)
     data.pop("date_of_birth", None)
 
-    for field in ("address", "age", "occupation", "timeline"):
+    # Convert optional blank fields to SQL NULL
+    for field in (
+        "address",
+        "age",
+        "occupation",
+        "timeline",
+    ):
         if data[field] == "":
             data[field] = None
 
@@ -132,12 +143,13 @@ def create_client(
             cur.execute(
                 """
                 INSERT INTO t_clients (
-                    advisor_id, name, email, phone_number,
-                    address, age, occupation, timeline
+                    name, email, phone_number, address,
+                    age, occupation, timeline, advisor_id
                 )
                 VALUES (
-                    %(advisor_id)s, %(name)s, %(email)s, %(phone_number)s,
-                    %(address)s, %(age)s, %(occupation)s, %(timeline)s
+                    %(name)s, %(email)s, %(phone_number)s,
+                    %(address)s, %(age)s, %(occupation)s,
+                    %(timeline)s, %(advisor_id)s
                 )
                 RETURNING id
                 """,
@@ -153,7 +165,7 @@ def create_client(
     except UniqueViolation:
         raise HTTPException(
             status_code=409,
-            detail="A client with this email or phone number already exists.",
+            detail=("A client with this email or phone number already exists."),
         )
 
 

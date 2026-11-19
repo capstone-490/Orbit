@@ -84,7 +84,7 @@ def create_task(
         with get_connection(str(advisor["id"]), "Advisor") as conn:
             row = conn.execute(
                 """
-                INSERT INTO tasks_advisor (
+                INSERT INTO t_tasks_advisor (
                     title,
                     description,
                     client_id,
@@ -99,7 +99,7 @@ def create_task(
                     %s,
                     %s,
                     COALESCE(%s, NOW())
-                FROM clients c
+                FROM t_clients c
                 WHERE c.id = %s
                   AND c.advisor_id = %s
                 RETURNING

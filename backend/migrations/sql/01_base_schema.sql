@@ -1558,6 +1558,7 @@ BEGIN
         v_resource_id := COALESCE(new_data ->> 'id', new_data ->> 'name');
         v_org_id := CASE
             WHEN TG_TABLE_NAME = 'organizations' THEN (new_data ->> 'id')::UUID
+            WHEN TG_TABLE_NAME IN ('identities', 'feature_flags') THEN NULL
             ELSE COALESCE((new_data ->> 'organization_id')::UUID, current_tenant_org_id())
         END;
         v_sub_id := CASE
@@ -1661,7 +1662,7 @@ $$;
 --
 -- usage in python middleware per request transaction:
 --   set local app.current_org_id = '<uuid>';
---   or for background outbox/reaper workers: set local app.bypass_rls = 'on';
+--   or for background workers: set local app.bypass_rls = 'on';
 
 
 DO $$
