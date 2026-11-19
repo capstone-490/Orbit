@@ -1,0 +1,59 @@
+#No substantial AI-generated code
+
+name-template: 'Iteration $RESOLVED_VERSION'
+tag-template: 'iteration-$RESOLVED_VERSION'
+tag-prefix: 'iteration-'
+version-template: '$MAJOR'
+
+autolabeler:
+  - label: 'feature'
+    branch:
+      - '/feat(ure)?\/.+/'
+    title:
+      - '/^feat/i'
+  - label: 'fix'
+    branch:
+      - '/fix\/.+/'
+    title:
+      - '/^fix/i'
+  - label: 'refactor'
+    title:
+      - '/^(doc|refactor)/i'
+      
+version-resolver:
+  major:
+    labels: []
+  minor:
+    labels: []
+  patch:
+    labels: []
+  default: major
+
+categories:
+  - title: '🚀 Features'
+    semver-increment: minor
+    when:
+      labels:
+        - 'feature'
+        - 'enhancement'
+  - title: '🐛 Bug Fixes'
+    when:
+      labels:
+        - 'fix'
+        - 'bugfix'
+        - 'bug'
+  - title: '🧰 Maintenance'
+    when:
+      labels: 
+        - 'refactor'
+
+change-template: '- $TITLE (#$NUMBER) @$AUTHOR'
+change-title-escapes: '\<*_&'
+no-changes-template: '*No PRs merged in this iteration.*'
+
+template: |
+  ## What's Changed
+
+  $CHANGES
+
+  **Contributors:** $CONTRIBUTORS

@@ -1,0 +1,217 @@
+# Below 50% AI-generated code
+name: Publish Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      create_milestone:
+        description: "Also tag and publish a milestone release (release-M) on the same commit"
+        type: boolean
+        default: false
+      iteration_number:
+        description: "Optional override for iteration number (leave blank to auto-increment)"
+        type: string
+        required: false
+        default: ""
+      milestone_number:
+        description: "Optional override for milestone number (only used if create_milestone is checked)"
+        type: string
+        required: false
+        default: ""
+      target_ref:
+        description: "Optional commit SHA or ref to tag (leave blank for latest commit on this branch)"
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+
+      - name: Resolve Tags & Target Commit
+        id: resolve
+        env:
+          CREATE_MILESTONE: ${{ inputs.create_milestone }}
+          INPUT_ITER: ${{ inputs.iteration_number }}
+          INPUT_REL: ${{ inputs.milestone_number }}
+          TARGET_REF: ${{ inputs.target_ref }}
+        run: |
+          if [ -n "$TARGET_REF" ]; then
+            TARGET_SHA=$(git rev-parse "${TARGET_REF}^{commit}")
+          else
+            TARGET_SHA=$(git rev-parse HEAD)
+          fi
+
+          # resolve iteration-N
+          if [ -n "$INPUT_ITER" ]; then
+            ITER_NUM="${INPUT_ITER#iteration-}"
+          else
+            LATEST_ITER=$(git tag -l "iteration-*" --sort=-version:refname | head -n 1 || true)
+            if [ -n "$LATEST_ITER" ]; then
+              LAST_NUM=$(echo "$LATEST_ITER" | grep -o -E '[0-9]+' | head -n 1)
+              ITER_NUM=$((10#$LAST_NUM + 1))
+            else
+              ITER_NUM=1
+            fi
+          fi
+          ITER_TAG="iteration-${ITER_NUM}"
+          PREV_ITER_TAG=$(git tag -l "iteration-*" --sort=-version:refname | grep -vxF "$ITER_TAG" | head -n 1 || true)
+
+          # optionally resolve release-M
+          MILESTONE_TAG=""
+          PREV_REL_TAG=""
+          if [ "$CREATE_MILESTONE" == "true" ]; then
+            if [ -n "$INPUT_REL" ]; then
+              REL_NUM="${INPUT_REL#release-}"
+            else
+              LATEST_REL=$(git tag -l "release-*" --sort=-version:refname | head -n 1 || true)
+              if [ -n "$LATEST_REL" ]; then
+                LAST_NUM=$(echo "$LATEST_REL" | grep -o -E '[0-9]+' | head -n 1)
+                REL_NUM=$((10#$LAST_NUM + 1))
+              else
+                REL_NUM=1
+              fi
+            fi
+            MILESTONE_TAG="release-${REL_NUM}"
+            PREV_REL_TAG=$(git tag -l "release-*" --sort=-version:refname | grep -vxF "$MILESTONE_TAG" | head -n 1 || true)
+          fi
+
+          {
+            echo "target_sha=${TARGET_SHA}"
+            echo "iter_tag=${ITER_TAG}"
+            echo "prev_iter_tag=${PREV_ITER_TAG}"
+            echo "milestone_tag=${MILESTONE_TAG}"
+            echo "prev_rel_tag=${PREV_REL_TAG}"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "Target commit : ${TARGET_SHA}"
+          echo "Iteration tag : ${ITER_TAG} (previous: ${PREV_ITER_TAG:-none})"
+          echo "Milestone tag : ${MILESTONE_TAG:-none} (previous: ${PREV_REL_TAG:-none})"
+
+      - name: Publish Iteration Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TARGET_SHA: ${{ steps.resolve.outputs.target_sha }}
+          ITER_TAG: ${{ steps.resolve.outputs.iter_tag }}
+          PREV_ITER_TAG: ${{ steps.resolve.outputs.prev_iter_tag }}
+          MILESTONE_TAG: ${{ steps.resolve.outputs.milestone_tag }}
+        run: |
+          # Pin and push iteration-N tag
+          git tag -f "$ITER_TAG" "$TARGET_SHA"
+          git push origin "$ITER_TAG" --force
+
+          # Grab notes from the Release Drafter draft if one exists, then remove the draft
+          gh api "repos/${GITHUB_REPOSITORY}/releases?per_page=30" \
+            --jq '([.[] | select(.draft == true and (.tag_name | startswith("iteration-")))] | first) // empty' \
+            > draft.json
+
+          USE_DRAFT_NOTES="false"
+          if [ -s draft.json ]; then
+            DRAFT_ID=$(jq -r '.id' draft.json)
+            jq -r '.body // ""' draft.json > iter_notes.md
+            if [ -s iter_notes.md ] && grep -q '[^[:space:]]' iter_notes.md; then
+              USE_DRAFT_NOTES="true"
+            fi
+            gh api -X DELETE "repos/${GITHUB_REPOSITORY}/releases/${DRAFT_ID}"
+          fi
+
+          # Replace existing published release if re-running the same iteration tag
+          if gh release view "$ITER_TAG" >/dev/null 2>&1; then
+            gh release delete "$ITER_TAG" --yes
+          fi
+
+          # Mark as Latest only when no milestone release is being published on the same run
+          IS_LATEST="true"
+          [ -n "$MILESTONE_TAG" ] && IS_LATEST="false"
+
+          ITER_NUM="${ITER_TAG#iteration-}"
+          TITLE="Iteration ${ITER_NUM}"
+
+          if [ "$USE_DRAFT_NOTES" == "true" ]; then
+            gh release create "$ITER_TAG" \
+              --title "$TITLE" \
+              --target "$TARGET_SHA" \
+              --latest="$IS_LATEST" \
+              --notes-file iter_notes.md
+          elif [ -n "$PREV_ITER_TAG" ]; then
+            gh release create "$ITER_TAG" \
+              --title "$TITLE" \
+              --target "$TARGET_SHA" \
+              --latest="$IS_LATEST" \
+              --generate-notes \
+              --notes-start-tag "$PREV_ITER_TAG"
+          else
+            gh release create "$ITER_TAG" \
+              --title "$TITLE" \
+              --target "$TARGET_SHA" \
+              --latest="$IS_LATEST" \
+              --generate-notes
+          fi
+
+      - name: Publish Milestone Release
+        if: steps.resolve.outputs.milestone_tag != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TARGET_SHA: ${{ steps.resolve.outputs.target_sha }}
+          MILESTONE_TAG: ${{ steps.resolve.outputs.milestone_tag }}
+          PREV_REL_TAG: ${{ steps.resolve.outputs.prev_rel_tag }}
+        run: |
+          # Pin and push release-M on the exact same commit
+          git tag -f "$MILESTONE_TAG" "$TARGET_SHA"
+          git push origin "$MILESTONE_TAG" --force
+
+          if gh release view "$MILESTONE_TAG" >/dev/null 2>&1; then
+            gh release delete "$MILESTONE_TAG" --yes
+          fi
+
+          REL_NUM="${MILESTONE_TAG#release-}"
+          TITLE="Release ${REL_NUM}"
+
+          if [ -n "$PREV_REL_TAG" ]; then
+            # Cumulative PR notes since the previous milestone tag
+            gh release create "$MILESTONE_TAG" \
+              --title "$TITLE" \
+              --target "$TARGET_SHA" \
+              --latest=true \
+              --generate-notes \
+              --notes-start-tag "$PREV_REL_TAG"
+          else
+            # First-ever milestone (release-1): roll up all published iteration release notes
+            gh api --paginate "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
+              | jq -s -r '
+                  add
+                  | map(select(.draft == false and (.tag_name | startswith("iteration-"))))
+                  | sort_by(.tag_name | ltrimstr("iteration-") | tonumber? // 0)
+                  | map("## " + (.name // .tag_name) + "\n\n" + (.body // "_No notes._"))
+                  | join("\n\n---\n\n")
+                ' > milestone_notes.md
+
+            gh release create "$MILESTONE_TAG" \
+              --title "$TITLE" \
+              --target "$TARGET_SHA" \
+              --latest=true \
+              --notes-file milestone_notes.md
+          fi
+
+      - name: Write Job Summary
+        env:
+          TARGET_SHA: ${{ steps.resolve.outputs.target_sha }}
+          ITER_TAG: ${{ steps.resolve.outputs.iter_tag }}
+          MILESTONE_TAG: ${{ steps.resolve.outputs.milestone_tag }}
+        run: |
+          {
+            echo "### Published Release"
+            echo "- **Commit:** \`${TARGET_SHA}\`"
+            echo "- **Iteration:** [${ITER_TAG}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/${ITER_TAG})"
+            if [ -n "$MILESTONE_TAG" ]; then
+              echo "- **Milestone:** [${MILESTONE_TAG}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/${MILESTONE_TAG})"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
