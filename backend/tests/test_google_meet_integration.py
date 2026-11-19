@@ -142,8 +142,6 @@ def test_callback_stores_credentials(mock_flow, mock_db):
         client.cookies.clear()
 
     assert response.status_code == 303
-    print("EXPECTED:", f"{PREFIX}/authorized")
-    print("ACTUAL:", response.headers["location"])
     assert response.headers["location"] == f"{PREFIX}/authorized"
 
     # The state cookie is cleared once it has been used

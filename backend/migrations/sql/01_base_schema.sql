@@ -1558,6 +1558,7 @@ BEGIN
         v_resource_id := COALESCE(new_data ->> 'id', new_data ->> 'name');
         v_org_id := CASE
             WHEN TG_TABLE_NAME = 'organizations' THEN (new_data ->> 'id')::UUID
+            WHEN TG_TABLE_NAME IN ('identities', 'feature_flags') THEN NULL
             ELSE COALESCE((new_data ->> 'organization_id')::UUID, current_tenant_org_id())
         END;
         v_sub_id := CASE
