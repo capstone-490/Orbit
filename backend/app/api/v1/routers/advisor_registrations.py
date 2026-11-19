@@ -5,7 +5,7 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 from app.dependencies.db import get_connection
 from app.security.passwords import hash_password
 
-router = APIRouter(prefix="/auth", tags=["Authentication"])
+router = APIRouter(prefix="/auth/register", tags=["Registration"])
 
 
 class AdvisorRegistration(BaseModel):
@@ -30,7 +30,7 @@ class AdvisorResponse(BaseModel):
     email: EmailStr
 
 
-@router.post("/register", response_model=AdvisorResponse, status_code=201)
+@router.post("", response_model=AdvisorResponse, status_code=201)
 def register_advisor(advisor: AdvisorRegistration):
     email = str(advisor.email).lower()
     password_hash = hash_password(advisor.password)
@@ -39,7 +39,7 @@ def register_advisor(advisor: AdvisorRegistration):
         with get_connection() as conn, conn.cursor() as cur:
             cur.execute(
                 """
-                    INSERT INTO advisors (username, email, password_hash)
+                    INSERT INTO t_advisors (username, email, password_hash)
                     VALUES (%s, %s, %s)
                     RETURNING id, username, email
                     """,

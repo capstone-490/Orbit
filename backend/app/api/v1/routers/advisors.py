@@ -46,8 +46,8 @@ def get_advisor_tasks(advisor_id: int):
             t.created_at AS "createdAt",
             t.client_id AS "clientId",
             c.name AS "clientName"
-        FROM tasks t
-        LEFT JOIN clients c ON t.client_id = c.id
+        FROM t_tasks t
+        LEFT JOIN t_clients c ON t.client_id = c.id
         WHERE t.advisor_id = %s
         ORDER BY t.due_date ASC;
     """
@@ -76,11 +76,11 @@ def create_advisor_task(
 
     query = """
         WITH inserted AS (
-            INSERT INTO tasks (advisor_id, client_id, task_title, due_date)
+            INSERT INTO t_tasks (advisor_id, client_id, task_title, due_date)
             SELECT %s, %s, %s, %s
             WHERE %s::BIGINT IS NULL OR EXISTS (
                 SELECT 1
-                FROM clients
+                FROM t_clients
                 WHERE id = %s AND advisor_id = %s
             )
             RETURNING id, advisor_id, client_id, task_title, due_date, status, created_at
@@ -93,9 +93,9 @@ def create_advisor_task(
             inserted.status,
             inserted.created_at AS "createdAt",
             inserted.client_id AS "clientId",
-            clients.name AS "clientName"
+            t_clients.name AS "clientName"
         FROM inserted
-        LEFT JOIN clients ON clients.id = inserted.client_id;
+        LEFT JOIN t_clients ON t_clients.id = inserted.client_id;
     """
     try:
         with get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
@@ -132,7 +132,7 @@ def update_task_status(
     advisor: dict[str, int] = Depends(get_current_advisor),
 ):
     query = """
-        UPDATE tasks
+        UPDATE t_tasks
         SET status = %s
         WHERE id = %s AND advisor_id = %s
         RETURNING
@@ -175,8 +175,8 @@ def get_advisor_schedule(advisor_id: int):
             c.agenda,
             c.completion_status AS "completionStatus",
             c.location_or_platform AS "locationOrPlatform"
-        FROM consultations c
-        JOIN clients cl ON c.client_id = cl.id
+        FROM t_consultations c
+        JOIN t_clients cl ON c.client_id = cl.id
         WHERE c.advisor_id = %s
         ORDER BY c.meeting_time ASC;
     """
@@ -204,7 +204,7 @@ def get_advisor_clients(advisor_id: int):
             advisor_id AS "advisorId",
             created_at AS "createdAt",
             updated_at AS "updated_at"
-        FROM clients
+        FROM t_clients
         WHERE advisor_id = %s
         ORDER BY name ASC;
     """

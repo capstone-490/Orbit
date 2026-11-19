@@ -1,52 +1,69 @@
 # No substantial AI-generated code
+
+pytest_plugins = [
+    "tests.fixtures.database",
+    "tests.fixtures.auth",
+]
+
+from contextlib import ExitStack
+
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
 
-from app.core.config import settings
+from app.auth import get_current_advisor
 from app.dependencies.deps import get_db
-from app.main import app
+from app.main import create_application
+
+DEFAULT_API_VERSION = "v1"
 
 
-@pytest.fixture(scope="session")
-def db_engine():
-    """Single engine connection to the already-migrated & seeded test DB."""
-
-    engine = create_engine(
-        settings.sqlalchemy_database_uri,
-        pool_pre_ping=True,
-    )
-
-    yield engine
-    engine.dispose()
-
-
-@pytest.fixture(scope="function")
-def db_session(db_engine):
-    connection = db_engine.connect()
-    transaction = connection.begin()
-    session = Session(bind=connection, join_transaction_mode="create_savepoint")
-
-    try:
-        yield session
-    finally:
-        session.close()
-        transaction.rollback()
-        connection.close()
-
-
-@pytest.fixture(scope="function")
-def client(db_session):
-    """FastAPI TestClient wired to the isolated per-test database session."""
+@pytest.fixture
+def app(db_session):
+    application = create_application()
+    original_overrides = application.dependency_overrides.copy()
 
     def override_get_db():
         yield db_session
 
-    app.dependency_overrides[get_db] = override_get_db
+    def override_get_current_advisor():
+        return {"id": 2}
 
-    try:
-        with TestClient(app) as test_client:
-            yield test_client
-    finally:
-        app.dependency_overrides.pop(get_db, None)
+    application.dependency_overrides[get_db] = override_get_db
+    application.dependency_overrides[get_current_advisor] = override_get_current_advisor
+    yield application
+
+    application.dependency_overrides.clear()
+    application.dependency_overrides.update(original_overrides)
+
+
+@pytest.fixture
+def api_client(app):
+    """Factory fixture to spawn TestClients for any API version or headers."""
+    with ExitStack() as stack:
+
+        def _make_client(version: str = DEFAULT_API_VERSION, **kwargs) -> TestClient:
+            return stack.enter_context(
+                TestClient(
+                    app,
+                    base_url=f"http://testserver/api/{version}",
+                    **kwargs,
+                )
+            )
+
+        yield _make_client
+
+
+@pytest.fixture
+def client(api_client, request):
+    version = getattr(request, "param", DEFAULT_API_VERSION)
+    return api_client(version)
+
+
+@pytest.fixture
+def client_v1(api_client):
+    return api_client("v1")
+
+
+@pytest.fixture
+def client_v2(api_client):
+    return api_client("v2")

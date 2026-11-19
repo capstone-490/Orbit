@@ -6,6 +6,19 @@ import { configDefaults, defineConfig } from 'vitest/config'
 export default defineConfig({
   plugins: [react()],
 
+  server: {
+    host: '0.0.0.0',
+    port: 5173,
+
+    proxy: {
+      '/api': {
+        target: 'http://backend:8001',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
+
   test: {
     environment: 'jsdom',
     setupFiles: './src/tests/setup.js',

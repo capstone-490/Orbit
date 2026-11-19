@@ -4,11 +4,11 @@ import '@testing-library/jest-dom/vitest'
 import { fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import AdvisorDashboard from '../../pages/AdvisorDashboard'
-import { getCurrentAdvisor } from '../../services/AuthApi'
+import { API_BASE_URL, getCurrentAdvisor } from '../../services/AuthApi'
 import { getAdvisorMeetings, rescheduleMeeting } from '../../services/MeetingApi'
 
 vi.mock('../../services/AuthApi', () => ({
-  API_BASE_URL: 'http://localhost:8001',
+  API_BASE_URL: 'http://127.0.0.1:8001',
   getCurrentAdvisor: vi.fn(),
 }))
 
@@ -119,11 +119,12 @@ describe('AdvisorDashboard', () => {
       expect(fetchMock).toHaveBeenCalledTimes(2)
     })
 
-    expect(fetchMock).toHaveBeenCalledWith('http://localhost:8001/advisors/1/tasks', {
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(fetchMock).toHaveBeenCalledWith(`${API_BASE_URL}/advisors/1/tasks`, {
       credentials: 'include',
     })
 
-    expect(fetchMock).toHaveBeenCalledWith('http://localhost:8001/advisors/1/clients', {
+    expect(fetchMock).toHaveBeenCalledWith(`${API_BASE_URL}/advisors/1/clients`, {
       credentials: 'include',
     })
   })

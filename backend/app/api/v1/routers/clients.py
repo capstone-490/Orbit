@@ -69,6 +69,51 @@ class ClientCreate(BaseModel):
         return phone
 
 
+@router.get("")
+def list_clients(advisor: dict[str, int] = Depends(get_current_advisor)):
+    with get_connection(str(advisor["id"]), "Advisor") as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, name, email, phone_number,
+                   address, age, occupation,
+                   timeline, created_at
+            FROM t_clients
+            WHERE advisor_id = %(advisor_id)s
+            ORDER BY created_at DESC, id DESC
+                 """,
+            {"advisor_id": advisor["id"]},
+        )
+
+        columns = [column.name for column in cur.description]
+        rows = cur.fetchall()
+
+    return [dict(zip(columns, row)) for row in rows]
+
+
+@router.get("/{client_id}")
+def get_client(
+    client_id: int,
+    advisor: dict[str, int] = Depends(get_current_advisor),
+):
+    with get_connection(str(advisor["id"]), "Advisor") as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, name, email, phone_number,
+                   address, age, occupation,
+                   timeline, created_at
+            FROM t_clients
+            WHERE id = %(client_id)s AND advisor_id = %(advisor_id)s
+            """,
+            {"client_id": client_id, "advisor_id": advisor["id"]},
+        )
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Client not found")
+
+        columns = [column.name for column in cur.description]
+        return dict(zip(columns, row))
+
+
 # Create a new client
 @router.post("", status_code=201)
 def create_client(
@@ -97,7 +142,7 @@ def create_client(
         ):
             cur.execute(
                 """
-                INSERT INTO clients (
+                INSERT INTO t_clients (
                     name, email, phone_number, address,
                     age, occupation, timeline, advisor_id
                 )
@@ -122,28 +167,6 @@ def create_client(
             status_code=409,
             detail=("A client with this email or phone number already exists."),
         )
-
-
-# Retrieve all existing clients
-@router.get("")
-def list_clients(advisor: dict[str, int] = Depends(get_current_advisor)):
-    with get_connection(str(advisor["id"]), "Advisor") as conn, conn.cursor() as cur:
-        cur.execute(
-            """
-            SELECT id, name, email, phone_number,
-                   address, age, occupation,
-                   timeline, created_at
-            FROM clients
-                 WHERE advisor_id = %(advisor_id)s
-            ORDER BY created_at DESC, id DESC
-                 """,
-            {"advisor_id": advisor["id"]},
-        )
-
-        columns = [column.name for column in cur.description]
-        rows = cur.fetchall()
-
-    return [dict(zip(columns, row)) for row in rows]
 
 
 # Temporary patch as US-15.1 needed a patch client API for testing purposes
@@ -177,7 +200,7 @@ def update_client(
     set_clause += ", updated_at = NOW() AT TIME ZONE 'UTC'"
 
     query = f"""
-        UPDATE clients
+        UPDATE t_clients
         SET {set_clause}
         WHERE id = %(client_id)s
           AND advisor_id = %(advisor_id)s

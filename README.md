@@ -6,15 +6,8 @@
 
 [View GitHub Actions workflows](https://github.com/capstone-490/Orbit/actions)
   
-## Release demos   
-- Release 1 Demo Video:  
-
- https://drive.google.com/file/d/1v-vE-wtCb19aHuWyVFc6kBANI4IcnZIB/view?usp=sharing    
-
-- Release 1 Slides:   
-
-https://docs.google.com/presentation/d/17RosGkqKAPLe0rOtL0uF40UAQ8pBdH7P_8N5PPo3GQ4/edit?usp=sharing
-
+## Release demos
+<!--This will be filled in with links to your demo videos for each release.-->
   
 ## Project summary
 
@@ -22,18 +15,20 @@ Orbit is an AI-powered client and workflow management platform built for financi
 
 ## Developer getting started guide
 
-## Install
+### 1. Prerequisites
 
-- [uv](https://docs.astral.sh/uv/#highlights)
-- [make](https://gnuwin32.sourceforge.net/downlinks/make.php)
-- [pnpm](https://pnpm.io/installation)
-- [docker](https://docs.docker.com/desktop/setup/install/windows-install/)
+- [GIT](https://git-scm.com/install/)
+- [Docker](https://docs.docker.com/engine/install/) | [docker desktop](https://docs.docker.com/desktop/setup/install/windows-install/)
+- [UV](https://docs.astral.sh/uv/getting-started/installation/)
+- [PNPM](https://pnpm.io/installation)
+- [Make](https://gnuwin32.sourceforge.net/downlinks/make.php) | [Make windows](https://gnuwin32.sourceforge.net/downlinks/make.php)
 
 ### Downloading dependencies (Windows)
 
 Docker: Here's a [video tutorial](https://www.youtube.com/watch?v=5Mfe54238xE) to simplify the installation of Docker Desktop on a Windows computer. You only need to follow the tutorial until 11:20. Our application only requires Docker Desktop to be installed and running. You don't need to configure anything else.
 
-Make: 
+Make:
+
 - Click on make in the Install section which should directly lead you to having an make***.exe file downloaded on your computer.
 - After download, click on the exe file to install it on your computer.
 - Go to the folder where you installed it. Click on the GnuWin32 folder, then bin folder.
@@ -41,82 +36,78 @@ Make:
   Example here the path is C:\Users\Temp\Downloads\GnuWin32\bin
   <img width="909" height="154" alt="image" src="https://github.com/user-attachments/assets/436f7d92-722d-468c-9577-af43ebf79eb8" />
 - Add this path to your Systems Variables [tutorial here](https://www.youtube.com/watch?v=dTZJQfMCHbg)
-- Open the Terminal or Powershell program (It can be found by using the Windows search bar)
-- Write the command: make --version    and press Enter
-- If it gives you the version, it means its installation was successful
+- Open the Terminal or Powershell program
 
 UV:
+
 - Click on uv in the Install section
-- Open the Terminal or Powershell program (It can be found by using the Windows search bar)
+- Open the Terminal or Powershell
 - Copy and Paste the command for Windows shown on the uv webpage to the Windows Powershell program and press Enter
-- Write the command: uv --version    and press Enter
-- If it gives you the version, it means its installation was successful
 
 PNPM:
+
 - Click on pnpm in the Install section
-- Open the Windows Powershell program
-- Copy-Paste the command for Windows-Powershell shown on the pnpm webpage and press Enter
-- Write the command: pnpm --version    and press Enter
-- If it gives you the version, it means its installation was successful
+- Open Powershell
+- Copy-Paste the command for Powershell shown on the pnpm webpage and press Enter
 
 
-### Downloading application
-To download the application, go to the application's GitHub [repository](https://github.com/capstone-490/Orbit) and click on the green Code button.
+Run the following block to confirm every tool is ready:
 
-<img width="114" height="40" alt="image" src="https://github.com/user-attachments/assets/d3cd920b-ac09-48d2-90b4-7d8a7cc1b3d8" />
+```bash
+git --version
+docker --version
+docker compose version
+make --version
+uv --version
+pnpm --version
+```
 
-Then, click on download zip which will download a zip file of the application
+---
 
-<img width="171" height="38" alt="image" src="https://github.com/user-attachments/assets/4af5cd93-d5cd-4371-ad64-609f6a356321" />
-
-### Run the program (Windows)
-
-**Prerequisites:** Docker running and dependencies above installed
-
-- Extract the downloaded Orbit-main.zip file
-- Open the extracted folder
-- Navigate through the folders until you reach the main project directory. You should see folders named backend and frontend, among other files and folders.
-- Shift + right click anywhere inside the folder
-- Click on the option of either Terminal or Windows Powershell
-- Enter the command: make dev
-- Press Enter
-- Wait for the application to finish starting.
-- Once you see a message containing an address such as http://localhost:****, open that address in your browser.
-
-
+## 2. Quickstart
 
 **Prerequisites:** Docker running and dependencies above installed
 
 ```bash
-cd backend/
-uv sync
-cd ../frontend
-pnpm install
+# open your terminal program and navigate to some empty folder
 
-cd ..
+git clone git@github.com:capstone-490/Orbit.git orbit
+cd orbit/
+
+cp .env.example .env
+
+cd backend/ && uv sync && cd ..
+cd frontend/ && pnpm install && cd ..
+
 make dev        # run live app
 make mon        # run live with metrics
-make test       # test front and backend
-make test-fe    # test frontend
-make test-be    # test backend
-make test-e2e   # run Playwright end-to-end tests
-make down       # stop running containers
-make clean      # remove all containers
+make test       # run front/backend tests
+make test-cov   # run front/backend tests show coverage
+make test-fe    # run frontend tests
+make test-be    # run backend tests
+make down       # stop containers
+make clean      # remove all containers and data
 
+# OR
+docker compose -f compose.yml -f compose.dev.yml up -d --build
+docker compose -f compose.yml -f compose.dev.yml down --remove-orphans
 ```
 
-**See Backend/Frontend README for detailed instruction**
+### See Backend/Frontend README for further detailed instruction
+
+---
 
 ### End-to-end tests (Playwright)
 
-**Prerequisites:** Docker running, frontend dependencies are installed, and the Playwright browser installed (one-time):
+**Prerequisites:**
+
+- Docker running, frontend dependencies are installed, and the Playwright browser installed (one-time):
+- Stop any running app before running E2E tests. The test stack uses the same ports (backend: 8001, frontend: 5173).
 
 ```bash
 cd frontend
 pnpm exec playwright install chromium
 ```
-
-**Stop `make dev` before running E2E tests.** The test stack uses the same ports (backend: 8001, frontend: 5173).
 
 **Run everything** from the project root:
 
@@ -137,8 +128,16 @@ docker compose -f compose.test.yml down -v
 
 ## Tech Stack
 
-- **Frontend:** React.js
-- **Backend:** Python with FastAPI
+| Layer | Technologies |
+| --- | --- |
+| **Frontend Application** | React.js, Vite, CSS, Nginx |
+| **Frontend Tooling & QA** | Node.js 22, pnpm, Vitest, Biome, ESLint |
+| **Backend API** | Python 3.14, FastAPI, Pydantic, Uvicorn |
+| **Database & Persistence** | PostgreSQL, SQLAlchemy, Alembic |
+| **Backend Tooling & QA** | uv, Pytest, Ruff, Mypy |
+| **Security & Privacy** | Custom PII Redactor, Anonymizer, Token Cipher |
+| **Observability & Load Testing** | Prometheus, Structured Logging, k6, Codecov |
+| **Infrastructure & Orchestration** | Docker, Docker Compose, GNU Make |
   
 ## Project board
 
@@ -153,10 +152,10 @@ your background, we welcome you.
 
 ## Our Commitments
 
-* **Inclusive Language:** We encourage and utilize inclusive language in our codebase, documentation, issues, and discussions. This includes avoiding gendered, ableist, or exclusionary terminology.
-* **Representation:** We intentionally seek and welcome contributions from different genders, ethnicities, backgrounds, abilities, and other historically underrepresented groups in technology.
-* **Barrier Reduction:** We work to minimize technical and social barriers to entry. Whether you are fixing a typo, updating documentation, or refactoring code, your contributions are equally valued.
-* **Safe Environments:** We will not officially participate in, align with, or sponsor events unless they operate under and enforce a clear code of conduct.
+- **Inclusive Language:** We encourage and utilize inclusive language in our codebase, documentation, issues, and discussions. This includes avoiding gendered, ableist, or exclusionary terminology.
+- **Representation:** We intentionally seek and welcome contributions from different genders, ethnicities, backgrounds, abilities, and other historically underrepresented groups in technology.
+- **Barrier Reduction:** We work to minimize technical and social barriers to entry. Whether you are fixing a typo, updating documentation, or refactoring code, your contributions are equally valued.
+- **Safe Environments:** We will not officially participate in, align with, or sponsor events unless they operate under and enforce a clear code of conduct.
 
 We recognize that we may not always get everything right, but we are committed to continuous learning, listening, and evolving our processes to ensure an equitable ecosystem.
 

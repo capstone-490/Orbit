@@ -1,3 +1,6 @@
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
 from fastapi import APIRouter, Depends, HTTPException
 from psycopg import Error as PsycopgError
 
@@ -12,10 +15,10 @@ from app.services.sla_cal import (
     get_timezone,
 )
 
-router = APIRouter()
+router = APIRouter(prefix="/tasks", tags=["Tasks"])
 
 
-@router.get("/tasks", response_model=list[TaskResponse])
+@router.get("", response_model=list[TaskResponse])
 def get_tasks(
     client_id: int,
     user_timezone: str = "UTC",
@@ -29,39 +32,38 @@ def get_tasks(
             rows = conn.execute(
                 """
                 SELECT
-                    id,
-                    title,
-                    description,
-                    client_id,
-                    status,
-                    due_date,
-                    last_contact_date
-                FROM tasks_advisor
-                INNER JOIN clients c ON c.id = t.client_id
+                    t.id,
+                    t.title,
+                    t.description,
+                    t.client_id,
+                    t.task_status,
+                    t.due_date,
+                    t.last_contact_date
+                FROM t_tasks_advisor t
+                INNER JOIN t_clients c ON c.id = t.client_id
                 WHERE t.client_id = %s
                   AND c.advisor_id = %s
-                ORDER BY due_date ASC
-            """,
+                ORDER BY t.due_date ASC
+                """,
                 (client_id, advisor["id"]),
             ).fetchall()
 
-        tasks = []
+        return [build_task_response(row, timezone_zi) for row in rows]
 
-        for row in rows:
-            task = build_task_response(row, timezone_zi)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=str(exc),
+        ) from exc
 
-            tasks.append(task)
-
-        return tasks
-
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-    except PsycopgError as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except PsycopgError as exc:
+        raise HTTPException(
+            status_code=500,
+            detail="Database operation failed",
+        ) from exc
 
 
-@router.post("/tasks", response_model=TaskResponse, status_code=201)
+@router.post("", response_model=TaskResponse, status_code=201)
 def create_task(
     task: TaskCreate,
     user_timezone: str = "UTC",
@@ -82,17 +84,22 @@ def create_task(
         with get_connection(str(advisor["id"]), "Advisor") as conn:
             row = conn.execute(
                 """
-                INSERT INTO tasks_advisor (
+                INSERT INTO t_tasks_advisor (
                     title,
                     description,
                     client_id,
-                    status,
+                    task_status,
                     due_date,
                     last_contact_date
                 )
-                VALUES (%s, %s, %s, %s, %s,
-                        COALESCE(%s, NOW()))
-                FROM clients c
+                SELECT
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    COALESCE(%s, NOW())
+                FROM t_clients c
                 WHERE c.id = %s
                   AND c.advisor_id = %s
                 RETURNING
@@ -100,10 +107,10 @@ def create_task(
                     title,
                     description,
                     client_id,
-                    status,
+                    task_status,
                     due_date,
                     last_contact_date
-            """,
+                """,
                 (
                     task.title,
                     task.description,
@@ -111,6 +118,7 @@ def create_task(
                     task.status.value,
                     due_date,
                     last_contact_date,
+                    task.client_id,
                     advisor["id"],
                 ),
             ).fetchone()
@@ -136,7 +144,11 @@ def create_task(
         )
 
 
-def build_task_response(row, timezone_zi, now=None):
+def build_task_response(
+    row,
+    timezone_zi: ZoneInfo,
+    now: datetime | None = None,
+) -> TaskResponse:
 
     urgency = compute_urgency(status=row[4], due_date=row[5], tz=timezone_zi, now=now)
 

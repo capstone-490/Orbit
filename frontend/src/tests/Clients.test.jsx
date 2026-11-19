@@ -6,6 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '@testing-library/jest-dom/vitest'
 import Clients from '../pages/Clients'
 
+export const API_BASE_URL = (import.meta.env.VITE_API_URL || '/api/v1').replace(/\/+$/, '')
+
 const alice = {
   id: 1,
   name: 'Alice Smith',
@@ -74,7 +76,7 @@ describe('US-14: Client directory', () => {
     expect(screen.getByText('Bob Jones')).toBeInTheDocument()
     expect(screen.getByText('All Clients (2)')).toBeInTheDocument()
 
-    expect(fetch).toHaveBeenCalledWith('http://localhost:8001/clients', {
+    expect(fetch).toHaveBeenCalledWith(expect.stringMatching(/\/api\/v1\/clients$/), {
       credentials: 'include',
     })
   })
