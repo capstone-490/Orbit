@@ -1,7 +1,7 @@
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from psycopg import Error as PsycopgError
 
 from app.api.v1.schemas.task import TaskCreate, TaskResponse
@@ -20,10 +20,11 @@ router = APIRouter(prefix="/tasks", tags=["Tasks"])
 
 @router.get("", response_model=list[TaskResponse])
 def get_tasks(
-    client_id: int = Query(..., gt=0),
-    user_timezone: str = Query(default="UTC"),
+    client_id: int,
+    user_timezone: str = "UTC",
     advisor: dict[str, int] = Depends(get_current_advisor),
 ):
+
     try:
         timezone_zi = get_timezone(user_timezone)
 
@@ -65,7 +66,7 @@ def get_tasks(
 @router.post("", response_model=TaskResponse, status_code=201)
 def create_task(
     task: TaskCreate,
-    user_timezone: str = Query(default="UTC"),
+    user_timezone: str = "UTC",
     advisor: dict[str, int] = Depends(get_current_advisor),
 ):
 

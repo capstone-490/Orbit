@@ -20,10 +20,6 @@ def mock_db(monkeypatch):
     return connection, cursor
 
 
-def normalize_sql(query: str) -> str:
-    return " ".join(query.lower().split())
-
-
 def test_list_advisor_tasks_returns_client_names(mock_db, client):
     _, cursor = mock_db
     cursor.fetchall.return_value = [
@@ -39,7 +35,7 @@ def test_list_advisor_tasks_returns_client_names(mock_db, client):
         }
     ]
 
-    response = client.get("/api/v1/advisors/2/tasks")
+    response = client.get("/advisors/2/tasks")
 
     assert response.status_code == 200
     assert response.json()[0]["clientName"] == "Sarah Smith"
@@ -141,7 +137,7 @@ def test_list_advisor_schedule_returns_dict_rows(mock_db, client):
         }
     ]
 
-    response = client.get("/api/v1/advisors/2/schedule")
+    response = client.get("/advisors/2/schedule")
 
     assert response.status_code == 200
     assert response.json()[0]["time"] == "2026-10-28T14:00:00"
@@ -167,7 +163,7 @@ def test_list_advisor_clients_returns_rows(mock_db, client):
         }
     ]
 
-    response = client.get("/api/v1/advisors/2/clients")
+    response = client.get("/advisors/2/clients")
 
     assert response.status_code == 200
     assert response.json() == [
@@ -243,9 +239,9 @@ def test_update_task_status_reports_database_errors(mock_db, client):
 @pytest.mark.parametrize(
     ("path", "method"),
     [
-        ("/api/v1/advisors/1/tasks", "get"),
-        ("/api/v1/advisors/1/schedule", "get"),
-        ("/api/v1/advisors/1/clients", "get"),
+        ("/advisors/1/tasks", "get"),
+        ("/advisors/1/schedule", "get"),
+        ("/advisors/1/clients", "get"),
     ],
 )
 def test_advisor_routes_report_database_errors(mock_db, client, path, method):

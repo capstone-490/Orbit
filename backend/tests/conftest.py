@@ -17,6 +17,29 @@ from app.main import create_application
 DEFAULT_API_VERSION = "v1"
 
 
+from collections.abc import AsyncIterator
+
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
+
+
+@pytest.fixture
+async def session_factory(db_engine) -> AsyncIterator[async_sessionmaker[AsyncSession]]:
+    async_engine: AsyncEngine = create_async_engine(db_engine.url)
+    try:
+        yield async_sessionmaker(
+            bind=async_engine,
+            class_=AsyncSession,
+            expire_on_commit=False,
+        )
+    finally:
+        await async_engine.dispose()
+
+
 @pytest.fixture
 def app(db_session):
     application = create_application()

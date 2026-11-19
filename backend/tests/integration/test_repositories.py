@@ -51,6 +51,10 @@ async def seeded_tenant(
             ),
             {"id": org_id, "owner_id": identity_id},
         )
+
+        # Now that the organization exists, set tenant context for RLS-protected tables
+        await uow.set_tenant_context(org_id, bypass_rls=True)
+
         await session.execute(
             text(
                 "INSERT INTO subscriptions (id, organization_id, name, purpose, is_default, status) "

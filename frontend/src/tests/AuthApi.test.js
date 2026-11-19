@@ -74,7 +74,6 @@ describe('registerAdvisor', () => {
 
     await expect(registerAdvisor(advisor)).resolves.toEqual(responseData)
 
-
     expect(fetchMock).toHaveBeenCalledWith(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
       headers: {
