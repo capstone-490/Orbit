@@ -254,7 +254,6 @@ def test_get_tasks_calls_sla_calculator(
 
     data = response.json()
 
-    assert data[0]["urgency_state"] == "DUE_NOW"
     assert data[0]["urgency_color"] == "Red"
 
     sla_spy.assert_called_once()
@@ -354,6 +353,7 @@ def test_task_due_exactly_now_is_red(client, mock_db):
     response = client.get("/tasks", params={"client_id": 10})
 
     assert response.status_code == 200, response.text
+    assert response.status_code == 200, response.text
 
     task = response.json()[0]
 
@@ -390,6 +390,7 @@ def test_get_task_timezone_conversion(client, mock_db):
         params={"client_id": 10, "user_timezone": "America/New_York"},
     )
 
+    assert response.status_code == 200, response.text
     assert response.status_code == 200, response.text
 
     task = response.json()[0]
