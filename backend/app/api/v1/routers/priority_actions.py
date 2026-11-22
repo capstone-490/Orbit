@@ -33,7 +33,10 @@ def _fetch_candidate_follow_ups(advisor_id: int, horizon: date) -> list[dict]:
     client that is not assigned to the signed-in advisor.
     """
     try:
-        with get_connection() as conn, conn.cursor(row_factory=dict_row) as cur:
+        with (
+            get_connection(str(advisor_id), "Advisor") as conn,
+            conn.cursor(row_factory=dict_row) as cur,
+        ):
             cur.execute(
                 """
                 SELECT f.id, f.client_id, c.name AS client_name, f.reason,
