@@ -5,7 +5,7 @@
 
 COMPOSE          := docker compose -f compose.yml
 COMPOSE_DEV      := $(COMPOSE) -f compose.dev.yml
-COMPOSE_MON      := $(COMPOSE_DEV) -f compose.monitoring.yml
+COMPOSE_MON 	 := $(COMPOSE_DEV) -f compose.monitoring.yml
 COMPOSE_PROD_MON := $(COMPOSE) -f compose.monitoring.yml
 COMPOSE_ALL      := $(COMPOSE) -f compose.dev.yml -f compose.monitoring.yml
 COMPOSE_TEST     := docker compose -f compose.test.yml
