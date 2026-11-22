@@ -19,6 +19,7 @@ class MeetingMode(StrEnum):
 class ClientStatus(StrEnum):
     PROVISIONING = "provisioning"
     ACTIVE = "active"
+    INACTIVE = "inactive"
     ARCHIVED = "archived"
     DELETED = "deleted"
 
