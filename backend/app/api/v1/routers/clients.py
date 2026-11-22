@@ -1,3 +1,4 @@
+# 50% or more AI-generated code
 import re
 from datetime import date
 from typing import Literal

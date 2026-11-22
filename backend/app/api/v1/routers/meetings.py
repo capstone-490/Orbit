@@ -11,7 +11,7 @@ CONTINUING_SESSION_DURATION = timedelta(hours=1)
 
 router = APIRouter(
     prefix="/meetings",
-    tags=["meetings"],
+    tags=["Meetings"],
     dependencies=[Depends(get_current_advisor)],
 )
 
