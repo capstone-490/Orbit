@@ -4,8 +4,7 @@ import { afterEach, describe, expect, test, vi } from 'vitest'
 import '@testing-library/jest-dom/vitest'
 import { MemoryRouter } from 'react-router-dom'
 import DashboardTasks from '../../components/dashboard/DashboardTasks'
-
-export const API_BASE_URL = import.meta.env.VITE_API_URL
+import { API_BASE_URL } from '../../services/AuthApi'
 
 const renderDashboardTasks = (props) =>
   render(

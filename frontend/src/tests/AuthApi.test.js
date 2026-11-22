@@ -1,7 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { loginAdvisor, logoutAdvisor, registerAdvisor } from '../services/AuthApi'
-
-export const API_BASE_URL = import.meta.env.VITE_API_URL
+import { API_BASE_URL, loginAdvisor, logoutAdvisor, registerAdvisor } from '../services/AuthApi'
 
 afterEach(() => {
   vi.unstubAllGlobals()
