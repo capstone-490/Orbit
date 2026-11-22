@@ -19,15 +19,6 @@ autolabeler:
   - label: 'refactor'
     title:
       - '/^(doc|refactor)/i'
-      
-version-resolver:
-  major:
-    labels: []
-  minor:
-    labels: []
-  patch:
-    labels: []
-  default: major
 
 categories:
   - title: '🚀 Features'
