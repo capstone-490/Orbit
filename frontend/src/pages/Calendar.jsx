@@ -14,8 +14,8 @@ const DAY_END_HOUR = 24
 const PIXELS_PER_HOUR = 64
 const PIXELS_PER_MIN = PIXELS_PER_HOUR / 60
 
-// TODO: https://orbit.ca/book-meeting/<advisorId> once the backend exposes the current advisor's id
-const BOOKING_URL = 'http://localhost:5173/book-meeting'
+// TODO: https://orbit.ca/api/v1/book-meeting/<advisorId> once the backend exposes the current advisor's id
+const BOOKING_URL = 'http://127.0.0.1:5173/api/v1/book-meeting'
 
 const BUSY_EVENT_STYLE = {
   label: 'Busy',
