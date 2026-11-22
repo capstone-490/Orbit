@@ -314,7 +314,7 @@ CREATE TABLE clients (
         )),
     primary_advisor_membership_id UUID,
     status TEXT NOT NULL DEFAULT 'provisioning'
-        CHECK (status IN ('provisioning', 'active', 'archived', 'deleted')),
+        CHECK (status IN ('provisioning', 'active', 'inactive', 'archived', 'deleted')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     deleted_at TIMESTAMPTZ,
@@ -355,7 +355,7 @@ CREATE TABLE goals (
         CHECK (duration IS NULL OR duration IN ('short_term', 'medium_term', 'long_term')),
     goal_type TEXT,
     status TEXT NOT NULL DEFAULT 'active'
-        CHECK (status IN ('active', 'achieved', 'archived', 'deleted')),
+        CHECK (status IN ('active', 'inactive', 'achieved', 'archived', 'deleted')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     deleted_at TIMESTAMPTZ,
@@ -384,7 +384,7 @@ CREATE TABLE notes (
     author_membership_id UUID,
     author_agent_id UUID,
     status TEXT NOT NULL DEFAULT 'active'
-        CHECK (status IN ('active', 'archived', 'deleted')),
+        CHECK (status IN ('active', 'inactive', 'archived', 'deleted')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     deleted_at TIMESTAMPTZ,
@@ -415,7 +415,7 @@ CREATE TABLE folders (
     parent_folder_id UUID,
     name TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'provisioning'
-        CHECK (status IN ('provisioning', 'active', 'deleted')),
+        CHECK (status IN ('provisioning', 'active', 'inactive', 'deleted')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     deleted_at TIMESTAMPTZ,
