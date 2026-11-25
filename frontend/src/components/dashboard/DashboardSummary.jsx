@@ -1,4 +1,4 @@
-import { FiCalendar, FiClipboard, FiClock, FiUsers } from 'react-icons/fi'
+import { FiCalendar, FiClipboard, FiClock, FiUsers, FiZap } from 'react-icons/fi'
 import '../../styles/DashboardSummary.css'
 import { isTaskCompleted } from '../../data/taskStatuses'
 
@@ -94,6 +94,15 @@ function DashboardSummary({ dashboardSummaryData, tasks, schedule, clients }) {
       ? dashboardSummaryData.overdueTasks
       : 0
 
+  const pendingFNAPlans =
+    typeof dashboardSummaryData.pendingFNAPlans === 'number'
+      ? dashboardSummaryData.pendingFNAPlans
+      : 0
+  const currentFNAPlans =
+    typeof dashboardSummaryData.currentFNAPlans === 'number'
+      ? dashboardSummaryData.currentFNAPlans
+      : 0
+
   return (
     <section className="dashboard-summary">
       {/* Total Clients */}
@@ -150,6 +159,22 @@ function DashboardSummary({ dashboardSummaryData, tasks, schedule, clients }) {
 
         <div className="card-icon tasks-icon">
           <FiClipboard />
+        </div>
+      </article>
+
+      {/* Pending FNA / Plans */}
+      <article className="summary-card" aria-label="Pending FNA / plans">
+        <div className="summary-card-content">
+          <span className="card-title">PENDING FNA / PLANS</span>
+
+          <div className="card-body">
+            <span className="primary-value">{pendingFNAPlans}</span>
+            <span className="secondary-value fna-status">{currentFNAPlans} current plans</span>
+          </div>
+        </div>
+
+        <div className="card-icon fna-icon">
+          <FiZap />
         </div>
       </article>
     </section>
