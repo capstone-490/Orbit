@@ -1,5 +1,6 @@
 // Substantial AI assistance used; verified with frontend tests and production build.
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { API_BASE_URL, withAuthCredentials } from '../services/AuthApi'
 import '../styles/Clients.css'
 
@@ -218,10 +219,13 @@ function Clients() {
                 <span>No upcoming meeting</span>
               </div>
 
-              {/* Client profile navigation will be added later */}
-              <span className="client-arrow" aria-hidden="true">
-                ›
-              </span>
+              <Link
+                className="client-arrow"
+                to={`/clients/${client.id}`}
+                aria-label={`View ${client.name} information`}
+              >
+                <span aria-hidden="true">›</span>
+              </Link>
             </div>
           ))
         ) : (

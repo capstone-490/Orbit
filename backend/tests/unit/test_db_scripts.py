@@ -125,12 +125,51 @@ def test_provision_credentials_uses_default_settings():
 # ------------------------------------------------------------------
 
 
-def test_seed_data_commits_database_session():
+def test_seed_data_creates_demo_records_and_commits_database_session():
     db = MagicMock()
+    db.execute.return_value.scalars.return_value.all.return_value = [17]
+    db.execute.return_value.all.return_value = [
+        (index, client["email"])
+        for index, client in enumerate(seed_module.DEMO_CLIENTS, start=1)
+    ]
 
     seed_module.seed_data(db)
 
+    assert db.execute.call_count == 11
     db.commit.assert_called_once()
+    executed_sql = [
+        call.args[0].text
+        for call in db.execute.call_args_list
+        if call.args and hasattr(call.args[0], "text")
+    ]
+    assert any("ON CONFLICT (email) DO NOTHING" in sql for sql in executed_sql)
+    assert sum("WHERE NOT EXISTS" in sql for sql in executed_sql) == 8
+    assert all(
+        client["email"] in repr(db.execute.call_args_list)
+        for client in seed_module.DEMO_CLIENTS
+    )
+
+
+@pytest.mark.parametrize("advisor_ids", [[], [1, 2]])
+def test_seed_data_skips_when_advisor_is_missing_or_ambiguous(advisor_ids):
+    db = MagicMock()
+    db.execute.return_value.scalars.return_value.all.return_value = advisor_ids
+
+    seed_module.seed_data(db)
+
+    db.execute.assert_called_once()
+    db.commit.assert_not_called()
+
+
+def test_seed_data_rejects_demo_email_owned_by_another_advisor():
+    db = MagicMock()
+    db.execute.return_value.scalars.return_value.all.return_value = [17]
+    db.execute.return_value.all.return_value = []
+
+    with pytest.raises(RuntimeError, match="already assigned to another advisor"):
+        seed_module.seed_data(db)
+
+    db.commit.assert_not_called()
 
 
 def test_main_skips_seeding_in_production(caplog):

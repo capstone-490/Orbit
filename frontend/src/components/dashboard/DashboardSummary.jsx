@@ -159,25 +159,6 @@ function DashboardSummary({ dashboardSummaryData, tasks, schedule, clients }) {
           <FiClipboard />
         </div>
       </article>
-
-      {/* Pending FNA / Plans */}
-      <article className="summary-card" aria-label="Pending FNA / plans">
-        <div className="summary-card-content">
-          <span className="card-title">PENDING FNA / PLANS</span>
-
-          <div className="card-body">
-            <span className="primary-value">{pendingFNAPlans}</span>
-
-            <span className="secondary-value fna-status">
-              {currentFNAPlans} FNA / Plans in progress
-            </span>
-          </div>
-        </div>
-
-        <div className="card-icon fna-icon">
-          <FiZap />
-        </div>
-      </article>
     </section>
   )
 }
