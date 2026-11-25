@@ -5,6 +5,7 @@ import AdvisorDashboard from './pages/AdvisorDashboard'
 import AIReview from './pages/AIReview'
 import BookMeeting from './pages/BookMeeting'
 import Calendar from './pages/Calendar'
+import ClientInfo from './pages/ClientInfo'
 import Clients from './pages/Clients'
 import CreateAccount from './pages/CreateAccount'
 import Documents from './pages/Documents'
@@ -28,6 +29,7 @@ function App() {
         <Route element={<AdvisorLayout />}>
           <Route path="/dashboard" element={<AdvisorDashboard />} />
           <Route path="/clients" element={<Clients />} />
+          <Route path="/clients/:clientId" element={<ClientInfo />} />
           <Route path="/calendar" element={<Calendar />} />
           <Route path="/follow-ups" element={<FollowUps />} />
           <Route path="/tasks" element={<Tasks />} />

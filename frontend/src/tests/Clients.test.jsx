@@ -2,6 +2,7 @@
 // Substantial AI assistance used; verified with frontend tests.
 
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { MemoryRouter, Route, Routes, useParams } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '@testing-library/jest-dom/vitest'
 import Clients from '../pages/Clients'
@@ -36,6 +37,19 @@ function openForm() {
   return screen.getByRole('dialog', { name: /add new client/i })
 }
 
+function renderClients() {
+  return render(
+    <MemoryRouter>
+      <Clients />
+    </MemoryRouter>,
+  )
+}
+
+function ClientRoute() {
+  const { clientId } = useParams()
+  return <p>Client profile {clientId}</p>
+}
+
 function fillRequiredFields(dialog) {
   fireEvent.change(within(dialog).getByLabelText(/full name/i), {
     target: { value: 'Charlie Brown' },
@@ -67,7 +81,7 @@ afterEach(() => {
 describe('US-14: Client directory', () => {
   it('loads and displays client names and emails', async () => {
     mockInitialClients()
-    render(<Clients />)
+    renderClients()
 
     expect(screen.getAllByText('Loading clients...').length).toBeGreaterThan(0)
 
@@ -83,17 +97,35 @@ describe('US-14: Client directory', () => {
 
   it('shows an empty state when there are no clients', async () => {
     mockInitialClients([])
-    render(<Clients />)
+    renderClients()
 
     expect(await screen.findByText('No clients found.')).toBeInTheDocument()
   })
 
   it('shows an error when the API fails', async () => {
     fetch.mockResolvedValueOnce(response({}, false))
-    render(<Clients />)
+    renderClients()
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Failed to load clients.')
     expect(screen.getByText('Unable to display clients.')).toBeInTheDocument()
+  })
+
+  it('links each client arrow to that client profile', async () => {
+    mockInitialClients()
+    render(
+      <MemoryRouter initialEntries={['/clients']}>
+        <Routes>
+          <Route path="/clients" element={<Clients />} />
+          <Route path="/clients/:clientId" element={<ClientRoute />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    await screen.findByText('Alice Smith')
+
+    fireEvent.click(screen.getByRole('link', { name: 'View Alice Smith information' }))
+
+    expect(await screen.findByText('Client profile 1')).toBeInTheDocument()
   })
 })
 
@@ -104,7 +136,7 @@ describe('US-14: Client directory', () => {
 describe('US-15: Search clients', () => {
   it('filters by name, ignoring case', async () => {
     mockInitialClients()
-    render(<Clients />)
+    renderClients()
 
     await screen.findByText('Alice Smith')
 
@@ -118,7 +150,7 @@ describe('US-15: Search clients', () => {
 
   it('filters by email', async () => {
     mockInitialClients()
-    render(<Clients />)
+    renderClients()
 
     await screen.findByText('Alice Smith')
 
@@ -132,7 +164,7 @@ describe('US-15: Search clients', () => {
 
   it('shows no matches and restores clients when search is cleared', async () => {
     mockInitialClients()
-    render(<Clients />)
+    renderClients()
 
     await screen.findByText('Alice Smith')
 
@@ -158,7 +190,7 @@ describe('US-15: Search clients', () => {
 describe('US-16: Add client', () => {
   it('opens and closes the form', async () => {
     mockInitialClients([])
-    render(<Clients />)
+    renderClients()
 
     await screen.findByText('No clients found.')
 
@@ -171,7 +203,7 @@ describe('US-16: Add client', () => {
 
   it('requires name, email and phone before submission', async () => {
     mockInitialClients([])
-    render(<Clients />)
+    renderClients()
 
     await screen.findByText('No clients found.')
 
@@ -203,7 +235,7 @@ describe('US-16: Add client', () => {
       ]),
     )
 
-    render(<Clients />)
+    renderClients()
 
     await screen.findByText('No clients found.')
 
