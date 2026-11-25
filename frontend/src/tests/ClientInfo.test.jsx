@@ -70,6 +70,20 @@ describe('Client information page', () => {
     expect(screen.getByRole('link', { name: /back to clients/i })).toBeInTheDocument()
   })
 
+  it('shows a general message when the client request fails', async () => {
+    fetch.mockResolvedValueOnce(response({}, false, 500))
+    renderClientInfo()
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Unable to load client information.')
+  })
+
+  it('shows the request error when fetching the client rejects', async () => {
+    fetch.mockRejectedValueOnce(new Error('Network unavailable'))
+    renderClientInfo()
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Network unavailable')
+  })
+
   it('shows a fallback for optional fields', async () => {
     fetch.mockResolvedValueOnce(
       response({
@@ -102,5 +116,42 @@ describe('Client information page', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: 'Documents' }))
     expect(screen.getByRole('tabpanel')).toHaveTextContent('Documents for this client')
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Tasks' }))
+    expect(screen.getByRole('tabpanel')).toHaveTextContent('Client-specific tasks')
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Meetings' }))
+    expect(screen.getByRole('tabpanel')).toHaveTextContent('Meetings for this client')
+  })
+
+  it('supports arrow, Home, and End keyboard navigation between sections', async () => {
+    fetch.mockResolvedValueOnce(response(client))
+    renderClientInfo()
+    await screen.findByRole('heading', { name: 'Alice Smith' })
+
+    const overviewTab = screen.getByRole('tab', { name: 'Overview' })
+    fireEvent.keyDown(overviewTab, { key: 'ArrowRight' })
+    expect(screen.getByRole('tab', { name: 'Timeline' })).toHaveAttribute('aria-selected', 'true')
+
+    fireEvent.keyDown(screen.getByRole('tab', { name: 'Timeline' }), { key: 'ArrowLeft' })
+    expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true')
+
+    fireEvent.keyDown(screen.getByRole('tab', { name: 'Overview' }), { key: 'End' })
+    expect(screen.getByRole('tab', { name: 'Documents' })).toHaveAttribute('aria-selected', 'true')
+
+    fireEvent.keyDown(screen.getByRole('tab', { name: 'Documents' }), { key: 'Home' })
+    expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true')
+
+    fireEvent.keyDown(screen.getByRole('tab', { name: 'Overview' }), { key: 'Enter' })
+    expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('shows a fallback planning stage in the timeline', async () => {
+    fetch.mockResolvedValueOnce(response({ ...client, timeline: null }))
+    renderClientInfo()
+    await screen.findByRole('heading', { name: 'Alice Smith' })
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Timeline' }))
+    expect(screen.getByRole('tabpanel')).toHaveTextContent('Planning stage: Not provided')
   })
 })
