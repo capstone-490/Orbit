@@ -1,4 +1,4 @@
-import { FiCalendar, FiClipboard, FiClock, FiUsers, FiZap } from 'react-icons/fi'
+import { FiCalendar, FiClipboard, FiClock, FiUsers} from 'react-icons/fi'
 import '../../styles/DashboardSummary.css'
 import { isTaskCompleted } from '../../data/taskStatuses'
 
@@ -92,13 +92,6 @@ function DashboardSummary({ dashboardSummaryData, tasks, schedule, clients }) {
     ? tasks.filter((task) => !isTaskCompleted(task) && isTaskOverdue(task, now)).length
     : typeof dashboardSummaryData.overdueTasks === 'number'
       ? dashboardSummaryData.overdueTasks
-      : 0
-
-  const pendingFNAPlans = dashboardSummaryData.pendingFNAPlans
-
-  const currentFNAPlans =
-    typeof dashboardSummaryData.currentFNAPlans === 'number'
-      ? dashboardSummaryData.currentFNAPlans
       : 0
 
   return (
