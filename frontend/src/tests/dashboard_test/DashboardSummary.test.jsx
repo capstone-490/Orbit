@@ -26,7 +26,7 @@ describe('DashboardSummary Component', () => {
     expect(screen.getByText('TOTAL CLIENTS')).toBeInTheDocument()
     expect(screen.getByText('UPCOMING MEETINGS')).toBeInTheDocument()
     expect(screen.getByText('PENDING TASKS')).toBeInTheDocument()
-    expect(screen.getByText('PENDING FNA / PLANS')).toBeInTheDocument()
+    expect(screen.queryByText('PENDING FNA / PLANS')).not.toBeInTheDocument()
   })
 
   test('renders primary metric values for all cards', () => {
@@ -35,7 +35,7 @@ describe('DashboardSummary Component', () => {
     expect(screen.getByText('142')).toBeInTheDocument()
     expect(screen.getByText('5')).toBeInTheDocument()
     expect(screen.getByText('8')).toBeInTheDocument()
-    expect(screen.getByText('4')).toBeInTheDocument()
+    expect(screen.getAllByRole('article')).toHaveLength(3)
   })
 
   test('excludes completed tasks from the pending task count', () => {
