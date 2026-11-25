@@ -1,4 +1,4 @@
-import { FiCalendar, FiClipboard, FiClock, FiUsers} from 'react-icons/fi'
+import { FiCalendar, FiClipboard, FiClock, FiUsers } from 'react-icons/fi'
 import '../../styles/DashboardSummary.css'
 import { isTaskCompleted } from '../../data/taskStatuses'
 
