@@ -32,11 +32,29 @@ const setup = () => {
 }
 
 const selectFutureDateAndTime = () => {
-  const dateCell = document.querySelector(`[data-day="${formatDate(futureDate)}"]`)
+  const today = new Date()
+
+  // Navigate to the next month if the future date
+  // is outside the current month.
+  if (
+    futureDate.getMonth() !== today.getMonth() ||
+    futureDate.getFullYear() !== today.getFullYear()
+  ) {
+    fireEvent.click(screen.getByRole('button', { name: /next month/i }))
+  }
+
+  const dateCell = document.querySelector(
+    `[data-day="${formatDate(futureDate)}"]:not([data-hidden="true"]):not([data-outside="true"])`,
+  )
 
   expect(dateCell).not.toBeNull()
 
-  fireEvent.click(dateCell.querySelector('button'))
+  const dateButton = dateCell.querySelector('button')
+
+  expect(dateButton).not.toBeNull()
+  expect(dateButton).toBeEnabled()
+
+  fireEvent.click(dateButton)
 
   fireEvent.change(screen.getByLabelText('New start time'), {
     target: { value: '14:30' },
