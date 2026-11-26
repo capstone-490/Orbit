@@ -6,8 +6,14 @@
 
 [View GitHub Actions workflows](https://github.com/capstone-490/Orbit/actions)
   
-## Release demos
-<!--This will be filled in with links to your demo videos for each release.-->
+## Release demos   
+- Release 1 Demo Video:  
+
+ https://drive.google.com/file/d/1v-vE-wtCb19aHuWyVFc6kBANI4IcnZIB/view?usp=sharing    
+
+- Release 1 Slides:   
+
+https://docs.google.com/presentation/d/17RosGkqKAPLe0rOtL0uF40UAQ8pBdH7P_8N5PPo3GQ4/edit?usp=sharing
   
 ## Project summary
 
