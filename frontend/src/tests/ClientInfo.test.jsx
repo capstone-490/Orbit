@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '@testing-library/jest-dom/vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import ClientInfo from '../pages/ClientInfo'
+import { API_BASE_URL } from '../services/AuthApi'
 
 const client = {
   id: 1,
@@ -57,9 +58,7 @@ describe('Client information page', () => {
       'href',
       '/clients',
     )
-    expect(fetch).toHaveBeenCalledWith(expect.stringMatching(/\/api\/v1\/clients\/1$/), {
-      credentials: 'include',
-    })
+    expect(fetch).toHaveBeenCalledWith(`${API_BASE_URL}/clients/1`, { credentials: 'include' })
   })
 
   it('shows an explicit message when the client does not exist', async () => {
