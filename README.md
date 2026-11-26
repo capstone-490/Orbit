@@ -5,10 +5,17 @@
 **GitHub Actions** is used for continuous integration.
 
 [View GitHub Actions workflows](https://github.com/capstone-490/Orbit/actions)
-  
+
 ## Release demos
-<!--This will be filled in with links to your demo videos for each release.-->
-  
+
+- Release 1 Demo Video:  
+
+ https://drive.google.com/file/d/1v-vE-wtCb19aHuWyVFc6kBANI4IcnZIB/view?usp=sharing    
+
+- Release 1 Slides:   
+
+https://docs.google.com/presentation/d/17RosGkqKAPLe0rOtL0uF40UAQ8pBdH7P_8N5PPo3GQ4/edit?usp=sharing
+
 ## Project summary
 
 Orbit is an AI-powered client and workflow management platform built for financial advisors that focuses on centralizing daily administrative tasks and client management activities to reduce the burden of managing multiple clients. Specialized AI agents support advisors by handling tasks such as drafting messages, suggesting tasks, summarizing information and identifying follow-up actions. Orbit includes a coordination mechanism that detects conflicting, duplicate and stale updates to reconcile the outputs of different AI agents before any changes are committed, while advisors have final approval over important actions.
