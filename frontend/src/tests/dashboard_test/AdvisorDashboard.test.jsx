@@ -200,8 +200,17 @@ describe('AdvisorDashboard', () => {
     expect(screen.getByRole('dialog')).toBeInTheDocument()
 
     // Select a future date using the calendar.
-    const futureDate = new Date()
+    const today = new Date()
+    const futureDate = new Date(today)
     futureDate.setDate(futureDate.getDate() + 7)
+
+    // Navigate to the next month when necessary.
+    if (
+      futureDate.getMonth() !== today.getMonth() ||
+      futureDate.getFullYear() !== today.getFullYear()
+    ) {
+      fireEvent.click(screen.getByRole('button', { name: /next month/i }))
+    }
 
     const dateString = [
       futureDate.getFullYear(),
@@ -209,10 +218,18 @@ describe('AdvisorDashboard', () => {
       String(futureDate.getDate()).padStart(2, '0'),
     ].join('-')
 
-    const dateCell = document.querySelector(`[data-day="${dateString}"]`)
+    const dateCell = document.querySelector(
+      `[data-day="${dateString}"]:not([data-hidden="true"]):not([data-outside="true"])`,
+    )
 
     expect(dateCell).not.toBeNull()
-    fireEvent.click(dateCell.querySelector('button'))
+
+    const dateButton = dateCell.querySelector('button')
+
+    expect(dateButton).not.toBeNull()
+    expect(dateButton).toBeEnabled()
+
+    fireEvent.click(dateButton)
 
     fireEvent.change(screen.getByLabelText('New start time'), {
       target: { value: '14:30' },
