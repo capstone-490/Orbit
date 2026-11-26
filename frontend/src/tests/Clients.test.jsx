@@ -6,8 +6,7 @@ import { MemoryRouter, Route, Routes, useParams } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '@testing-library/jest-dom/vitest'
 import Clients from '../pages/Clients'
-
-export const API_BASE_URL = (import.meta.env.VITE_API_URL || '/api/v1').replace(/\/+$/, '')
+import { API_BASE_URL } from '../services/AuthApi'
 
 const alice = {
   id: 1,
@@ -90,9 +89,7 @@ describe('US-14: Client directory', () => {
     expect(screen.getByText('Bob Jones')).toBeInTheDocument()
     expect(screen.getByText('All Clients (2)')).toBeInTheDocument()
 
-    expect(fetch).toHaveBeenCalledWith(expect.stringMatching(/\/api\/v1\/clients$/), {
-      credentials: 'include',
-    })
+    expect(fetch).toHaveBeenCalledWith(`${API_BASE_URL}/clients`, { credentials: 'include' })
   })
 
   it('shows an empty state when there are no clients', async () => {
