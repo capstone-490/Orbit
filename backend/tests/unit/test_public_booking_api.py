@@ -17,7 +17,7 @@ from tests.unit.test_public_booking_service import FakeUnitOfWork, now, uow  # n
 def test_app(uow: FakeUnitOfWork, now: datetime) -> FastAPI:  # noqa: F811
     app = FastAPI()
     register_domain_exception_handlers(app)
-    app.include_router(router, prefix="/api/v1")
+    app.include_router(router, prefix="/api/v2")
 
     app.dependency_overrides[get_uow] = lambda: uow
     app.dependency_overrides[get_clock] = lambda: now
@@ -37,7 +37,7 @@ async def test_e2e_public_booking_http_flow(test_app: FastAPI) -> None:
     ) as client:
         # 1. Fetch weekly slots
         weekly_resp = await client.get(
-            "/api/v1/public/booking-links/tok_valid_123/availability/weekly",
+            "/api/v2/public/booking-links/tok_valid_123/availability/weekly",
             params={"start_date": "2026-11-02", "end_date": "2026-11-08"},
         )
         assert weekly_resp.status_code == 200
@@ -49,7 +49,7 @@ async def test_e2e_public_booking_http_flow(test_app: FastAPI) -> None:
 
         # 2. Acquire soft hold on the first slot
         hold_resp = await client.post(
-            "/api/v1/public/booking-links/tok_valid_123/holds",
+            "/api/v2/public/booking-links/tok_valid_123/holds",
             json={
                 "start_at": first_slot["start_at"],
                 "end_at": first_slot["end_at"],
@@ -64,7 +64,7 @@ async def test_e2e_public_booking_http_flow(test_app: FastAPI) -> None:
 
         # 3. Confirm booking
         confirm_resp = await client.post(
-            f"/api/v1/public/booking-links/tok_valid_123/bookings/{booking_id}/confirm",
+            f"/api/v2/public/booking-links/tok_valid_123/bookings/{booking_id}/confirm",
             json={
                 "email": "prospect@example.com",
                 "full_name": "Jordan Prospect",
@@ -82,7 +82,7 @@ async def test_e2e_public_booking_http_flow(test_app: FastAPI) -> None:
 
         # 4. Cancel booking using the returned token
         cancel_resp = await client.post(
-            "/api/v1/public/booking-links/cancel",
+            "/api/v2/public/booking-links/cancel",
             json={
                 "cancel_token": confirm_data["cancel_token"],
                 "reason": "Need to reschedule next month",
@@ -99,14 +99,14 @@ async def test_api_error_status_codes(test_app: FastAPI) -> None:
     ) as client:
         # 404 Not Found on bogus public_token
         not_found_resp = await client.get(
-            "/api/v1/public/booking-links/tok_unknown/availability/weekly",
+            "/api/v2/public/booking-links/tok_unknown/availability/weekly",
             params={"start_date": "2026-11-02", "end_date": "2026-11-08"},
         )
         assert not_found_resp.status_code == 404
 
         # 422 Unprocessable Entity when trying to hold a slot outside working hours (e.g. 03:00 UTC)
         bad_slot_resp = await client.post(
-            "/api/v1/public/booking-links/tok_valid_123/holds",
+            "/api/v2/public/booking-links/tok_valid_123/holds",
             json={
                 "start_at": "2026-11-02T03:00:00Z",
                 "end_at": "2026-11-02T03:30:00Z",
