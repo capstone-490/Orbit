@@ -1,36 +1,28 @@
-import json
-from pathlib import Path
+from __future__ import annotations
 
-from app.dependencies.db import get_connection
+import asyncio
 
-CONFIG_PATH = Path(__file__).resolve().parent.parent / "config" / "feature_flags.json"
+from app.core.config import settings
+from app.infrastructure.database import build_async_engine, build_session_factory
+from app.infrastructure.uow import SqlAlchemyUnitOfWork
+from app.services.feature_flags import FeatureFlagService
 
 
-def load_feature_flags() -> None:
-    with CONFIG_PATH.open(encoding="utf-8") as f:
-        config = json.load(f)
+async def _run() -> int:
+    engine = build_async_engine(settings.sqlalchemy_database_uri)
+    try:
+        service = FeatureFlagService(
+            SqlAlchemyUnitOfWork(build_session_factory(engine))
+        )
+        return await service.seed_from_config()
+    finally:
+        await engine.dispose()
 
-    flags = config.get("flags", [])
 
-    with get_connection() as conn:
-        conn.execute("SET LOCAL app.bypass_rls = 'on'")
-        for flag in flags:
-            conn.execute(
-                """
-                INSERT INTO feature_flags (name, enabled, rollout_percent, description)
-                VALUES (%s, %s, %s, %s)
-                ON CONFLICT (name) DO NOTHING
-                """,
-                (
-                    flag["name"],
-                    flag["enabled"],
-                    flag["rollout_percent"],
-                    flag.get("description"),
-                ),
-            )
-        conn.commit()
+def main() -> None:
+    inserted = asyncio.run(_run())
+    print(f"Feature flags synced ({inserted} new flag(s) added).")
 
 
 if __name__ == "__main__":
-    load_feature_flags()
-    print("Feature flags loaded successfully.")
+    main()

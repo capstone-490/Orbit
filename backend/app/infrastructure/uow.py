@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.domain.uow import AbstractUnitOfWork
 from app.infrastructure.repositories.booking import SqlAlchemyBookingRepository
 from app.infrastructure.repositories.client import SqlAlchemyClientRepository
+from app.infrastructure.repositories.feature_flag import SqlAlchemyFeatureFlagRepository
 from app.infrastructure.repositories.schedule import SqlAlchemyScheduleRepository
 
 
@@ -38,6 +39,7 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
         self.schedules = SqlAlchemyScheduleRepository(self._session)
         self.bookings = SqlAlchemyBookingRepository(self._session)
         self.clients = SqlAlchemyClientRepository(self._session)
+        self.feature_flags = SqlAlchemyFeatureFlagRepository(self._session)
         return self
 
     async def __aexit__(
@@ -47,7 +49,6 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
         exc_tb: TracebackType | None,
     ) -> None:
         try:
-            # ask parent to save work or rollback
             await super().__aexit__(exc_type, exc_val, exc_tb)
         finally:
             if self._session is not None:
@@ -59,6 +60,9 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
         organization_id: UUID | None,
         *,
         bypass_rls: bool = False,
+        actor_id: UUID | str | None = None,
+        actor_type: str = "system",
+        effective_subject_id: UUID | str | None = None,
     ) -> None:
         """
         Sets transaction psql session (is_local = true)
@@ -72,14 +76,24 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
         await self._session.execute(
             text(
                 """
-                SELECT
-                    set_config('app.current_org_id', :org_id, true),
-                    set_config('app.bypass_rls', :bypass, true)
-                """
+                    SELECT
+                        set_config('app.current_org_id', :org_id, true),
+                        set_config('app.bypass_rls', :bypass, true),
+                        set_config('app.actor_id', :actor_id, true),
+                        set_config('app.actor_type', :actor_type, true),
+                        set_config('app.effective_subject_id', :effective_subject_id, true)
+                    """
             ),
             {
                 "org_id": str(organization_id) if organization_id is not None else "",
                 "bypass": "on" if bypass_rls else "off",
+                "actor_id": str(actor_id) if actor_id is not None else "",
+                "actor_type": actor_type,
+                "effective_subject_id": (
+                    str(effective_subject_id)
+                    if effective_subject_id is not None
+                    else ""
+                ),
             },
         )
 
