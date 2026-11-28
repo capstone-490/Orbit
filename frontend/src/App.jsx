@@ -6,6 +6,7 @@ import AIReview from './pages/AIReview'
 import BookMeeting from './pages/BookMeeting'
 import Calendar from './pages/Calendar'
 import ClientInfo from './pages/ClientInfo'
+import ClientReschedule from './pages/ClientReschedule'
 import Clients from './pages/Clients'
 import CreateAccount from './pages/CreateAccount'
 import Documents from './pages/Documents'
@@ -26,6 +27,7 @@ function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/create-account" element={<CreateAccount />} />
         <Route path="/book-meeting" element={<BookMeeting />} />
+        <Route path="/reschedule-meeting" element={<ClientReschedule />} />
         <Route element={<AdvisorLayout />}>
           <Route path="/dashboard" element={<AdvisorDashboard />} />
           <Route path="/clients" element={<Clients />} />

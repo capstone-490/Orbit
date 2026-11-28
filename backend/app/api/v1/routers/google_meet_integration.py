@@ -1,6 +1,8 @@
 # Below 50% AI-generated
+import hashlib
 import json
 import os
+import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -24,6 +26,7 @@ from app.core.config import settings
 from app.core.security.token_cipher import InvalidToken, decrypt_token, encrypt_token
 from app.dependencies.db import get_connection
 from app.observability.logging_config import get_logger
+from app.services.email import send_email
 
 logger = get_logger("google_meet_integration")
 
@@ -235,12 +238,21 @@ def book_meeting(advisor_id: int, booking: BookingCreate):
         ) from None
 
     client_id = _get_or_create_booking_client(advisor_id, booking)
+    reschedule_token = secrets.token_urlsafe(32)
+    reschedule_url = (
+        f"{settings.FRONTEND_URL.rstrip('/')}/reschedule-meeting"
+        f"?token={reschedule_token}"
+    )
+    description = booking.notes or ""
+    if description:
+        description += "\n\n"
+    description += f"Reschedule this meeting: {reschedule_url}"
     event_body = _build_event_body(
         booking.title,
         booking.start,
         booking.duration_minutes,
         attendees=[{"email": booking.email, "displayName": booking.name}],
-        description=booking.notes,
+        description=description,
     )
 
     meeting_id, event = _schedule_calendar_event(
@@ -250,6 +262,18 @@ def book_meeting(advisor_id: int, booking: BookingCreate):
         booking.start,
         booking.duration_minutes,
         event_body,
+        reschedule_token_hash=_hash_reschedule_token(reschedule_token),
+    )
+
+    send_email(
+        to=str(booking.email),
+        subject="Your Orbit meeting is confirmed",
+        body=(
+            f"Hi {booking.name},\n\n"
+            f"Your {booking.title} is scheduled for {booking.start.isoformat()}.\n"
+            f"Google Meet: {event.get('hangoutLink') or 'See your calendar invitation'}\n\n"
+            f"To choose a new time, visit: {reschedule_url}\n"
+        ),
     )
 
     return {
@@ -259,7 +283,12 @@ def book_meeting(advisor_id: int, booking: BookingCreate):
         "end": event["end"]["dateTime"],
         "meeting_uri": event.get("hangoutLink"),
         "meeting_code": _meeting_code(event),
+        "reschedule_url": reschedule_url,
     }
+
+
+def _hash_reschedule_token(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
 def _get_or_create_booking_client(advisor_id: int, booking: BookingCreate) -> int:
@@ -337,6 +366,7 @@ def _schedule_calendar_event(
     meeting_date: datetime,
     duration_minutes: int,
     event_body: dict,
+    reschedule_token_hash: str | None = None,
 ) -> tuple[int, dict]:
     # Check the client first so no Google event is created for a client that
     # isn't this advisor's.
@@ -378,9 +408,12 @@ def _schedule_calendar_event(
                     meeting_date,
                     meeting_uri,
                     meeting_code,
-                    duration_minutes
+                    duration_minutes,
+                    google_calendar_id,
+                    google_event_id,
+                    reschedule_token_hash
                 )
-                VALUES (%s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id
                 """,
             (
@@ -390,6 +423,9 @@ def _schedule_calendar_event(
                 event.get("hangoutLink"),
                 _meeting_code(event),
                 duration_minutes,
+                calendar_id,
+                event["id"],
+                reschedule_token_hash,
             ),
         )
         meeting_id = cur.fetchone()[0]
@@ -410,6 +446,33 @@ def _insert_event(calendar, calendar_id: str, event_body: dict) -> dict:
         )
         .execute()
     )
+
+
+def update_calendar_event(
+    advisor_id: int,
+    calendar_id: str,
+    event_id: str,
+    start: datetime,
+    duration_minutes: int,
+) -> None:
+    creds = _get_valid_credentials(advisor_id)
+    end = start + timedelta(minutes=duration_minutes)
+    try:
+        calendar = build("calendar", "v3", credentials=creds, cache_discovery=False)
+        calendar.events().patch(
+            calendarId=calendar_id,
+            eventId=event_id,
+            body={
+                "start": {"dateTime": start.isoformat()},
+                "end": {"dateTime": end.isoformat()},
+            },
+            sendUpdates="all",
+        ).execute()
+    except HttpError:
+        logger.exception("Google Calendar meeting update failed")
+        raise HTTPException(
+            status_code=502, detail="Could not update the Google Calendar meeting."
+        ) from None
 
 
 def _create_orbit_calendar(calendar, advisor_id: int) -> str:

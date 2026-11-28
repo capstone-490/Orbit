@@ -38,6 +38,26 @@ describe('BookingConfirmationModal', () => {
     expect(onDone).toHaveBeenCalledTimes(1)
   })
 
+  it('shows the client reschedule link', () => {
+    render(
+      <BookingConfirmationModal
+        meetingName="Tax Education"
+        duration={45}
+        formattedDate="Thu, Nov 19, 2026"
+        selectedTime="10:30 AM"
+        advisorName="Nayiri Saba"
+        email="daniel@example.com"
+        rescheduleUrl="https://orbit.example/reschedule-meeting?token=secure"
+        onDone={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByRole('link', { name: 'Reschedule this meeting' })).toHaveAttribute(
+      'href',
+      'https://orbit.example/reschedule-meeting?token=secure',
+    )
+  })
+
   it('calls onDone when Escape is pressed', () => {
     const onDone = renderModal()
 

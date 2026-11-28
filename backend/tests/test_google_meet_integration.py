@@ -1,5 +1,6 @@
 # Below 50% AI-generated
 import json
+from datetime import UTC, datetime
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
@@ -409,13 +410,26 @@ def test_create_meeting_saves_orbit_meeting(mock_db, stored_creds, mock_calendar
     assert client_params == (7, 1)
 
     [(_, params)] = _insert_calls(mock_db)
-    advisor_id, client_id, meeting_date, meeting_uri, meeting_code, duration = params
+    (
+        advisor_id,
+        client_id,
+        meeting_date,
+        meeting_uri,
+        meeting_code,
+        duration,
+        calendar_id,
+        event_id,
+        reschedule_token_hash,
+    ) = params
     assert (advisor_id, client_id) == (1, 7)
     assert duration == 60
     assert meeting_date.isoformat() == "2026-11-10T14:00:00-05:00"
     # The Meet link and code from Google are stored with the meeting
     assert meeting_uri == "https://meet.google.com/abc-defg-hij"
     assert meeting_code == "abc-defg-hij"
+    assert calendar_id == "cal-1"
+    assert event_id == "evt123"
+    assert reschedule_token_hash is None
     mock_db.connection.commit.assert_called_once()
 
 
@@ -580,7 +594,9 @@ def test_list_bookable_advisors_when_none_connected(mock_db):
     assert response.json() == []
 
 
-def test_book_meeting_for_existing_client(mock_db, stored_creds, mock_calendar):
+def test_book_meeting_for_existing_client(
+    mock_db, stored_creds, mock_calendar, monkeypatch
+):
     # Credentials, existing client of advisor 1, then _schedule_calendar_event's
     # client check, Orbit calendar and inserted meeting id
     mock_db.fetchone.side_effect = [
@@ -590,18 +606,25 @@ def test_book_meeting_for_existing_client(mock_db, stored_creds, mock_calendar):
         ("cal-1",),
         MEETING_ROW,
     ]
+    send_email = MagicMock()
+    monkeypatch.setattr(gmi, "send_email", send_email)
 
     response = public_client.post(f"{PREFIX}/book/1", json=BOOKING)
 
     assert response.status_code == 201
-    assert response.json() == {
-        "meeting_id": 42,
-        "title": "Portfolio review",
-        "start": "2026-11-10T14:00:00-05:00",
-        "end": "2026-11-10T14:45:00-05:00",
-        "meeting_uri": "https://meet.google.com/abc-defg-hij",
-        "meeting_code": "abc-defg-hij",
-    }
+    data = response.json()
+    assert data["meeting_id"] == 42
+    assert data["title"] == "Portfolio review"
+    assert data["start"] == "2026-11-10T14:00:00-05:00"
+    assert data["end"] == "2026-11-10T14:45:00-05:00"
+    assert data["meeting_uri"] == "https://meet.google.com/abc-defg-hij"
+    assert data["meeting_code"] == "abc-defg-hij"
+    assert data["reschedule_url"].startswith(
+        f"{settings.FRONTEND_URL}/reschedule-meeting?token="
+    )
+    send_email.assert_called_once()
+    assert send_email.call_args.kwargs["to"] == "jane@example.com"
+    assert data["reschedule_url"] in send_email.call_args.kwargs["body"]
 
     kwargs = mock_calendar.events.return_value.insert.call_args.kwargs
     assert kwargs["calendarId"] == "cal-1"
@@ -614,11 +637,21 @@ def test_book_meeting_for_existing_client(mock_db, stored_creds, mock_calendar):
     assert body["summary"] == "Meeting"
     assert body["start"] == {"dateTime": "2030-01-15T14:00:00-05:00"}
     assert body["end"] == {"dateTime": "2030-01-15T15:00:00-05:00"}
+    assert data["reschedule_url"] in body["description"]
 
     assert _executed(mock_db, "INSERT INTO t_clients") == []
     [(_, params)] = _insert_calls(mock_db)
     assert params[:2] == (1, 7)
-    assert params[3:] == ("https://meet.google.com/abc-defg-hij", "abc-defg-hij", 60)
+    assert params[3:6] == (
+        "https://meet.google.com/abc-defg-hij",
+        "abc-defg-hij",
+        60,
+    )
+    assert params[6] == "cal-1"
+    assert params[7] == "evt123"
+    assert len(params[8]) == 64
+    reschedule_token = data["reschedule_url"].split("token=", 1)[1]
+    assert params[8] == gmi._hash_reschedule_token(reschedule_token)
 
 
 def test_book_meeting_creates_new_client(mock_db, stored_creds, mock_calendar):
@@ -658,8 +691,7 @@ def test_book_meeting_uses_title_and_duration(mock_db, stored_creds, mock_calend
     body = mock_calendar.events.return_value.insert.call_args.kwargs["body"]
     assert body["summary"] == "Retirement planning"
     assert body["end"] == {"dateTime": "2030-01-15T14:30:00-05:00"}
-    # No notes given, so the event has no description
-    assert "description" not in body
+    assert body["description"].startswith("Reschedule this meeting: ")
     # The duration is also saved on the Orbit meeting
     [(_, params)] = _insert_calls(mock_db)
     assert params[5] == 30
@@ -680,7 +712,32 @@ def test_book_meeting_puts_notes_in_the_event(mock_db, stored_creds, mock_calend
 
     assert response.status_code == 201
     body = mock_calendar.events.return_value.insert.call_args.kwargs["body"]
-    assert body["description"] == "Questions about my RRSP"
+    assert body["description"].startswith("Questions about my RRSP\n\n")
+    assert "Reschedule this meeting: " in body["description"]
+
+
+def test_update_calendar_event_sends_attendee_updates(
+    monkeypatch, stored_creds, mock_calendar
+):
+    monkeypatch.setattr(gmi, "_get_valid_credentials", lambda advisor_id: stored_creds)
+
+    gmi.update_calendar_event(
+        1,
+        "cal-1",
+        "evt123",
+        datetime(2030, 6, 1, 10, tzinfo=UTC),
+        45,
+    )
+
+    mock_calendar.events.return_value.patch.assert_called_once_with(
+        calendarId="cal-1",
+        eventId="evt123",
+        body={
+            "start": {"dateTime": "2030-06-01T10:00:00+00:00"},
+            "end": {"dateTime": "2030-06-01T10:45:00+00:00"},
+        },
+        sendUpdates="all",
+    )
 
 
 def test_book_meeting_in_the_past_returns_422(mock_db, mock_calendar):

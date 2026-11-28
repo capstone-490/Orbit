@@ -9,6 +9,7 @@ function BookingConfirmationModal({
   advisorName,
   email,
   meetingUri,
+  rescheduleUrl,
   onDone,
 }) {
   const doneButtonRef = useRef(null)
@@ -84,10 +85,16 @@ function BookingConfirmationModal({
         <div className="confirmation-email">
           <FiMail />
           <p>
-            A Google Calendar invite has been sent to <strong>{email}</strong>. It includes the
-            meeting link.
+            A Google Calendar invite and reschedule link have been sent to <strong>{email}</strong>.
+            The invite includes the meeting link.
           </p>
         </div>
+
+        {rescheduleUrl && (
+          <p>
+            Need a different time? <a href={rescheduleUrl}>Reschedule this meeting</a>
+          </p>
+        )}
 
         <button
           ref={doneButtonRef}

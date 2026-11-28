@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   getAdvisorMeetings,
+  getClientReschedule,
   getMeetingBriefingNotes,
+  rescheduleClientMeeting,
   rescheduleMeeting,
 } from '../services/MeetingApi'
 
@@ -130,6 +132,42 @@ describe('MeetingApi', () => {
       fetch.mockRejectedValue(new TypeError('Network unavailable'))
 
       await expect(rescheduleMeeting(5, newStart)).rejects.toThrow('Network unavailable')
+    })
+  })
+
+  describe('client rescheduling', () => {
+    const token = 'x'.repeat(43)
+    const newStart = '2030-06-01T10:00:00.000Z'
+
+    it('loads meeting details using the bearer link without advisor credentials', async () => {
+      const details = { meeting_date: newStart, duration_minutes: 30 }
+      fetch.mockResolvedValue({ ok: true, json: async () => details })
+
+      await expect(getClientReschedule(token)).resolves.toEqual(details)
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringMatching(/\/meetings\/client-reschedule\?token=/),
+      )
+    })
+
+    it('submits a new time using the bearer link', async () => {
+      const updated = { id: 5, meeting_date: newStart, duration_minutes: 30 }
+      fetch.mockResolvedValue({ ok: true, json: async () => updated })
+
+      await expect(rescheduleClientMeeting(token, newStart)).resolves.toEqual(updated)
+      const [url, options] = fetch.mock.calls[0]
+      expect(url).toMatch(/\/meetings\/client-reschedule\?token=/)
+      expect(options).toMatchObject({
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ new_start: newStart }),
+      })
+    })
+
+    it('rejects malformed links before making a request', async () => {
+      await expect(getClientReschedule('short')).rejects.toThrow(
+        'This reschedule link is invalid.',
+      )
+      expect(fetch).not.toHaveBeenCalled()
     })
   })
 

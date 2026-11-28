@@ -1,7 +1,8 @@
 # Substantial AI assistance used; verified with backend tests and live auth smoke test.
+import hashlib
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, field_validator
 
 from app.auth import get_current_advisor
@@ -14,6 +15,7 @@ router = APIRouter(
     tags=["Meetings"],
     dependencies=[Depends(get_current_advisor)],
 )
+public_router = APIRouter(prefix="/meetings", tags=["Meetings"])
 
 
 @router.get("/{meeting_id}/briefing-notes")
@@ -261,26 +263,108 @@ def reschedule_meeting(
     payload: RescheduleMeetingRequest,
     advisor: dict[str, int] = Depends(get_current_advisor),
 ):
-    advisor_id = advisor["id"]
+    updated = _reschedule_meeting(
+        payload.new_start,
+        advisor_id=advisor["id"],
+        meeting_id=meeting_id,
+    )
 
+    return {
+        **updated,
+        "notification_status": "sent",
+    }
+
+
+@public_router.get("/client-reschedule")
+def get_client_reschedule(token: str = Query(min_length=40, max_length=100)):
     with get_connection() as conn, conn.cursor() as cur:
-        # Serialize rescheduling operations for this advisor.
+        cur.execute(
+            """
+            SELECT m.meeting_date, m.duration_minutes,
+                   a.username, m.completion_status
+            FROM t_meetings m
+            JOIN t_advisors a ON a.id = m.advisor_id
+            WHERE m.reschedule_token_hash = %s
+            """,
+            (_hash_reschedule_token(token),),
+        )
+        meeting = cur.fetchone()
+
+    if meeting is None or str(meeting[3]) != "Scheduled":
+        raise HTTPException(status_code=404, detail="Reschedule link is invalid.")
+
+    return {
+        "meeting_date": meeting[0],
+        "duration_minutes": meeting[1],
+        "advisor_name": meeting[2],
+    }
+
+
+@public_router.patch("/client-reschedule")
+def client_reschedule_meeting(
+    payload: RescheduleMeetingRequest,
+    token: str = Query(min_length=40, max_length=100),
+):
+    updated = _reschedule_meeting(
+        payload.new_start,
+        token_hash=_hash_reschedule_token(token),
+    )
+    return {
+        "id": updated["id"],
+        "meeting_date": updated["meeting_date"],
+        "duration_minutes": updated["duration_minutes"],
+    }
+
+
+def _reschedule_meeting(
+    new_start: datetime,
+    *,
+    advisor_id: int | None = None,
+    meeting_id: int | None = None,
+    token_hash: str | None = None,
+) -> dict:
+    with get_connection() as conn, conn.cursor() as cur:
+        if token_hash is not None:
+            cur.execute(
+                "SELECT advisor_id FROM t_meetings WHERE reschedule_token_hash = %s",
+                (token_hash,),
+            )
+            token_owner = cur.fetchone()
+            if token_owner is None:
+                raise HTTPException(status_code=404, detail="Reschedule link is invalid.")
+            advisor_id = token_owner[0]
+
+        if advisor_id is None:
+            raise HTTPException(status_code=404, detail="Meeting not found.")
         cur.execute(
             "SELECT pg_advisory_xact_lock(%s, %s)",
             (26, advisor_id),
         )
 
-        # Fetch only a meeting owned by the authenticated advisor.
-        cur.execute(
-            """
-            SELECT id, client_id, advisor_id, meeting_date,
-                   duration_minutes, completion_status
-            FROM t_meetings
-            WHERE id = %s AND advisor_id = %s
-            FOR UPDATE
-            """,
-            (meeting_id, advisor_id),
-        )
+        if token_hash is not None:
+            cur.execute(
+                """
+                SELECT id, client_id, advisor_id, meeting_date,
+                       duration_minutes, completion_status, google_calendar_id,
+                       google_event_id
+                FROM t_meetings
+                WHERE reschedule_token_hash = %s
+                FOR UPDATE
+                """,
+                (token_hash,),
+            )
+        else:
+            cur.execute(
+                """
+                SELECT id, client_id, advisor_id, meeting_date,
+                       duration_minutes, completion_status, google_calendar_id,
+                       google_event_id
+                FROM t_meetings
+                WHERE id = %s AND advisor_id = %s
+                FOR UPDATE
+                """,
+                (meeting_id, advisor_id),
+            )
 
         meeting = cur.fetchone()
 
@@ -291,12 +375,14 @@ def reschedule_meeting(
             )
 
         (
-            _current_id,
+            current_id,
             _client_id,
             _current_advisor_id,
             _old_start,
             duration_minutes,
             status,
+            google_calendar_id,
+            google_event_id,
         ) = meeting
 
         if str(status) != "Scheduled":
@@ -305,7 +391,14 @@ def reschedule_meeting(
                 detail="Only scheduled meetings can be rescheduled.",
             )
 
-        new_end = payload.new_start + timedelta(minutes=duration_minutes)
+        if not google_calendar_id or not google_event_id:
+            raise HTTPException(
+                status_code=409,
+                detail="The meeting has no linked Google Calendar event.",
+            )
+
+        new_start = new_start.astimezone(UTC)
+        new_end = new_start + timedelta(minutes=duration_minutes)
 
         # Find any overlapping scheduled meeting for this advisor.
         cur.execute(
@@ -322,9 +415,9 @@ def reschedule_meeting(
             """,
             (
                 advisor_id,
-                meeting_id,
+                current_id,
                 new_end,
-                payload.new_start,
+                new_start,
             ),
         )
 
@@ -333,6 +426,14 @@ def reschedule_meeting(
                 status_code=409,
                 detail="The requested time conflicts with another meeting.",
             )
+
+        _update_calendar_event(
+            advisor_id,
+            google_calendar_id,
+            google_event_id,
+            new_start,
+            duration_minutes,
+        )
 
         cur.execute(
             """
@@ -343,7 +444,7 @@ def reschedule_meeting(
             RETURNING id, client_id, advisor_id, meeting_date,
                       duration_minutes, completion_status
             """,
-            (payload.new_start, meeting_id, advisor_id),
+            (new_start, current_id, advisor_id),
         )
 
         updated = cur.fetchone()
@@ -355,8 +456,23 @@ def reschedule_meeting(
         "meeting_date": updated[3],
         "duration_minutes": updated[4],
         "completion_status": str(updated[5]),
-        "notification_status": "not_implemented",
     }
+
+
+def _hash_reschedule_token(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def _update_calendar_event(
+    advisor_id: int,
+    calendar_id: str,
+    event_id: str,
+    start: datetime,
+    duration_minutes: int,
+) -> None:
+    from app.api.v1.routers.google_meet_integration import update_calendar_event
+
+    update_calendar_event(advisor_id, calendar_id, event_id, start, duration_minutes)
 
 
 def _require_matching_advisor(advisor_id: int, advisor: dict[str, int]) -> None:

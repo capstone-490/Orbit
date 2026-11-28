@@ -62,6 +62,51 @@ export async function rescheduleMeeting(meetingId, newStart) {
   return response.json()
 }
 
+export async function getClientReschedule(token) {
+  requireRescheduleToken(token)
+
+  const query = new URLSearchParams({ token })
+  const response = await fetch(`${API_BASE_URL}/meetings/client-reschedule?${query}`)
+
+  if (!response.ok) {
+    throw new Error(await readError(response))
+  }
+
+  return response.json()
+}
+
+export async function rescheduleClientMeeting(token, newStart) {
+  requireRescheduleToken(token)
+
+  if (typeof newStart !== 'string' || !newStart.trim() || Number.isNaN(Date.parse(newStart))) {
+    throw new Error('newStart must be a valid date.')
+  }
+
+  const query = new URLSearchParams({ token })
+  const response = await fetch(`${API_BASE_URL}/meetings/client-reschedule?${query}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ new_start: newStart }),
+  })
+
+  if (!response.ok) {
+    const message = await readError(response)
+    const error = new Error(message)
+    error.status = response.status
+    throw error
+  }
+
+  return response.json()
+}
+
+function requireRescheduleToken(token) {
+  if (typeof token !== 'string' || token.length < 40 || token.length > 100) {
+    throw new Error('This reschedule link is invalid.')
+  }
+}
+
 export async function getMeetingBriefingNotes(meetingId) {
   requirePositiveId(meetingId, 'meetingId')
 

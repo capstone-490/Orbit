@@ -1,5 +1,8 @@
 // Substantial AI assistance used; verified with frontend tests and production build.
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8001/api/v1'
+// Use the same origin by default so deployed clients call their site's API
+// proxy instead of the visitor's own localhost. Local Docker development can
+// still provide VITE_API_URL explicitly.
+export const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1'
 
 export function withAuthCredentials(options = {}) {
   return { ...options, credentials: 'include' }

@@ -26,6 +26,7 @@ function BookingDetailsStep({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState(null)
   const [meetingUri, setMeetingUri] = useState(null)
+  const [rescheduleUrl, setRescheduleUrl] = useState(null)
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -70,6 +71,7 @@ function BookingDetailsStep({
       })
 
       setMeetingUri(result.meeting_uri ?? null)
+      setRescheduleUrl(result.reschedule_url ?? null)
       setIsConfirmed(true)
     } catch (error) {
       setSubmitError(error.message)
@@ -256,6 +258,7 @@ function BookingDetailsStep({
           advisorName={advisor.username}
           email={formData.email}
           meetingUri={meetingUri}
+          rescheduleUrl={rescheduleUrl}
           onDone={() => {
             setIsConfirmed(false)
             onBookingComplete?.()

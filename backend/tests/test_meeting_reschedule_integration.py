@@ -6,6 +6,7 @@ from uuid import uuid4
 import pytest
 from fastapi.testclient import TestClient
 
+from app.api.v1.routers import meetings
 from app.auth import create_access_token
 from app.core.config import settings
 from app.dependencies.db import get_connection
@@ -13,7 +14,7 @@ from app.main import app
 
 
 @pytest.fixture
-def meeting_records():
+def meeting_records(monkeypatch):
     # Never run these tests against the regular application database.
     if settings.ENVIRONMENT not in ("test", "local"):
         pytest.fail("Integration tests require ENVIRONMENT=test")
@@ -53,8 +54,9 @@ def meeting_records():
             cur.execute(
                 """
                     INSERT INTO t_meetings
-                        (advisor_id, client_id, meeting_date, duration_minutes)
-                    VALUES (%s, %s, %s, %s)
+                        (advisor_id, client_id, meeting_date, duration_minutes,
+                         google_calendar_id, google_event_id)
+                    VALUES (%s, %s, %s, %s, %s, %s)
                     RETURNING id
                     """,
                 (
@@ -62,9 +64,13 @@ def meeting_records():
                     client_id,
                     datetime(2030, 5, 30, 10, tzinfo=UTC),
                     30,
+                    "test-calendar-id",
+                    "test-event-id",
                 ),
             )
             meeting_id = cur.fetchone()[0]
+
+        monkeypatch.setattr(meetings, "_update_calendar_event", lambda *args: None)
 
         yield {
             "advisor_id": advisor_id,

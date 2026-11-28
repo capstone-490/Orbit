@@ -4,6 +4,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from app.api.v1.routers import meetings
@@ -363,7 +364,7 @@ def mock_reschedule_queries(cursor, meeting, conflict=None):
     ]
 
 
-def test_reschedule_meeting_success(mock_db):
+def test_reschedule_meeting_success(mock_db, monkeypatch):
     meeting = (
         1,  # meeting ID
         2,  # client ID
@@ -371,7 +372,11 @@ def test_reschedule_meeting_success(mock_db):
         datetime(2030, 5, 30, 10, tzinfo=UTC),
         30,  # duration
         "Scheduled",
+        "calendar-1",
+        "event-1",
     )
+    update_calendar = MagicMock()
+    monkeypatch.setattr(meetings, "_update_calendar_event", update_calendar)
     mock_reschedule_queries(mock_db, meeting)
 
     response = client.patch(
@@ -385,11 +390,121 @@ def test_reschedule_meeting_success(mock_db):
     assert data["client_id"] == 2
     assert data["advisor_id"] == 1
     assert data["duration_minutes"] == 30
-    assert data["notification_status"] == "not_implemented"
+    assert data["notification_status"] == "sent"
+    update_calendar.assert_called_once_with(
+        1, "calendar-1", "event-1", datetime(2030, 6, 1, 10, tzinfo=UTC), 30
+    )
 
     assert mock_db.execute.call_count == 4
     update_query = mock_db.execute.call_args_list[-1].args[0]
     assert "UPDATE t_meetings" in update_query
+
+
+def test_calendar_update_failure_does_not_change_orbit_meeting(mock_db, monkeypatch):
+    meeting = (
+        1,
+        2,
+        1,
+        datetime(2030, 5, 30, 10, tzinfo=UTC),
+        30,
+        "Scheduled",
+        "calendar-1",
+        "event-1",
+    )
+    mock_db.fetchone.side_effect = [meeting, None]
+    monkeypatch.setattr(
+        meetings,
+        "_update_calendar_event",
+        MagicMock(side_effect=HTTPException(status_code=502, detail="Calendar failed")),
+    )
+
+    response = client.patch(RESCHEDULE_URL, json={"new_start": FUTURE_START})
+
+    assert response.status_code == 502
+    assert not any(
+        "UPDATE t_meetings" in call.args[0]
+        for call in mock_db.execute.call_args_list
+    )
+
+
+def test_client_can_read_reschedule_details_without_account(mock_db):
+    token = "x" * 43
+    mock_db.fetchone.return_value = (
+        datetime(2030, 5, 30, 10, tzinfo=UTC),
+        30,
+        "Advisor",
+        "Scheduled",
+    )
+    anonymous_client = TestClient(app)
+
+    response = anonymous_client.get(
+        "/api/v1/meetings/client-reschedule",
+        params={"token": token},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "meeting_date": "2030-05-30T10:00:00+00:00",
+        "duration_minutes": 30,
+        "advisor_name": "Advisor",
+    }
+    query, params = mock_db.execute.call_args.args
+    assert "reschedule_token_hash = %s" in query
+    assert params == (meetings._hash_reschedule_token(token),)
+
+
+def test_client_reschedule_updates_calendar_and_orbit(mock_db, monkeypatch):
+    token = "x" * 43
+    updated = (1, 2, 1, datetime(2030, 6, 1, 10, tzinfo=UTC), 30, "Scheduled")
+    mock_db.fetchone.side_effect = [
+        (1,),
+        (
+            1,
+            2,
+            1,
+            datetime(2030, 5, 30, 10, tzinfo=UTC),
+            30,
+            "Scheduled",
+            "calendar-1",
+            "event-1",
+        ),
+        None,
+        updated,
+    ]
+    update_calendar = MagicMock()
+    monkeypatch.setattr(meetings, "_update_calendar_event", update_calendar)
+    anonymous_client = TestClient(app)
+
+    response = anonymous_client.patch(
+        "/api/v1/meetings/client-reschedule",
+        params={"token": token},
+        json={"new_start": FUTURE_START},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "id": 1,
+        "meeting_date": "2030-06-01T10:00:00+00:00",
+        "duration_minutes": 30,
+    }
+    update_calendar.assert_called_once_with(
+        1, "calendar-1", "event-1", datetime(2030, 6, 1, 10, tzinfo=UTC), 30
+    )
+
+
+def test_client_reschedule_rejects_invalid_token(mock_db):
+    mock_db.fetchone.return_value = None
+    anonymous_client = TestClient(app)
+
+    response = anonymous_client.patch(
+        "/api/v1/meetings/client-reschedule",
+        params={"token": "x" * 43},
+        json={"new_start": FUTURE_START},
+    )
+
+    assert response.status_code == 404
+    assert "invalid" in response.json()["detail"].lower()
+    assert mock_db.execute.call_count == 1
 
 
 def test_reschedule_meeting_conflict(mock_db):
@@ -400,6 +515,8 @@ def test_reschedule_meeting_conflict(mock_db):
         datetime(2030, 5, 30, 10, tzinfo=UTC),
         30,
         "Scheduled",
+        "calendar-1",
+        "event-1",
     )
     mock_db.fetchone.side_effect = [
         meeting,
@@ -424,6 +541,8 @@ def test_reschedule_completed_meeting(mock_db):
         datetime(2030, 5, 30, 10, tzinfo=UTC),
         30,
         "Completed",
+        "calendar-1",
+        "event-1",
     )
 
     response = client.patch(
