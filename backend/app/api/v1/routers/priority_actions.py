@@ -39,7 +39,11 @@ def _fetch_candidate_follow_ups(advisor_id: int, horizon: date) -> list[dict]:
         ):
             cur.execute(
                 """
-                SELECT f.id, f.client_id, c.name AS client_name, f.reason,
+                SELECT f.id, f.client_id, c.name AS client_name,
+                        c.email AS client_email,
+                        c.phone_number AS client_phone_number,
+                        c.address AS client_address,
+                        f.reason,
                        f.financial_planning_stage::text AS financial_planning_stage,
                        f.due_date, f.priority::text AS priority,
                        f.status::text AS status
@@ -54,20 +58,40 @@ def _fetch_candidate_follow_ups(advisor_id: int, horizon: date) -> list[dict]:
             )
             return cur.fetchall()
     except PsycopgError as error:
-        logger.exception(
-            "Failed to retrieve priority actions", extra={"advisor_id": advisor_id}
+        logger.error(
+            "Failed to retrieve priority actions",
+            extra={"advisor_id": advisor_id},
         )
         raise HTTPException(
             status_code=500, detail="Unable to retrieve priority actions."
         ) from error
 
 
-def _ranked_actions(advisor_id: int) -> list[dict]:
+def _ranked_actions(
+    advisor_id: int,
+    *,
+    include_pii: bool = False,
+) -> list[dict]:
     today = _today()
     horizon = today + timedelta(days=HIGH_PRIORITY_WINDOW_DAYS)
-    return rank_priority_actions(
-        _fetch_candidate_follow_ups(advisor_id, horizon), today
-    )
+
+    follow_ups = _fetch_candidate_follow_ups(advisor_id, horizon)
+    actions = rank_priority_actions(follow_ups, today)
+
+    if include_pii:
+        source = {item["id"]: item for item in follow_ups}
+
+        for action in actions:
+            original = source[action["follow_up_id"]]
+
+            for field in (
+                "client_email",
+                "client_phone_number",
+                "client_address",
+            ):
+                action[field] = original.get(field)
+
+    return actions
 
 
 @router.get("")
@@ -83,5 +107,8 @@ def list_priority_actions(
 def list_priority_action_suggestions(
     advisor: dict[str, int] = Depends(get_current_advisor),
 ):
-    actions = _ranked_actions(advisor["id"])
+    actions = _ranked_actions(
+        advisor["id"],
+        include_pii=True,
+    )
     return get_suggestions(actions, get_ai_provider())

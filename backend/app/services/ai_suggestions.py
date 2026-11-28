@@ -13,6 +13,7 @@ from typing import Protocol
 
 import httpx
 
+from app.core.security.anonymizer import MaskingContext
 from app.observability.logging_config import get_logger
 
 logger = get_logger("app.services.ai_suggestions")
@@ -28,6 +29,8 @@ SYSTEM_PROMPT = (
     "concrete next step each (max 25 words). Do not invent facts that are not "
     'in the input. Reply with JSON only, in the form {"suggestions": '
     '[{"follow_up_id": <int>, "text": "<next step>"}]}.'
+    " Preserve any personal-information placeholders exactly as "
+    "provided. Do not modify or invent placeholders."
 )
 
 
@@ -122,39 +125,96 @@ def _to_prompt_item(action: dict) -> dict:
     }
 
 
-def get_suggestions(actions: list[dict], provider: SuggestionProvider | None) -> dict:
-    """Return {"status": ..., "suggestions": [...]} and never raise."""
+def get_suggestions(
+    actions: list[dict],
+    provider: SuggestionProvider | None,
+) -> dict:
+    """Return privacy-protected AI suggestions."""
+
     if provider is None:
         return {"status": "disabled", "suggestions": []}
+
     if not actions:
         return {"status": "available", "suggestions": []}
 
-    items = [_to_prompt_item(action) for action in actions[:MAX_ITEMS_SENT]]
-    allowed_ids = {item["follow_up_id"] for item in items}
-
     try:
-        raw_suggestions = provider.suggest(items)
-    except Exception:
-        logger.warning("AI suggestions unavailable", exc_info=True)
-        return {"status": "unavailable", "suggestions": []}
+        selected = actions[:MAX_ITEMS_SENT]
 
-    suggestions = []
-    for suggestion in raw_suggestions:
-        if not isinstance(suggestion, dict):
-            continue
-        follow_up_id = suggestion.get("follow_up_id")
-        text = suggestion.get("text")
-        # Drop anything referring to a follow-up we did not send (hallucinated
-        # or another advisor's id) and anything without usable text.
-        if follow_up_id not in allowed_ids or not isinstance(text, str):
-            continue
-        text = text.strip()
-        if not text:
-            continue
-        suggestions.append(
-            {"follow_up_id": follow_up_id, "text": text[:MAX_SUGGESTION_LENGTH]}
+        clients = [
+            {
+                "name": action.get("client_name"),
+                "email": action.get("client_email"),
+                "phone_number": action.get("client_phone_number"),
+                "address": action.get("client_address"),
+            }
+            for action in actions
+        ]
+
+        contexts = {}
+        items = []
+
+        for action in selected:
+            follow_up_id = action["follow_up_id"]
+            context = MaskingContext(clients)
+
+            items.append(context.mask(_to_prompt_item(action)))
+            contexts[follow_up_id] = context
+
+        logger.debug(
+            "Sending masked AI request",
+            extra={"item_count": len(items)},
         )
-        if len(suggestions) == MAX_SUGGESTIONS:
-            break
 
-    return {"status": "available", "suggestions": suggestions}
+        raw_suggestions = provider.suggest(items)
+
+        suggestions = []
+
+        for suggestion in raw_suggestions:
+            if not isinstance(suggestion, dict):
+                continue
+
+            follow_up_id = suggestion.get("follow_up_id")
+            text = suggestion.get("text")
+
+            if (
+                type(follow_up_id) is not int
+                or follow_up_id not in contexts
+                or not isinstance(text, str)
+            ):
+                continue
+
+            text = text.strip()
+
+            if not text:
+                continue
+
+            context = contexts[follow_up_id]
+
+            if context.has_unknown_placeholders(text):
+                continue
+
+            text = context.restore(text)
+
+            suggestions.append(
+                {
+                    "follow_up_id": follow_up_id,
+                    "text": text[:MAX_SUGGESTION_LENGTH],
+                }
+            )
+
+            if len(suggestions) == MAX_SUGGESTIONS:
+                break
+
+        return {
+            "status": "available",
+            "suggestions": suggestions,
+        }
+
+    except Exception:  # noqa: BLE001
+        # Fail closed without logging potentially sensitive exception details.
+        logger.warning("AI suggestions unavailable")
+
+        return {
+            "status": "unavailable",
+            "suggestions": [],
+        }

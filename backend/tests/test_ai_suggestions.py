@@ -209,3 +209,211 @@ def test_suggestions_are_capped_at_five_and_300_characters():
         len(s["text"]) == ai_suggestions.MAX_SUGGESTION_LENGTH
         for s in result["suggestions"]
     )
+
+
+def test_ai_request_masks_pii_and_restores_response(monkeypatch):
+    import json
+
+    action = {
+        "follow_up_id": 1,
+        "client_id": 42,
+        "client_name": "Alice Smith",
+        "client_email": "alice@example.com",
+        "client_phone_number": "514-555-1234",
+        "client_address": "123 Main Street",
+        "reason": (
+            "Contact Alice Smith at alice@example.com "
+            "or 514-555-1234 at 123 Main Street."
+        ),
+        "priority": "High",
+        "urgency_reason": "Due today",
+    }
+
+    def fake_post(url, **kwargs):
+        content = kwargs["json"]["messages"][1]["content"]
+
+        for field in (
+            "client_name",
+            "client_email",
+            "client_phone_number",
+            "client_address",
+        ):
+            assert action[field] not in content
+
+        items = json.loads(content)
+
+        assert "[NAME_" in items[0]["reason"]
+        assert "[EMAIL_" in items[0]["reason"]
+        assert "[PHONE_" in items[0]["reason"]
+        assert "[ADDRESS_" in items[0]["reason"]
+
+        return FakeResponse(
+            chat_reply(
+                json.dumps(
+                    {
+                        "suggestions": [
+                            {
+                                "follow_up_id": 1,
+                                "text": items[0]["reason"],
+                            }
+                        ]
+                    }
+                )
+            )
+        )
+
+    monkeypatch.setattr(ai_suggestions.httpx, "post", fake_post)
+
+    provider = OpenAICompatibleProvider("http://ai.test/v1", "model-x", "", 3)
+
+    result = ai_suggestions.get_suggestions([action], provider)
+
+    assert result["status"] == "available"
+    assert result["suggestions"][0]["text"] == action["reason"]
+
+
+def test_ai_suggestions_restore_correct_client_details():
+    actions = [
+        {
+            "follow_up_id": 1,
+            "client_name": "Alice Smith",
+            "reason": "Call Alice Smith",
+            "priority": "High",
+            "urgency_reason": "Due today",
+        },
+        {
+            "follow_up_id": 2,
+            "client_name": "Bob Jones",
+            "reason": "Call Bob Jones",
+            "priority": "High",
+            "urgency_reason": "Due today",
+        },
+    ]
+
+    class EchoProvider:
+        def suggest(self, items):
+            assert "Alice Smith" not in repr(items)
+            assert "Bob Jones" not in repr(items)
+            assert items[0]["reason"] != items[1]["reason"]
+
+            return [
+                {
+                    "follow_up_id": item["follow_up_id"],
+                    "text": item["reason"],
+                }
+                for item in items
+            ]
+
+    result = ai_suggestions.get_suggestions(actions, EchoProvider())
+
+    assert result["suggestions"] == [
+        {"follow_up_id": 1, "text": "Call Alice Smith"},
+        {"follow_up_id": 2, "text": "Call Bob Jones"},
+    ]
+
+
+def test_ai_cannot_restore_another_follow_ups_placeholder():
+    actions = [
+        {
+            "follow_up_id": 1,
+            "client_name": "Alice Smith",
+            "reason": "Call Alice Smith",
+            "priority": "High",
+            "urgency_reason": "Due today",
+        },
+        {
+            "follow_up_id": 2,
+            "client_name": "Bob Jones",
+            "reason": "Call Bob Jones",
+            "priority": "High",
+            "urgency_reason": "Due today",
+        },
+    ]
+
+    class SwappedProvider:
+        def suggest(self, items):
+            return [
+                {
+                    "follow_up_id": 1,
+                    "text": items[1]["reason"],
+                },
+                {
+                    "follow_up_id": 2,
+                    "text": items[0]["reason"],
+                },
+            ]
+
+    result = ai_suggestions.get_suggestions(actions, SwappedProvider())
+
+    assert result["status"] == "available"
+    assert result["suggestions"] == []
+
+
+def test_ai_provider_error_does_not_leak_pii(caplog):
+    action = {
+        "follow_up_id": 1,
+        "client_name": "Alice Smith",
+        "reason": "Call Alice Smith",
+        "priority": "High",
+        "urgency_reason": "Due today",
+    }
+
+    sensitive_values = [
+        "Alice Smith",
+        "alice@example.com",
+        "514-555-1234",
+        "123 Main Street",
+    ]
+
+    class FailingProvider:
+        def suggest(self, items):
+            raise RuntimeError(" ".join(sensitive_values))
+
+    with caplog.at_level("WARNING"):
+        result = ai_suggestions.get_suggestions([action], FailingProvider())
+
+    assert result == {
+        "status": "unavailable",
+        "suggestions": [],
+    }
+
+    for value in sensitive_values:
+        assert value not in caplog.text
+        assert value not in repr(result)
+
+    assert "AI suggestions unavailable" in caplog.text
+
+
+def test_ai_provider_not_called_when_masking_fails(monkeypatch):
+    action = {
+        "follow_up_id": 1,
+        "reason": "Call Alice Smith",
+        "priority": "High",
+        "urgency_reason": "Due today",
+    }
+
+    def fail_masking(*args, **kwargs):
+        raise RuntimeError("Masking failed")
+
+    monkeypatch.setattr(
+        ai_suggestions.MaskingContext,
+        "mask",
+        fail_masking,
+    )
+
+    class TrackingProvider:
+        called = False
+
+        def suggest(self, items):
+            self.called = True
+            return []
+
+    provider = TrackingProvider()
+
+    result = ai_suggestions.get_suggestions([action], provider)
+
+    assert provider.called is False
+    assert result == {
+        "status": "unavailable",
+        "suggestions": [],
+    }
