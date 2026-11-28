@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import ClientDocuments from '../components/client_profile/ClientDocuments'
 import ClientMeetings from '../components/client_profile/ClientMeetings'
+import ClientNotes from '../components/client_profile/ClientNotes'
 import ClientOverview from '../components/client_profile/ClientOverview'
 import ClientTask from '../components/client_profile/ClientTask'
 import ClientTimeline from '../components/client_profile/ClientTimeline'
@@ -20,6 +21,7 @@ function ClientInfo() {
     { id: 'timeline', label: 'Timeline', component: ClientTimeline },
     { id: 'tasks', label: 'Tasks', component: ClientTask },
     { id: 'meetings', label: 'Meetings', component: ClientMeetings },
+    { id: 'notes', label: 'Notes', component: ClientNotes },
     { id: 'documents', label: 'Documents', component: ClientDocuments },
   ]
 

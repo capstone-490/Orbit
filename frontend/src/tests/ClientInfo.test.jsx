@@ -123,27 +123,31 @@ describe('Client information page', () => {
     expect(screen.getByRole('tabpanel')).toHaveTextContent('Meetings for this client')
   })
 
-  it('supports arrow, Home, and End keyboard navigation between sections', async () => {
-    fetch.mockResolvedValueOnce(response(client))
-    renderClientInfo()
-    await screen.findByRole('heading', { name: 'Alice Smith' })
 
-    const overviewTab = screen.getByRole('tab', { name: 'Overview' })
-    fireEvent.keyDown(overviewTab, { key: 'ArrowRight' })
-    expect(screen.getByRole('tab', { name: 'Timeline' })).toHaveAttribute('aria-selected', 'true')
+it('supports arrow, Home, and End keyboard navigation between sections', async () => {
+  fetch.mockResolvedValueOnce(response(client))
 
-    fireEvent.keyDown(screen.getByRole('tab', { name: 'Timeline' }), { key: 'ArrowLeft' })
-    expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true')
+  renderClientInfo()
+  await screen.findByRole('heading', { name: 'Alice Smith' })
 
-    fireEvent.keyDown(screen.getByRole('tab', { name: 'Overview' }), { key: 'End' })
-    expect(screen.getByRole('tab', { name: 'Documents' })).toHaveAttribute('aria-selected', 'true')
+  const overviewTab = screen.getByRole('tab', { name: 'Overview' })
 
-    fireEvent.keyDown(screen.getByRole('tab', { name: 'Documents' }), { key: 'Home' })
-    expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true')
+  fireEvent.keyDown(overviewTab, { key: 'ArrowRight' })
+  expect(screen.getByRole('tab', { name: 'Timeline' })).toHaveAttribute('aria-selected', 'true')
 
-    fireEvent.keyDown(screen.getByRole('tab', { name: 'Overview' }), { key: 'Enter' })
-    expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true')
-  })
+  fireEvent.keyDown(screen.getByRole('tab', { name: 'Timeline' }), { key: 'ArrowLeft' })
+  expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true')
+
+  fireEvent.keyDown(overviewTab, { key: 'End' })
+  expect(screen.getByRole('tab', { name: 'Documents' })).toHaveAttribute('aria-selected', 'true')
+
+  fireEvent.keyDown(screen.getByRole('tab', { name: 'Documents' }), { key: 'Home' })
+  expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true')
+
+  fireEvent.keyDown(screen.getByRole('tab', { name: 'Overview' }), { key: 'Enter' })
+  expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true')
+})
+
 
   it('shows a fallback planning stage in the timeline', async () => {
     fetch.mockResolvedValueOnce(response({ ...client, timeline: null }))
@@ -153,4 +157,29 @@ describe('Client information page', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Timeline' }))
     expect(screen.getByRole('tabpanel')).toHaveTextContent('Planning stage: Not provided')
   })
+
+
+it('opens the Notes tab and loads client notes', async () => {
+  fetch.mockResolvedValueOnce(response(client))
+  fetch.mockResolvedValueOnce(response([]))
+
+  renderClientInfo()
+
+  await screen.findByRole('heading', { name: 'Alice Smith' })
+
+  fireEvent.click(screen.getByRole('tab', { name: 'Notes' }))
+
+  expect(screen.getByRole('tab', { name: 'Notes' })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  )
+
+  expect(await screen.findByText('No notes yet')).toBeInTheDocument()
+
+  expect(fetch).toHaveBeenCalledWith(
+    `${API_BASE_URL}/clients/1/notes`,
+    { credentials: 'include' },
+  )
+})
+
 })
