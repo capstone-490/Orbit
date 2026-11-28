@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import ClientDocuments from '../components/client_profile/ClientDocuments'
+import ClientFormModal from '../components/client_profile/ClientFormModal'
 import ClientMeetings from '../components/client_profile/ClientMeetings'
 import ClientOverview from '../components/client_profile/ClientOverview'
 import ClientTask from '../components/client_profile/ClientTask'
 import ClientTimeline from '../components/client_profile/ClientTimeline'
+import ClientSnapshot from '../components/client_profile/ClientSnapshot'
+import { isValidPhoneNumber } from '../components/client_profile/clientProfileValidation'
 import { API_BASE_URL, withAuthCredentials } from '../services/AuthApi'
 import '../styles/Clients.css'
 
@@ -14,10 +17,15 @@ function ClientInfo() {
   const [client, setClient] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [formError, setFormError] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [success, setSuccess] = useState('')
 
   const tabs = [
     { id: 'overview', label: 'Overview', component: ClientOverview },
     { id: 'timeline', label: 'Timeline', component: ClientTimeline },
+    { id: 'financial-snapshot', label: 'Financial Snapshot', component: ClientSnapshot },
     { id: 'tasks', label: 'Tasks', component: ClientTask },
     { id: 'meetings', label: 'Meetings', component: ClientMeetings },
     { id: 'documents', label: 'Documents', component: ClientDocuments },
@@ -49,6 +57,74 @@ function ClientInfo() {
       active = false
     }
   }, [clientId])
+
+  const closeEditModal = () => {
+    if (saving) return
+    setEditing(false)
+    setFormError('')
+  }
+
+  const handleUpdateClient = async (values) => {
+    if (saving) return
+    setFormError('')
+    setSuccess('')
+
+    if (Object.keys(values).length === 0) {
+      setFormError('Enter at least one profile change before saving.')
+      return
+    }
+
+    if (values.phone_number && !isValidPhoneNumber(values.phone_number)) {
+      setFormError('Please enter a valid Canadian or US phone number.')
+      return
+    }
+
+    const payload = { ...values }
+    if (payload.date_of_birth) {
+      const birthDate = new Date(`${payload.date_of_birth}T00:00:00`)
+      const today = new Date()
+      if (birthDate > today) {
+        setFormError('Date of birth cannot be in the future.')
+        return
+      }
+
+      const hasHadBirthdayThisYear =
+        today.getMonth() > birthDate.getMonth() ||
+        (today.getMonth() === birthDate.getMonth() && today.getDate() >= birthDate.getDate())
+      payload.age = today.getFullYear() - birthDate.getFullYear() - (hasHadBirthdayThisYear ? 0 : 1)
+      delete payload.date_of_birth
+    }
+
+    setSaving(true)
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/clients/${clientId}`,
+        withAuthCredentials({
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        }),
+      )
+
+      if (!response.ok) {
+        const details = await response.json().catch(() => ({}))
+        throw new Error(
+          typeof details.detail === 'string'
+            ? details.detail
+            : 'Unable to update client information.',
+        )
+      }
+
+      const updatedClient = await response.json()
+      setClient((current) => ({ ...current, ...updatedClient }))
+      setEditing(false)
+      setSuccess('Client profile updated successfully.')
+    } catch (updateError) {
+      setFormError(updateError.message)
+    } finally {
+      setSaving(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -88,6 +164,11 @@ function ClientInfo() {
       </Link>
 
       <section className="client-info-card" aria-labelledby="client-info-title">
+        {success && (
+          <p role="status" className="client-profile-success">
+            {success}
+          </p>
+        )}
         <div className="client-info-header">
           <div className="client-avatar client-info-avatar" aria-hidden="true">
             {initials}
@@ -96,6 +177,17 @@ function ClientInfo() {
             <p className="client-info-eyebrow">Client profile</p>
             <h1 id="client-info-title">{client.name}</h1>
           </div>
+          <button
+            type="button"
+            className="client-info-edit"
+            onClick={() => {
+              setFormError('')
+              setSuccess('')
+              setEditing(true)
+            }}
+          >
+            Edit profile
+          </button>
         </div>
 
         <div className="client-profile-tabs" role="tablist" aria-label="Client profile sections">
@@ -140,6 +232,16 @@ function ClientInfo() {
           <ActiveTab client={client} clientId={client.id} />
         </div>
       </section>
+      {editing && (
+        <ClientFormModal
+          mode="edit"
+          client={client}
+          error={formError}
+          onClose={closeEditModal}
+          onSubmit={handleUpdateClient}
+          saving={saving}
+        />
+      )}
     </main>
   )
 }

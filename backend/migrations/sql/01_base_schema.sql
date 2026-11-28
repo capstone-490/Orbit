@@ -327,6 +327,118 @@ CREATE TABLE clients (
         REFERENCES memberships(organization_id, id)
 );
 
+CREATE TABLE client_financial_summaries (
+    client_id UUID PRIMARY KEY,
+    organization_id UUID NOT NULL,
+    subscription_id UUID NOT NULL,
+    annual_income NUMERIC(14, 2)
+        CHECK (annual_income IS NULL OR annual_income >= 0),
+    risk_tolerance TEXT
+        CHECK (risk_tolerance IS NULL OR risk_tolerance IN (
+            'Conservative', 'Moderate', 'Aggressive'
+        )),
+    target_retirement_age SMALLINT
+        CHECK (target_retirement_age IS NULL OR target_retirement_age BETWEEN 0 AND 130),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    FOREIGN KEY (organization_id, subscription_id, client_id)
+        REFERENCES clients(organization_id, subscription_id, id)
+        ON DELETE CASCADE
+);
+
+CREATE TRIGGER trg_client_financial_summaries_updated_at
+BEFORE UPDATE ON client_financial_summaries
+FOR EACH ROW EXECUTE FUNCTION trigger_set_updated_at();
+
+CREATE TABLE client_financial_snapshots (
+    client_id UUID PRIMARY KEY,
+    organization_id UUID NOT NULL,
+    subscription_id UUID NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (organization_id, subscription_id, client_id),
+    FOREIGN KEY (organization_id, subscription_id, client_id)
+        REFERENCES clients(organization_id, subscription_id, id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE client_expenses (
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
+    organization_id UUID NOT NULL,
+    subscription_id UUID NOT NULL,
+    client_id UUID NOT NULL,
+    description VARCHAR(120) NOT NULL,
+    amount NUMERIC(14, 2) NOT NULL CHECK (amount > 0),
+    frequency TEXT NOT NULL
+        CHECK (frequency IN ('weekly', 'monthly', 'annually')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    FOREIGN KEY (organization_id, subscription_id, client_id)
+        REFERENCES client_financial_snapshots(
+            organization_id, subscription_id, client_id
+        )
+        ON DELETE CASCADE
+);
+
+CREATE INDEX idx_client_expenses_client_id
+    ON client_expenses(organization_id, subscription_id, client_id);
+
+CREATE TABLE client_income (
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
+    organization_id UUID NOT NULL,
+    subscription_id UUID NOT NULL,
+    client_id UUID NOT NULL,
+    description VARCHAR(120) NOT NULL,
+    amount NUMERIC(14, 2) NOT NULL CHECK (amount > 0),
+    frequency TEXT NOT NULL
+        CHECK (frequency IN ('weekly', 'monthly', 'annually')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    FOREIGN KEY (organization_id, subscription_id, client_id)
+        REFERENCES client_financial_snapshots(
+            organization_id, subscription_id, client_id
+        )
+        ON DELETE CASCADE
+);
+
+CREATE INDEX idx_client_income_client_id
+    ON client_income(organization_id, subscription_id, client_id);
+
+CREATE TABLE client_assets (
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
+    organization_id UUID NOT NULL,
+    subscription_id UUID NOT NULL,
+    client_id UUID NOT NULL,
+    description VARCHAR(120) NOT NULL,
+    value NUMERIC(14, 2) NOT NULL CHECK (value > 0),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    FOREIGN KEY (organization_id, subscription_id, client_id)
+        REFERENCES client_financial_snapshots(
+            organization_id, subscription_id, client_id
+        )
+        ON DELETE CASCADE
+);
+
+CREATE INDEX idx_client_assets_client_id
+    ON client_assets(organization_id, subscription_id, client_id);
+
+CREATE TABLE client_debts (
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
+    organization_id UUID NOT NULL,
+    subscription_id UUID NOT NULL,
+    client_id UUID NOT NULL,
+    description VARCHAR(120) NOT NULL,
+    balance NUMERIC(14, 2) NOT NULL CHECK (balance > 0),
+    interest_rate NUMERIC(5, 2) NOT NULL CHECK (interest_rate >= 0),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    FOREIGN KEY (organization_id, subscription_id, client_id)
+        REFERENCES client_financial_snapshots(
+            organization_id, subscription_id, client_id
+        )
+        ON DELETE CASCADE
+);
+
+CREATE INDEX idx_client_debts_client_id
+    ON client_debts(organization_id, subscription_id, client_id);
+
 -- deduplicate active client emails within the same subscription
 CREATE UNIQUE INDEX uq_clients_subscription_email
     ON clients (organization_id, subscription_id, lower(email))
@@ -1691,7 +1803,8 @@ DECLARE
     t TEXT;
     tenant_tables TEXT[] := ARRAY[
         'memberships', 'advisor_profiles', 'staff_profiles', 'subscriptions',
-        'agents', 'clients', 'goals', 'notes', 'folders',
+        'agents', 'clients', 'client_financial_summaries',
+        'client_financial_snapshots', 'client_expenses', 'goals', 'notes', 'folders',
         'documents', 'meetings', 'tasks', 'meeting_types',
         'public_booking_links', 'availability_rules', 'availability_overrides',
         'public_prospects', 'bookings', 'groups', 'group_members',
