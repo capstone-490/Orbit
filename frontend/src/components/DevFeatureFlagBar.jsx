@@ -8,7 +8,7 @@ export default function DevFeatureFlagBar() {
 
   const flagNames = Array.from(
     new Set(['use_v2_workspace', ...Object.keys(serverFlags), ...Object.keys(devOverrides)]),
-  ).sort()
+  ).sort((a, b) => a.localeCompare(b))
 
   if (!open) {
     return (
