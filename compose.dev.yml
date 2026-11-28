@@ -10,7 +10,7 @@ services:
     ports:
       - "127.0.0.1:5432:5432"
     volumes: !override
-      - client_overview_pgdata:/var/lib/postgresql
+      - orbit_postgres19_data:/var/lib/postgresql
   
   backend:
     build:
@@ -75,5 +75,5 @@ services:
       - backend_net
 
 volumes:
-  client_overview_pgdata:
-  frontend_node_modules:
+   orbit_postgres19_data:
+   frontend_node_modules:

@@ -7,6 +7,7 @@ from app.api.v1.routers import (
     debug,
     feature_flags,
     follow_ups,
+    goals,
     google_meet_integration,
     meetings,
     password_reset,
@@ -25,6 +26,7 @@ router.include_router(google_meet_integration.router)
 router.include_router(google_meet_integration.public_router)
 router.include_router(debug.router)
 router.include_router(follow_ups.router)
+router.include_router(goals.router)
 router.include_router(meetings.router)
 router.include_router(password_reset.router)
 router.include_router(priority_actions.router)

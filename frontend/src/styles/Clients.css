@@ -343,32 +343,6 @@
   min-height: 160px;
 }
 
-.client-profile-details {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0 24px;
-  margin: 0;
-}
-
-.client-profile-detail {
-  padding: 20px 0;
-  border-bottom: 1px solid #edf0f5;
-}
-
-.client-profile-detail dt {
-  margin-bottom: 7px;
-  color: #7b8497;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.client-profile-detail dd {
-  margin: 0;
-  color: #152238;
-  font-size: 14px;
-  overflow-wrap: anywhere;
-}
-
 .client-profile-empty {
   padding: 24px 0;
 }
@@ -534,8 +508,113 @@
     padding-right: 20px;
     padding-left: 20px;
   }
+}
 
-  .client-profile-details {
+/* Client Overview Dashboard */
+
+.client-overview {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-top: 24px;
+}
+
+.client-summary-card,
+.financial-snapshot-card {
+  background: #ffffff;
+  border: 1px solid #e3e8f2;
+  border-radius: 12px;
+  padding: 24px;
+  min-width: 0;
+}
+
+.overview-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #edf0f5;
+}
+
+.overview-section-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #152238;
+}
+
+.overview-section-header svg {
+  font-size: 21px;
+  color: #1747bd;
+  flex-shrink: 0;
+}
+
+.client-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 20px 0 0;
+}
+
+.client-summary-item {
+  background: #edf1fa;
+  border: 1px solid #e3e8f2;
+  border-radius: 6px;
+  padding: 16px;
+}
+
+.client-summary-item dt {
+  color: #7b8497;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.client-summary-item dd {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #152238;
+  overflow-wrap: anywhere;
+}
+
+.client-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  align-items: stretch;
+}
+
+.financial-snapshot-card {
+  min-height: 300px;
+}
+
+.client-overview-grid > .financial-goals-card {
+  margin-top: 0;
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .client-overview-grid {
     grid-template-columns: 1fr;
+  }
+
+  .client-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .client-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .client-summary-card,
+  .financial-snapshot-card {
+    padding: 16px;
+  }
+
+  .client-overview,
+  .client-overview-grid {
+    gap: 16px;
   }
 }

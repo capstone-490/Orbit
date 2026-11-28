@@ -18,7 +18,7 @@ services:
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql
+      - orbit_postgres19_data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
       interval: 10s
@@ -109,4 +109,5 @@ networks:
     driver: bridge
 
 volumes:
-  pgdata:
+  orbit_postgres19_data:
+    name: orbit_postgres19_data
