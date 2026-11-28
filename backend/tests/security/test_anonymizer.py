@@ -1,7 +1,11 @@
 import pytest
 
 from app.api.v1.routers.clients import ClientCreate
-from app.core.security.anonymizer import TokenStore, mask_for_ai
+from app.core.security.anonymizer import (
+    MaskingContext,
+    TokenStore,
+    mask_for_ai,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -109,3 +113,188 @@ def test_masking_requires_stable_client_id():
             {"name": "Alice Smith"},
             TokenStore(secret=TEST_SECRET),
         )
+
+
+def test_reversible_masking_of_client_details():
+    client = client_payload()
+    context = MaskingContext([client])
+
+    original = (
+        "Contact Alice Smith at alice@example.com "
+        "or 514-555-1234. Address: 123 Main Street."
+    )
+
+    masked = context.mask(original)
+
+    for field in ("name", "email", "phone_number", "address"):
+        assert client[field] not in masked
+
+    assert context.restore(masked) == original
+
+
+def test_masking_repeated_values_is_consistent():
+    context = MaskingContext([client_payload()])
+
+    masked = context.mask("Alice Smith and Alice Smith")
+
+    first, second = masked.split(" and ")
+
+    assert first == second
+    assert first != "Alice Smith"
+
+
+def test_masking_multiple_clients():
+    alice = client_payload()
+    bob = {
+        "id": 43,
+        "name": "Bob Jones",
+        "email": "bob@example.com",
+        "phone_number": "438-555-9876",
+        "address": "456 Oak Avenue",
+    }
+
+    context = MaskingContext([alice, bob])
+
+    original = {
+        "first": "Contact Alice Smith at alice@example.com",
+        "second": "Contact Bob Jones at bob@example.com",
+    }
+
+    masked = context.mask(original)
+
+    assert "Alice Smith" not in repr(masked)
+    assert "Bob Jones" not in repr(masked)
+    assert masked["first"] != masked["second"]
+
+    assert context.restore(masked["first"]) == original["first"]
+    assert context.restore(masked["second"]) == original["second"]
+
+
+@pytest.mark.parametrize(
+    "phone",
+    [
+        "514-555-1234",
+        "(514) 555-1234",
+        "+1 514 555 1234",
+        "5145551234",
+        "514.555.1234",
+    ],
+)
+def test_masking_different_phone_formats(phone):
+    context = MaskingContext([])
+
+    masked = context.mask(phone)
+
+    assert phone not in masked
+    assert context.restore(masked) == phone
+
+
+def test_masking_nested_data_without_mutation():
+    context = MaskingContext([client_payload()])
+
+    original = {
+        "notes": [
+            "Contact Alice Smith",
+            {"email": "alice@example.com"},
+        ]
+    }
+
+    masked = context.mask(original)
+
+    assert "Alice Smith" not in repr(masked)
+    assert "alice@example.com" not in repr(masked)
+
+    assert original["notes"][0] == "Contact Alice Smith"
+    assert original["notes"][1]["email"] == "alice@example.com"
+
+
+def test_placeholder_isolation_between_contexts():
+    first = MaskingContext([client_payload()])
+    second = MaskingContext([client_payload()])
+
+    first_token = first.mask("Alice Smith")
+    second_token = second.mask("Alice Smith")
+
+    assert first_token != second_token
+    assert second.restore(first_token) == first_token
+    assert first.restore(second_token) == second_token
+
+
+def test_sin_is_not_restored():
+    context = MaskingContext([])
+
+    masked = context.mask("SIN: 123-456-789")
+
+    assert "123-456-789" not in masked
+    assert context.restore(masked) == "SIN: [REDACTED]"
+
+
+def test_empty_and_missing_client_details():
+    context = MaskingContext([{"name": None, "email": "", "address": None}])
+
+    assert context.mask("") == ""
+    assert context.mask(None) is None
+    assert context.mask("Review documents") == "Review documents"
+
+
+def test_unknown_placeholder_is_not_restored():
+    context = MaskingContext([client_payload()])
+
+    context.mask("Alice Smith")
+
+    unknown = "[NAME_unknown_999]"
+
+    assert context.restore(unknown) == unknown
+
+
+def test_name_overlapping_email_is_fully_masked():
+    context = MaskingContext([{"name": "Alice"}])
+
+    original = "Contact alice@anotherdomain.com"
+    masked = context.mask(original)
+
+    assert "alice" not in masked.lower()
+    assert "anotherdomain.com" not in masked
+    assert "[EMAIL_" in masked
+    assert context.restore(masked) == original
+
+
+def test_name_overlapping_address_is_fully_masked():
+    context = MaskingContext(
+        [
+            {
+                "name": "Alice",
+                "address": "123 Alice Street",
+            }
+        ]
+    )
+
+    original = "Visit 123 Alice Street"
+    masked = context.mask(original)
+
+    assert "Alice" not in masked
+    assert "123" not in masked
+    assert "Street" not in masked
+    assert context.restore(masked) == original
+
+
+def test_case_insensitive_name_masking():
+    context = MaskingContext([{"name": "Alice Smith"}])
+
+    original = "Contact ALICE SMITH"
+    masked = context.mask(original)
+
+    assert "ALICE SMITH" not in masked
+    assert context.restore(masked) == original
+
+
+def test_detects_foreign_placeholders():
+    first = MaskingContext([{"name": "Alice"}])
+    second = MaskingContext([{"name": "Bob"}])
+
+    alice_token = first.mask("Alice")
+    bob_token = second.mask("Bob")
+
+    assert not first.has_unknown_placeholders(alice_token)
+    assert first.has_unknown_placeholders(bob_token)
+    assert second.has_unknown_placeholders(alice_token)

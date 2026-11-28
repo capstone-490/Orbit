@@ -310,3 +310,89 @@ def test_suggestions_endpoint_requires_authentication(client):
     response = client.get("/priority-actions/suggestions")
 
     assert response.status_code == 401
+
+
+def test_priority_actions_excludes_additional_client_pii(mock_db, client):
+    follow_up = make_follow_up(1, -1)
+    follow_up.update(
+        {
+            "client_email": "alice@example.com",
+            "client_phone_number": "514-555-1234",
+            "client_address": "123 Main Street",
+        }
+    )
+
+    mock_db.fetchall.return_value = [follow_up]
+
+    response = client.get("/priority-actions")
+
+    assert response.status_code == 200
+
+    item = response.json()["items"][0]
+
+    for field in (
+        "client_email",
+        "client_phone_number",
+        "client_address",
+    ):
+        assert field not in item
+        assert follow_up[field] not in response.text
+
+    assert item["client_name"] == follow_up["client_name"]
+
+
+def test_suggestions_endpoint_masks_and_restores_pii(mock_db, client, monkeypatch):
+    follow_up = make_follow_up(1, -1)
+
+    follow_up.update(
+        {
+            "client_name": "Alice Smith",
+            "client_email": "alice@example.com",
+            "client_phone_number": "514-555-1234",
+            "client_address": "123 Main Street",
+            "reason": (
+                "Contact Alice Smith at alice@example.com "
+                "or 514-555-1234 at 123 Main Street."
+            ),
+        }
+    )
+
+    mock_db.fetchall.return_value = [follow_up]
+
+    class EchoProvider:
+        def suggest(self, items):
+            payload = repr(items)
+
+            for field in (
+                "client_name",
+                "client_email",
+                "client_phone_number",
+                "client_address",
+            ):
+                assert follow_up[field] not in payload
+
+            return [
+                {
+                    "follow_up_id": items[0]["follow_up_id"],
+                    "text": items[0]["reason"],
+                }
+            ]
+
+    monkeypatch.setattr(
+        priority_actions,
+        "get_ai_provider",
+        lambda: EchoProvider(),
+    )
+
+    response = client.get("/priority-actions/suggestions")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "status": "available",
+        "suggestions": [
+            {
+                "follow_up_id": 1,
+                "text": follow_up["reason"],
+            }
+        ],
+    }
