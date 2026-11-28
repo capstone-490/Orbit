@@ -202,3 +202,23 @@ class AbstractClientRepository(ABC):
         Raises DuplicateClientEmailError on email collision.
         """
         raise NotImplementedError
+
+
+class AbstractFeatureFlagRepository(ABC):
+    @abstractmethod
+    async def get_all(self) -> dict[str, bool]:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def seed_missing(self, flags: list[dict]) -> int:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def set_enabled(
+        self,
+        name: str,
+        enabled: bool,
+        *,
+        description: str | None = None,
+    ) -> None:
+        raise NotImplementedError
