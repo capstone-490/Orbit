@@ -240,15 +240,24 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         self.rolled_back = False
         self.current_org_id: UUID | None = None
         self.bypass_rls: bool = False
+        self.actor_id: UUID | str | None = None
+        self.actor_type: str = "system"
+        self.effective_subject_id: UUID | str | None = None
 
     async def set_tenant_context(
         self,
         organization_id: UUID | None,
         *,
         bypass_rls: bool = False,
+        actor_id: UUID | str | None = None,
+        actor_type: str = "system",
+        effective_subject_id: UUID | str | None = None,
     ) -> None:
         self.current_org_id = organization_id
         self.bypass_rls = bypass_rls
+        self.actor_id = actor_id
+        self.actor_type = actor_type
+        self.effective_subject_id = effective_subject_id
 
     async def commit(self) -> None:
         self.committed = True
