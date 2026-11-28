@@ -1,6 +1,6 @@
 from functools import lru_cache
 from pathlib import Path
-from typing import Literal
+from typing import ClassVar, Literal
 
 from pydantic import PostgresDsn, computed_field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -19,6 +19,10 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         case_sensitive=True,
         extra="ignore",
+    )
+
+    TOGGLES_CONFIG_PATH: ClassVar[Path] = (
+        Path(__file__).resolve().parents[2] / "config" / "feature_flags.json"
     )
 
     CORS_ORIGINS: list[str] = [

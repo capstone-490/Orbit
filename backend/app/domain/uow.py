@@ -14,6 +14,7 @@ from uuid import UUID
 from app.domain.repositories import (
     AbstractBookingRepository,
     AbstractClientRepository,
+    AbstractFeatureFlagRepository,
     AbstractScheduleRepository,
 )
 
@@ -26,6 +27,7 @@ class AbstractUnitOfWork(ABC):
     schedules: AbstractScheduleRepository
     bookings: AbstractBookingRepository
     clients: AbstractClientRepository
+    feature_flags: AbstractFeatureFlagRepository
 
     async def __aenter__(self) -> Self:
         """return this object when entering the async with block"""
@@ -47,6 +49,9 @@ class AbstractUnitOfWork(ABC):
         organization_id: UUID | None,
         *,
         bypass_rls: bool = False,
+        actor_id: UUID | str | None = None,
+        actor_type: str = "system",
+        effective_subject_id: UUID | str | None = None,
     ) -> None:
         # set the current organization for database row-level security
         # bypass rls only when access outside normal tenant rules is needed

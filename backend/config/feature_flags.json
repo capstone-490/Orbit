@@ -5,6 +5,12 @@
             "enabled": false,
             "rollout_percent": 0,
             "description": "Demo A/B test"
+        },
+        {
+            "name": "use_v2_workspace",
+            "enabled": false,
+            "description": "Use the v2 RLS backend and v2 frontend pages."
         }
+
     ]
 }
