@@ -5,6 +5,8 @@ import json
 import os
 from pathlib import Path
 
+from anyio import Path as AsyncPath
+
 from app.core.config import settings
 from app.domain.uow import AbstractUnitOfWork
 
@@ -33,10 +35,11 @@ class FeatureFlagService:
         self._uow = uow
 
     async def seed_from_config(self, path: Path = settings.TOGGLES_CONFIG_PATH) -> int:
-        if not path.exists():
+        async_path = AsyncPath(path)
+        if not await async_path.exists():
             return 0
-        with path.open(encoding="utf-8") as fh:
-            flags = json.load(fh).get("flags", [])
+        raw = await async_path.read_text(encoding="utf-8")
+        flags = json.loads(raw).get("flags", [])
         if not flags:
             return 0
         async with self._uow as uow:
